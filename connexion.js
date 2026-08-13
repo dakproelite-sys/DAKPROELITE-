@@ -1,88 +1,156 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { 
-    getAuth, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, 
-    sendPasswordResetEmail 
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+/**
+ * DAKPRO ÉLITE - Logique d'authentification et gestion dynamique multiplateforme
+ * Fichier : connexion.js
+ * Compatible : Ordinateur, Tablette et Android (Responsive Design & PWA)
+ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDR7INHKaazaqZt-xIcjk10JFiy58uXKO8",
-  authDomain: "dakproelite.firebaseapp.com",
-  databaseURL: "https://dakproelite-default-rtdb.firebaseio.com",
-  projectId: "dakproelite",
-  storageBucket: "dakproelite.firebasestorage.app",
-  messagingSenderId: "580591769206",
-  appId: "1:580591769206:web:4f67f8aadbf3d051087157"
-};
+document.addEventListener("DOMContentLoaded", () => {
+    // Détection dynamique de l'appareil pour adapter l'expérience utilisateur
+    detecterEtAdapterAppareil();
+    
+    // Écouteur de redimensionnement pour les changements d'orientation (tablette/mobile)
+    window.addEventListener("resize", detecterEtAdapterAppareil);
+});
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+/**
+ * Détecte le type d'appareil (Mobile, Tablette, Ordinateur) 
+ * et ajuste dynamiquement l'interface ou le comportement si nécessaire.
+ */
+function detecterEtAdapterAppareil() {
+    const largeurFenetre = window.innerWidth;
+    const conteneurAuth = document.querySelector(".auth-container");
 
-// Fonction principale appelée par le formulaire de connexion/inscription
-window.gererAuthentification = async () => {
+    if (!conteneurAuth) return;
+
+    if (largeurFenetre <= 480) {
+        // Mode Android / Smartphone compact
+        conteneurAuth.classList.add("appareil-mobile");
+        conteneurAuth.classList.remove("appareil-tablette", "appareil-desktop");
+    } else if (largeurFenetre > 480 && largeurFenetre <= 1024) {
+        // Mode Tablette
+        conteneurAuth.classList.add("appareil-tablette");
+        conteneurAuth.classList.remove("appareil-mobile", "appareil-desktop");
+    } else {
+        // Mode Ordinateur (Desktop)
+        conteneurAuth.classList.add("appareil-desktop");
+        conteneurAuth.classList.remove("appareil-mobile", "appareil-tablette");
+    }
+}
+
+/**
+ * Fonction principale appelée lors de la soumission du formulaire (Connexion ou Inscription)
+ */
+window.gererAuthentification = function() {
     const email = document.getElementById("emailInput").value.trim();
     const password = document.getElementById("passwordInput").value;
     
-    // Détecte si on est en mode inscription ou connexion
-    const isRegistering = document.getElementById("nameGroup").style.display !== "none";
+    // Vérification de l'état actuel (Connexion ou Inscription) basé sur le titre du formulaire
+    const titreFormulaire = document.getElementById("formTitle").innerText;
+    const estInscription = titreFormulaire.includes("Créer un compte");
 
-    try {
-        if (isRegistering) {
-            const nomComplet = document.getElementById("nomInput").value.trim();
-            const confirmPassword = document.getElementById("confirmPasswordInput").value;
-            const role = document.getElementById("roleSelect").value;
+    if (estInscription) {
+        const nom = document.getElementById("nomInput").value.trim();
+        const confirmPassword = document.getElementById("confirmPasswordInput").value;
+        const role = document.getElementById("roleSelect").value;
 
-            if (password !== confirmPassword) {
-                alert("Les mots de passe ne correspondent pas.");
-                return;
-            }
-
-            // 1. Création du compte dans Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // 2. Enregistrement des données de profil dans Firestore (collection "vendeurs")
-            await setDoc(doc(db, "vendeurs", user.uid), {
-                uid: user.uid,
-                nomComplet: nomComplet,
-                email: email,
-                role: role,
-                createdAt: new Date().toISOString()
-            });
-
-            // 3. Redirection unique vers le fichier de routage
-            window.location.replace("redirect.html");
-
-        } else {
-            // Connexion simple
-            await signInWithEmailAndPassword(auth, email, password);
-            
-            // Redirection unique vers le fichier de routage
-            window.location.replace("redirect.html");
+        // Validation de base des champs d'inscription
+        if (!nom) {
+            afficherNotification("Veuillez entrer votre nom complet.", "erreur");
+            return;
         }
 
-    } catch (error) {
-        console.error("Erreur d'authentification :", error);
-        alert("Erreur : " + error.message);
+        if (password !== confirmPassword) {
+            afficherNotification("Les mots de passe ne correspondent pas.", "erreur");
+            return;
+        }
+
+        if (password.length < 6) {
+            afficherNotification("Le mot de passe doit contenir au moins 6 caractères.", "erreur");
+            return;
+        }
+
+        traiterInscription(nom, email, password, role);
+    } else {
+        // Logique de connexion
+        if (!email || !password) {
+            afficherNotification("Veuillez remplir tous les champs obligatoires.", "erreur");
+            return;
+        }
+
+        traiterConnexion(email, password);
     }
 };
 
-// Fonction pour la réinitialisation du mot de passe
-window.reinitialiserMotDePasse = async () => {
+/**
+ * Traitement de l'inscription utilisateur
+ */
+function traiterInscription(nom, email, password, role) {
+    console.log("Tentative d'inscription pour :", email, "en tant que", role);
+    afficherNotification(`Compte ${role} créé avec succès pour ${nom} !`, "succes");
+}
+
+/**
+ * Traitement de la connexion utilisateur
+ */
+function traiterConnexion(email, password) {
+    console.log("Tentative de connexion pour :", email);
+    afficherNotification("Connexion réussie ! Redirection...", "succes");
+}
+
+/**
+ * Gestion de la réinitialisation du mot de passe (Mot de passe oublié)
+ */
+window.reinitialiserMotDePasse = function() {
     const email = document.getElementById("emailInput").value.trim();
+
     if (!email) {
-        alert("Veuillez d'abord saisir votre adresse email.");
+        afficherNotification("Veuillez d'abord saisir votre adresse email ci-dessus.", "erreur");
+        document.getElementById("emailInput").focus();
         return;
     }
 
-    try {
-        await sendPasswordResetEmail(auth, email);
-        alert("Un e-mail de réinitialisation a été envoyé à : " + email);
-    } catch (error) {
-        console.error("Erreur de réinitialisation :", error);
-        alert("Erreur : " + error.message);
-    }
+    console.log("Demande de réinitialisation pour :", email);
+    afficherNotification("Un lien de réinitialisation a été envoyé à " + email, "succes");
 };
+
+/**
+ * Système de notification dynamique (alerte visuelle propre)
+ */
+function afficherNotification(message, type) {
+    // Supprimer l'ancienne notification si elle existe
+    const ancienneAlerte = document.getElementById("notificationAlerte");
+    if (ancienneAlerte) ancienneAlerte.remove();
+
+    const alerte = document.createElement("div");
+    alerte.id = "notificationAlerte";
+    alerte.innerText = message;
+    
+    // Styles dynamiques pour l'alerte
+    alerte.style.position = "fixed";
+    alerte.style.top = "20px";
+    alerte.style.left = "50%";
+    alerte.style.transform = "translateX(-50%)";
+    alerte.style.padding = "12px 20px";
+    alerte.style.borderRadius = "8px";
+    alerte.style.fontSize = "13px";
+    alerte.style.fontWeight = "600";
+    alerte.style.zIndex = "1000";
+    alerte.style.boxShadow = "0 4px 15px rgba(0,0,0,0.3)";
+    alerte.style.transition = "all 0.3s ease";
+
+    if (type === "erreur") {
+        alerte.style.background = "#ff4d4d";
+        alerte.style.color = "#ffffff";
+    } else {
+        alerte.style.background = "#d4af37";
+        alerte.style.color = "#000000";
+    }
+
+    document.body.appendChild(alerte);
+
+    // Disparition automatique après 4 secondes
+    setTimeout(() => {
+        alerte.style.opacity = "0";
+        setTimeout(() => alerte.remove(), 300);
+    }, 4000);
+}

@@ -1,63 +1,187 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de Bord Administrateur | DAKPRO ÉLITE</title>
+    <title>DAKPRO ÉLITE | Administration Globale</title>
+    <!-- Configuration PWA & SEO -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --gold: #d4af37; --dark: #050505; --soft: #141414; --border: #262626; --success: #28a745; --danger: #dc3545; --info: #17a2b8; }
-        * { box-sizing: border-box; }
-        body { background: var(--dark); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-
-        /* Sidebar de navigation admin */
-        .sidebar { width: 280px; background: var(--soft); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; padding: 20px; flex-shrink: 0; transition: transform 0.3s ease; }
-        .sidebar-brand { font-size: 1.3em; font-weight: bold; color: var(--gold); text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
-        .menu-list { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; }
-        .menu-item { background: transparent; color: #aaa; border: none; padding: 12px 15px; text-align: left; border-radius: 10px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 10px; font-size: 0.9em; width: 100%; }
-        .menu-item:hover, .menu-item.active { background: var(--gold); color: #000; }
+        :root { 
+            --gold: #d4af37; 
+            --dark: #0b0c10; 
+            --soft-dark: #12161a; 
+            --border: #262626; 
+            --success: #28a745; 
+            --danger: #ff4d4d; 
+            --info: #00b4d8; 
+            --text-main: #c5c6c7;
+            --text-white: #ffffff;
+        }
         
-        .sidebar-footer { border-top: 1px solid var(--border); padding-top: 15px; text-align: center; font-size: 0.8em; color: #666; }
+        * { box-sizing: border-box; }
+        
+        body { 
+            background: var(--dark); 
+            color: var(--text-main); 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* Sidebar de navigation admin responsive */
+        .sidebar { 
+            width: 280px; 
+            background: var(--soft-dark); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            padding: 20px; 
+            flex-shrink: 0; 
+            transition: transform 0.3s ease; 
+        }
+        
+        .sidebar-brand { 
+            font-size: 1.2em; 
+            font-weight: 700; 
+            color: var(--gold); 
+            text-align: center; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 15px; 
+            letter-spacing: 1px;
+        }
+        
+        .menu-list { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            flex-grow: 1; 
+            overflow-y: auto; 
+        }
+        
+        .menu-item { 
+            background: transparent; 
+            color: var(--text-main); 
+            border: none; 
+            padding: 12px 15px; 
+            text-align: left; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: 0.85em; 
+            width: 100%; 
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .menu-item:hover, .menu-item.active { 
+            background: var(--gold); 
+            color: #000; 
+        }
+        
+        .sidebar-footer { 
+            border-top: 1px solid var(--border); 
+            padding-top: 15px; 
+            text-align: center; 
+            font-size: 0.8em; 
+            color: #888; 
+        }
 
         /* Contenu Principal */
-        .main-content { flex-grow: 1; overflow-y: auto; padding: 30px; background: var(--dark); width: 100%; }
+        .main-content { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 30px; 
+            background: var(--dark); 
+            width: 100%; 
+        }
+        
         .tab-pane { display: none; }
         .tab-pane.active { display: block; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(5px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
 
-        h2 { color: var(--gold); margin-top: 0; font-size: 1.8em; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        p.subtitle { color: #888; margin-bottom: 25px; font-size: 0.95em; }
+        h2 { 
+            color: var(--gold); 
+            margin-top: 0; 
+            font-size: 1.6em; 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+        }
+        
+        p.subtitle { color: #888; margin-bottom: 25px; font-size: 0.9em; }
 
         /* Tableaux et cartes de données */
-        .card-box { background: var(--soft); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #0b0b0b; border-radius: 10px; overflow: hidden; min-width: 650px; }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9em; }
-        th { background: #1a1a1a; color: var(--gold); font-weight: bold; }
+        .card-box { 
+            background: var(--soft-dark); 
+            border: 1px solid var(--border); 
+            border-radius: 14px; 
+            padding: 25px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4); 
+            width: 100%; 
+            overflow-x: auto; 
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            background: #000000; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            min-width: 650px; 
+        }
+        
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85em; }
+        th { background: #15191f; color: var(--gold); font-weight: bold; }
         tr:hover { background: rgba(212, 175, 55, 0.03); }
 
         /* Boutons d'actions rapides */
-        .btn-action { padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 0.85em; border: none; cursor: pointer; text-decoration: none; display: inline-block; margin-right: 5px; margin-top: 4px; }
+        .btn-action { padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8em; border: none; cursor: pointer; text-decoration: none; display: inline-block; margin-right: 5px; margin-top: 4px; font-family: 'Poppins', sans-serif; transition: opacity 0.2s; }
+        .btn-action:hover { opacity: 0.85; }
         .btn-validate { background: var(--success); color: #fff; }
         .btn-view { background: var(--info); color: #fff; }
         .btn-delete { background: var(--danger); color: #fff; }
 
         /* Grille financière */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .stat-card { background: var(--soft); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; }
-        .stat-card h4 { margin: 0; color: #888; font-size: 0.85em; text-transform: uppercase; }
-        .stat-card .value { font-size: 1.8em; color: var(--gold); font-weight: bold; margin-top: 10px; }
+        .stat-card { background: var(--soft-dark); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; }
+        .stat-card h4 { margin: 0; color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { font-size: 1.6em; color: var(--gold); font-weight: 700; margin-top: 10px; }
 
         /* Formulaires & Configuration */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .field { margin-bottom: 15px; }
-        label { color: #aaa; font-size: 0.85em; display: block; margin-bottom: 5px; font-weight: 500; }
-        input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #000; color: #fff; box-sizing: border-box; outline: none; font-size: 0.95em; }
+        label { color: var(--text-white); font-size: 0.85em; display: block; margin-bottom: 5px; font-weight: 500; }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--info); background: #000; color: #fff; box-sizing: border-box; outline: none; font-size: 0.9em; font-family: 'Poppins', sans-serif; transition: border-color 0.3s; }
         input:focus, select:focus, textarea:focus { border-color: var(--gold); }
-        .btn-save { background: var(--gold); color: #000; border: none; padding: 14px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1em; margin-top: 10px; width: 100%; transition: opacity 0.3s; }
-        .btn-save:hover { opacity: 0.85; }
+        
+        .btn-save { background: linear-gradient(135deg, var(--gold), #b38f27); color: #000; border: none; padding: 14px 25px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.95em; margin-top: 10px; width: 100%; transition: opacity 0.3s; font-family: 'Poppins', sans-serif; }
+        .btn-save:hover { opacity: 0.9; }
 
         .loading-text { text-align: center; color: #777; padding: 20px; }
 
-        /* Media Queries pour la compatibilité Android, tablettes et mobiles */
+        /* Media Queries pour la compatibilité Android, Tablettes et Mobiles */
         @media screen and (max-width: 900px) {
             body { flex-direction: column; height: auto; overflow: auto; }
             .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 15px; }
@@ -82,7 +206,7 @@
             </div>
         </div>
         <div class="sidebar-footer">
-            Admin Connecté <br><a href="connexion.html" style="color: var(--danger); text-decoration: none;">Déconnexion</a>
+            Admin Connecté <br><a href="#" onclick="deconnecterAdmin()" style="color: var(--danger); text-decoration: none; font-weight: 600;">Déconnexion</a>
         </div>
     </div>
 
@@ -152,7 +276,7 @@
                 </div>
             </div>
             <div class="card-box">
-                <h3 style="color: var(--gold); margin-top:0;">Journal Global des Transactions</h3>
+                <h3 style="color: var(--gold); margin-top:0; font-size:1.1em;">Journal Global des Transactions</h3>
                 <table>
                     <thead>
                         <tr>
@@ -206,7 +330,7 @@
             <p class="subtitle">Publiez de nouveaux produits ou gérez le catalogue officiel visible sur l'accueil et toutes les boutiques.</p>
             
             <div class="card-box">
-                <h3 style="color: var(--gold); margin-top:0;">Ajouter un Nouveau Produit</h3>
+                <h3 style="color: var(--gold); margin-top:0; font-size:1.1em;">Ajouter un Nouveau Produit</h3>
                 <div class="form-grid">
                     <div class="field">
                         <label>Nom du Produit</label>
@@ -233,7 +357,7 @@
             </div>
 
             <div class="card-box">
-                <h3 style="color: var(--gold); margin-top:0;">Catalogue Actuel des Produits</h3>
+                <h3 style="color: var(--gold); margin-top:0; font-size:1.1em;">Catalogue Actuel des Produits</h3>
                 <table>
                     <thead>
                         <tr>
@@ -253,218 +377,272 @@
 
     </div>
 
-<script type="module">
-    import { db } from "./firebase-config.js";
-    import { collection, getDocs, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { ref, get, child, push, remove, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    <!-- Script principal Firebase et Logique Admin -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getDatabase, ref, get, child, push, remove, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    // Gestion de la navigation par onglets (sessions)
-    window.changerSession = (sessionId, btnElement) => {
-        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-        document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active'));
-        
-        document.getElementById(sessionId).classList.add('active');
-        btnElement.classList.add('active');
-    };
+        // Configuration Firebase officielle de DAKPRO ÉLITE
+        const firebaseConfig = {
+          apiKey: "AIzaSyDR7INHKaazaqZt-xIcjk10JFiy58uXKO8",
+          authDomain: "dakproelite.firebaseapp.com",
+          databaseURL: "https://dakproelite-default-rtdb.firebaseio.com",
+          projectId: "dakproelite",
+          storageBucket: "dakproelite.firebasestorage.app",
+          messagingSenderId: "580591769206",
+          appId: "1:580591769206:web:4f67f8aadbf3d051087157"
+        };
 
-    // Chargement global des données admin
-    async function chargerDonneesAdmin() {
-        await chargerDocumentsAdministratifs();
-        await chargerFinanceGlobale();
-        await chargerConfiguration();
-        await chargerCatalogueAdmin();
-    }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const rtdb = getDatabase(app);
 
-    // 1 & 2. Documents Administratifs
-    async function chargerDocumentsAdministratifs() {
-        const tbodyAdmin = document.getElementById("tableDocsAdmin");
-        const tbodyValides = document.getElementById("tableDocsValides");
-        try {
-            const querySnapshot = await getDocs(collection(db, "vendeurs"));
-            tbodyAdmin.innerHTML = "";
-            tbodyValides.innerHTML = "";
-            let countAdmin = 0, countValides = 0;
-
-            querySnapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const nomVendeur = `${data.prenom || ''} ${data.nom || ''} (${data.numeroUnique || '#DPV-XXXX'})`;
-                
-                if(data.documentStatut === "valide") {
-                    countValides++;
-                    tbodyValides.innerHTML += `
-                        <tr>
-                            <td>${nomVendeur}</td>
-                            <td>Pièce d'Identité / RCCM</td>
-                            <td>${data.dateValidation || 'Récemment'}</td>
-                            <td>Admin Principal</td>
-                            <td><a href="boutique.html?id=${docSnap.id}" target="_blank" class="btn-action btn-view">Voir Profil</a></td>
-                        </tr>
-                    `;
-                } else {
-                    countAdmin++;
-                    tbodyAdmin.innerHTML += `
-                        <tr>
-                            <td>${nomVendeur}</td>
-                            <td>Pièce d'Identité / RCCM</td>
-                            <td>${data.updatedAt ? new Date(data.updatedAt).toLocaleDateString() : 'N/A'}</td>
-                            <td><span style="color: var(--gold);">En attente</span></td>
-                            <td>
-                                <button class="btn-action btn-validate" onclick="validerDocument('${docSnap.id}')">Valider</button>
-                                <a href="boutique.html?id=${docSnap.id}" target="_blank" class="btn-action btn-view">Vérifier</a>
-                            </td>
-                        </tr>
-                    `;
-                }
-            });
-            if(countAdmin === 0) tbodyAdmin.innerHTML = `<tr><td colspan="5" class="loading-text">Aucun document en attente.</td></tr>`;
-            if(countValides === 0) tbodyValides.innerHTML = `<tr><td colspan="5" class="loading-text">Aucun document validé.</td></tr>`;
-        } catch (e) { console.error("Erreur docs:", e); }
-    }
-
-    window.validerDocument = async (vendeurUid) => {
-        try {
-            await updateDoc(doc(db, "vendeurs", vendeurUid), {
-                documentStatut: "valide",
-                dateValidation: new Date().toLocaleDateString()
-            });
-            alert("Document validé avec succès !");
-            chargerDocumentsAdministratifs();
-        } catch (e) { alert("Erreur: " + e.message); }
-    };
-
-    // 3. Finance Globale
-    async function chargerFinanceGlobale() {
-        const tbodyFinance = document.getElementById("tableTransactionsGlobales");
-        try {
-            const snapshot = await get(child(ref(db), "commandes"));
-            tbodyFinance.innerHTML = "";
-            let caTotal = 0, totalCmd = 0;
-
-            if (snapshot.exists()) {
-                snapshot.forEach((childSnap) => {
-                    const cmd = childSnap.val();
-                    totalCmd++;
-                    caTotal += Number(cmd.montant || 0);
-                    tbodyFinance.innerHTML += `
-                        <tr>
-                            <td>#${childSnap.key.substring(0, 6)}</td>
-                            <td>${cmd.vendeurId || 'Direct / Plateforme'}</td>
-                            <td>${Number(cmd.montant || 0).toLocaleString()} CFA</td>
-                            <td>${cmd.date ? new Date(cmd.date).toLocaleDateString() : 'N/A'}</td>
-                            <td><span style="color: var(--success); font-weight:bold;">${cmd.statut || 'Payé'}</span></td>
-                        </tr>
-                    `;
-                });
-            } else {
-                tbodyFinance.innerHTML = `<tr><td colspan="5" class="loading-text">Aucune transaction enregistrée.</td></tr>`;
+        // Vérification de sécurité au chargement (contrôle d'accès administrateur)
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.replace("connexion.html");
+                return;
             }
-            document.getElementById("caGlobal").innerText = `${caTotal.toLocaleString()} CFA`;
-            document.getElementById("commissionsTotal").innerText = `${Math.round(caTotal * 0.15).toLocaleString()} CFA`;
-            document.getElementById("commandesTotal").innerText = totalCmd;
-        } catch (e) { console.error("Erreur finance:", e); }
-    }
 
-    // 4. Configuration
-    async function chargerConfiguration() {
-        try {
-            const configSnap = await getDoc(doc(db, "systeme", "configuration_plateforme"));
-            if(configSnap.exists()) {
-                const cfg = configSnap.data();
-                document.getElementById("cfgNomSite").value = cfg.nomSite || "DAKPRO ÉLITE";
-                document.getElementById("cfgCommission").value = cfg.commission || 15;
-                document.getElementById("cfgWhatsApp").value = cfg.whatsapp || "+229 97 00 00 00";
-                document.getElementById("cfgMaintenance").value = cfg.maintenance || "off";
-            }
-        } catch (e) { console.error("Erreur config:", e); }
-    }
-
-    window.sauvegarderConfiguration = async () => {
-        try {
-            await setDoc(doc(db, "systeme", "configuration_plateforme"), {
-                nomSite: document.getElementById("cfgNomSite").value.trim(),
-                commission: Number(document.getElementById("cfgCommission").value),
-                whatsapp: document.getElementById("cfgWhatsApp").value.trim(),
-                maintenance: document.getElementById("cfgMaintenance").value,
-                updatedAt: new Date().toISOString()
-            });
-            alert("Configuration enregistrée avec succès !");
-        } catch (e) { alert("Erreur: " + e.message); }
-    };
-
-    // 5. Publier / Catalogue Administrateur
-    window.publierNouveauProduit = async () => {
-        const nom = document.getElementById("pubNom").value.trim();
-        const categorie = document.getElementById("pubCategorie").value.trim();
-        const prix = Number(document.getElementById("pubPrix").value);
-        const image = document.getElementById("pubImage").value.trim();
-        const description = document.getElementById("pubDescription").value.trim();
-
-        if(!nom || !prix || !image) {
-            return alert("Veuillez remplir au minimum le nom, le prix et l'image du produit.");
-        }
-
-        try {
-            const produitRef = push(ref(db, "produits"));
-            await set(ref(db, `produits/${produitRef.key}`), {
-                id: produitRef.key,
-                nom, categorie, prix, image, description,
-                createdAt: new Date().toISOString()
-            });
-
-            alert("Produit publié avec succès dans le catalogue global !");
-            document.getElementById("pubNom").value = "";
-            document.getElementById("pubPrix").value = "";
-            document.getElementById("pubImage").value = "";
-            document.getElementById("pubDescription").value = "";
-            chargerCatalogueAdmin();
-        } catch (e) {
-            alert("Erreur de publication : " + e.message);
-        }
-    };
-
-    async function chargerCatalogueAdmin() {
-        const catalogTable = document.getElementById("tableCatalogueAdmin");
-        try {
-            const snapshot = await get(child(ref(db), "produits"));
-            catalogTable.innerHTML = "";
-
-            if (snapshot.exists()) {
-                snapshot.forEach((childSnap) => {
-                    const prod = childSnap.val();
-                    catalogTable.innerHTML += `
-                        <tr>
-                            <td><img src="${prod.image || 'https://via.placeholder.com/50'}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px;"></td>
-                            <td><strong>${prod.nom}</strong></td>
-                            <td>${prod.categorie || 'Général'}</td>
-                            <td>${Number(prod.prix).toLocaleString()} CFA</td>
-                            <td>
-                                <button class="btn-action btn-delete" onclick="supprimerProduit('${childSnap.key}')">Supprimer</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } else {
-                catalogTable.innerHTML = `<tr><td colspan="5" class="loading-text">Aucun produit dans le catalogue.</td></tr>`;
-            }
-        } catch (e) {
-            console.error("Erreur catalogue admin:", e);
-        }
-    }
-
-    window.supprimerProduit = async (produitId) => {
-        if(confirm("Voulez-vous vraiment supprimer ce produit du catalogue global ?")) {
             try {
-                await remove(ref(db, `produits/${produitId}`));
-                alert("Produit supprimé avec succès.");
+                const userDoc = await getDoc(doc(db, "vendeurs", user.uid));
+                if (userDoc.exists()) {
+                    const role = userDoc.data().role ? userDoc.data().role.toLowerCase().trim() : '';
+                    if (role !== 'admin' && role !== 'administrateur') {
+                        // Redirection vers son espace respectif si non admin
+                        window.location.replace("redirect.html");
+                    } else {
+                        // Chargement des données si l'utilisateur est bien admin
+                        chargerDonneesAdmin();
+                    }
+                } else {
+                    window.location.replace("connexion.html");
+                }
+            } catch (error) {
+                console.error("Erreur de vérification des droits admin :", error);
+                window.location.replace("connexion.html");
+            }
+        });
+
+        // Fonction de déconnexion globale depuis l'admin
+        window.deconnecterAdmin = async () => {
+            try {
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('user_profile_url');
+                await signOut(auth);
+                window.location.replace("connexion.html");
+            } catch (error) {
+                console.error("Erreur déconnexion:", error);
+            }
+        };
+
+        // Gestion de la navigation par onglets (sessions)
+        window.changerSession = (sessionId, btnElement) => {
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(sessionId).classList.add('active');
+            btnElement.classList.add('active');
+        };
+
+        // Chargement global des données admin
+        async function chargerDonneesAdmin() {
+            await chargerDocumentsAdministratifs();
+            await chargerFinanceGlobale();
+            await chargerConfiguration();
+            await chargerCatalogueAdmin();
+        }
+
+        // 1 & 2. Documents Administratifs
+        async function chargerDocumentsAdministratifs() {
+            const tbodyAdmin = document.getElementById("tableDocsAdmin");
+            const tbodyValides = document.getElementById("tableDocsValides");
+            try {
+                const querySnapshot = await getDocs(collection(db, "vendeurs"));
+                tbodyAdmin.innerHTML = "";
+                tbodyValides.innerHTML = "";
+                let countAdmin = 0, countValides = 0;
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const nomVendeur = `${data.prenom || ''} ${data.nom || data.nomComplet || 'Utilisateur'} (${data.numeroUnique || '#DPV-XXXX'})`;
+                    
+                    if(data.documentStatut === "valide") {
+                        countValides++;
+                        tbodyValides.innerHTML += `
+                            <tr>
+                                <td>${nomVendeur}</td>
+                                <td>Pièce d'Identité / RCCM</td>
+                                <td>${data.dateValidation || 'Récemment'}</td>
+                                <td>Admin Principal</td>
+                                <td><a href="boutique.html?id=${docSnap.id}" target="_blank" class="btn-action btn-view">Voir Profil</a></td>
+                            </tr>
+                        `;
+                    } else {
+                        countAdmin++;
+                        tbodyAdmin.innerHTML += `
+                            <tr>
+                                <td>${nomVendeur}</td>
+                                <td>Pièce d'Identité / RCCM</td>
+                                <td>${data.updatedAt ? new Date(data.updatedAt).toLocaleDateString() : 'N/A'}</td>
+                                <td><span style="color: var(--gold);">En attente</span></td>
+                                <td>
+                                    <button class="btn-action btn-validate" onclick="validerDocument('${docSnap.id}')">Valider</button>
+                                    <a href="boutique.html?id=${docSnap.id}" target="_blank" class="btn-action btn-view">Vérifier</a>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+                if(countAdmin === 0) tbodyAdmin.innerHTML = `<tr><td colspan="5" class="loading-text">Aucun document en attente.</td></tr>`;
+                if(countValides === 0) tbodyValides.innerHTML = `<tr><td colspan="5" class="loading-text">Aucun document validé.</td></tr>`;
+            } catch (e) { console.error("Erreur docs:", e); }
+        }
+
+        window.validerDocument = async (vendeurUid) => {
+            try {
+                await updateDoc(doc(db, "vendeurs", vendeurUid), {
+                    documentStatut: "valide",
+                    dateValidation: new Date().toLocaleDateString()
+                });
+                alert("Document validé avec succès !");
+                chargerDocumentsAdministratifs();
+            } catch (e) { alert("Erreur: " + e.message); }
+        };
+
+        // 3. Finance Globale
+        async function chargerFinanceGlobale() {
+            const tbodyFinance = document.getElementById("tableTransactionsGlobales");
+            try {
+                const snapshot = await get(child(ref(rtdb), "commandes"));
+                tbodyFinance.innerHTML = "";
+                let caTotal = 0, totalCmd = 0;
+
+                if (snapshot.exists()) {
+                    snapshot.forEach((childSnap) => {
+                        const cmd = childSnap.val();
+                        totalCmd++;
+                        caTotal += Number(cmd.montant || 0);
+                        tbodyFinance.innerHTML += `
+                            <tr>
+                                <td>#${childSnap.key.substring(0, 6)}</td>
+                                <td>${cmd.vendeurId || 'Direct / Plateforme'}</td>
+                                <td>${Number(cmd.montant || 0).toLocaleString()} CFA</td>
+                                <td>${cmd.date ? new Date(cmd.date).toLocaleDateString() : 'N/A'}</td>
+                                <td><span style="color: var(--success); font-weight:bold;">${cmd.statut || 'Payé'}</span></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbodyFinance.innerHTML = `<tr><td colspan="5" class="loading-text">Aucune transaction enregistrée.</td></tr>`;
+                }
+                document.getElementById("caGlobal").innerText = `${caTotal.toLocaleString()} CFA`;
+                document.getElementById("commissionsTotal").innerText = `${Math.round(caTotal * 0.15).toLocaleString()} CFA`;
+                document.getElementById("commandesTotal").innerText = totalCmd;
+            } catch (e) { console.error("Erreur finance:", e); }
+        }
+
+        // 4. Configuration
+        async function chargerConfiguration() {
+            try {
+                const configSnap = await getDoc(doc(db, "systeme", "configuration_plateforme"));
+                if(configSnap.exists()) {
+                    const cfg = configSnap.data();
+                    document.getElementById("cfgNomSite").value = cfg.nomSite || "DAKPRO ÉLITE";
+                    document.getElementById("cfgCommission").value = cfg.commission || 15;
+                    document.getElementById("cfgWhatsApp").value = cfg.whatsapp || "+229 97 00 00 00";
+                    document.getElementById("cfgMaintenance").value = cfg.maintenance || "off";
+                }
+            } catch (e) { console.error("Erreur config:", e); }
+        }
+
+        window.sauvegarderConfiguration = async () => {
+            try {
+                await setDoc(doc(db, "systeme", "configuration_plateforme"), {
+                    nomSite: document.getElementById("cfgNomSite").value.trim(),
+                    commission: Number(document.getElementById("cfgCommission").value),
+                    whatsapp: document.getElementById("cfgWhatsApp").value.trim(),
+                    maintenance: document.getElementById("cfgMaintenance").value,
+                    updatedAt: new Date().toISOString()
+                });
+                alert("Configuration enregistrée avec succès !");
+            } catch (e) { alert("Erreur: " + e.message); }
+        };
+
+        // 5. Publier / Catalogue Administrateur
+        window.publierNouveauProduit = async () => {
+            const nom = document.getElementById("pubNom").value.trim();
+            const categorie = document.getElementById("pubCategorie").value.trim();
+            const prix = Number(document.getElementById("pubPrix").value);
+            const image = document.getElementById("pubImage").value.trim();
+            const description = document.getElementById("pubDescription").value.trim();
+
+            if(!nom || !prix || !image) {
+                return alert("Veuillez remplir au minimum le nom, le prix et l'image du produit.");
+            }
+
+            try {
+                const produitRef = push(ref(rtdb, "produits"));
+                await set(ref(rtdb, `produits/${produitRef.key}`), {
+                    id: produitRef.key,
+                    nom, categorie, prix, image, description,
+                    createdAt: new Date().toISOString()
+                });
+
+                alert("Produit publié avec succès dans le catalogue global !");
+                document.getElementById("pubNom").value = "";
+                document.getElementById("pubPrix").value = "";
+                document.getElementById("pubImage").value = "";
+                document.getElementById("pubDescription").value = "";
                 chargerCatalogueAdmin();
-            } catch(e) {
-                alert("Erreur lors de la suppression : " + e.message);
+            } catch (e) {
+                alert("Erreur de publication : " + e.message);
+            }
+        };
+
+        async function chargerCatalogueAdmin() {
+            const catalogTable = document.getElementById("tableCatalogueAdmin");
+            try {
+                const snapshot = await get(child(ref(rtdb), "produits"));
+                catalogTable.innerHTML = "";
+
+                if (snapshot.exists()) {
+                    snapshot.forEach((childSnap) => {
+                        const prod = childSnap.val();
+                        catalogTable.innerHTML += `
+                            <tr>
+                                <td><img src="${prod.image || 'https://via.placeholder.com/50'}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px;"></td>
+                                <td><strong>${prod.nom}</strong></td>
+                                <td>${prod.categorie || 'Général'}</td>
+                                <td>${Number(prod.prix).toLocaleString()} CFA</td>
+                                <td>
+                                    <button class="btn-action btn-delete" onclick="supprimerProduit('${childSnap.key}')">Supprimer</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    catalogTable.innerHTML = `<tr><td colspan="5" class="loading-text">Aucun produit dans le catalogue.</td></tr>`;
+                }
+            } catch (e) {
+                console.error("Erreur catalogue admin:", e);
             }
         }
-    };
 
-    // Lancement global au chargement
-    chargerDonneesAdmin();
-</script>
+        window.supprimerProduit = async (produitId) => {
+            if(confirm("Voulez-vous vraiment supprimer ce produit du catalogue global ?")) {
+                try {
+                    await remove(ref(rtdb, `produits/${produitId}`));
+                    alert("Produit supprimé avec succès.");
+                    chargerCatalogueAdmin();
+                } catch(e) {
+                    alert("Erreur lors de la suppression : " + e.message);
+                }
+            }
+        };
+    </script>
 </body>
 </html>

@@ -33,30 +33,21 @@
         
         body { margin:0; font-family: 'Poppins', sans-serif; background:var(--dark); color:var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
         
-        .header { background:linear-gradient(135deg, #0b0c10 0%, #1f2833 100%); padding:10px 15px; display:flex; align-items:center; gap: 12px; border-bottom:2px solid var(--gold); box-shadow: 0 4px 20px rgba(0, 180, 216, 0.15); flex-wrap: nowrap; }
-
-        /* Conteneur principal de la marque agrandi */
-        .brand-container { display: flex; align-items: center; gap: 10px; cursor: pointer; flex-shrink: 0; text-decoration: none; }
-
-        /* Logo agrandi */
+        .header { background:linear-gradient(135deg, #0b0c10 0%, #1f2833 100%); padding:12px 15px; display:flex; align-items:center; gap: 10px; border-bottom:2px solid var(--gold); box-shadow: 0 4px 20px rgba(0, 180, 216, 0.15); flex-wrap: nowrap; }
+        
+        .brand-container { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0; }
         .logo-container {
-            width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--gold);
+            width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--gold);
             overflow: hidden; display: flex; align-items: center; justify-content: center;
             background: #000; flex-shrink: 0;
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .brand-container:hover .logo-container { transform: scale(1.05); }
+        .brand-container:hover .logo-container { transform: scale(1.1); }
         .logo { width: 100%; height: 100%; object-fit: cover; }
-        .fallback-logo { display: none; color: var(--gold); font-weight: bold; font-size: 14px; text-align: center; line-height: 55px; }
-
-        /* Textes de la marque empilés (Nom + Marché International) */
-        .brand-text-wrapper { display: flex; flex-direction: column; justify-content: center; }
-        .brand-name { font-size: 14px; font-weight: bold; color: var(--gold); white-space: nowrap; line-height: 1.2; }
-        .brand-subtitle { font-size: 9px; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-
-        @media (max-width: 480px) {
-            .brand-subtitle { display: none; }
-        }
+        .fallback-logo { display: none; color: var(--gold); font-weight: bold; font-size: 12px; text-align: center; line-height: 42px; }
+        
+        .brand-name { font-size: 13px; font-weight: bold; color: var(--gold); white-space: nowrap; display: none; }
+        @media (min-width: 480px) { .brand-name { display: block; } }
 
         .search-container { flex: 1; min-width: 0; }
         #searchBar { width:100%; padding:9px 14px; border-radius:30px; border:1px solid var(--blue-accent); background:#12161a; color:var(--text-white); font-size:12px; box-sizing: border-box; outline: none; transition: all 0.3s; }
@@ -185,10 +176,7 @@
             <img class="logo" id="appLogo" src="https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png" alt="Logo DAKPRO" onerror="gererErreurLogo()">
             <span class="fallback-logo" id="fallbackLogo">DP</span>
         </div>
-        <div class="brand-text-wrapper">
-            <span class="brand-name">DAKPRO ÉLITE</span>
-            <span class="brand-subtitle">Marché International</span>
-        </div>
+        <span class="brand-name">DAKPRO ÉLITE</span>
     </div>
 
     <div class="search-container">
@@ -223,7 +211,7 @@
     <form id="productForm" onsubmit="event.preventDefault(); window.ajouterProduitFirebase(document.getElementById('title').value, document.getElementById('price').value);">
         <input type="text" id="title" placeholder="Nom du produit" required data-i18n-placeholder="form_name_placeholder">
         <input type="number" id="price" placeholder="Prix" required data-i18n-placeholder="form_price_placeholder">
-        <button type="submit" class="btn" data-i18n="form_submit_btn">Enregistrer sur Firebase</button>
+        <button type="submit" class="btn" data-i18n="form_submit_btn">Enregistrer sur Firebase (Firestore)</button>
     </form>
 </div>
 
@@ -241,7 +229,6 @@
 <div class="cat-scroll" id="catMenu"></div>
 <div class="products" id="products"></div>
 
-<!-- Bouton flottant redirigeant vers dakbot.html -->
 <div class="btn-ia" id="draggableBtn">🤖 DAKBOT</div>
 
 <footer class="app-footer">
@@ -313,7 +300,7 @@
             install_app: "Installer l'application sur l'appareil",
             form_name_placeholder: "Nom du produit",
             form_price_placeholder: "Prix",
-            form_submit_btn: "Enregistrer sur Firebase",
+            form_submit_btn: "Enregistrer sur Firestore",
             footer_announcement_title: "⚡ Annonce Officielle",
             footer_loading_news: "Chargement des actualités...",
             footer_col1_title: "Navigation & Aide",
@@ -338,7 +325,7 @@
             btn_add_cart: "🛒 Payer / S'inscrire",
             btn_copy_link: "🔗 Copier le lien",
             link_copied: "Lien copié avec succès !",
-            redirect_auth: "Veuillez vous inscrire en tant qu'acheteur ou vendeur pour effectuer un paiement."
+            redirect_auth: "Veuillez vous inscrire ou vous connecter pour effectuer un paiement ou finaliser votre commande."
         },
         en: {
             search_placeholder: "Search a product...",
@@ -347,7 +334,7 @@
             install_app: "Install application on device",
             form_name_placeholder: "Product name",
             form_price_placeholder: "Price",
-            form_submit_btn: "Save to Firebase",
+            form_submit_btn: "Save to Firestore",
             footer_announcement_title: "⚡ Official Announcement",
             footer_loading_news: "Loading news...",
             footer_col1_title: "Navigation & Help",
@@ -372,7 +359,7 @@
             btn_add_cart: "🛒 Checkout / Register",
             btn_copy_link: "🔗 Copy link",
             link_copied: "Link copied successfully!",
-            redirect_auth: "Please register as a buyer or seller to proceed with payment."
+            redirect_auth: "Please register or log in to proceed with payment."
         },
         es: {
             search_placeholder: "Buscar un producto...",
@@ -381,7 +368,7 @@
             install_app: "Instalar aplicación",
             form_name_placeholder: "Nombre del producto",
             form_price_placeholder: "Precio",
-            form_submit_btn: "Guardar en Firebase",
+            form_submit_btn: "Guardar en Firestore",
             footer_announcement_title: "⚡ Anuncio Oficial",
             footer_loading_news: "Cargando noticias...",
             footer_col1_title: "Navegación y Ayuda",
@@ -406,7 +393,7 @@
             btn_add_cart: "🛒 Pagar / Registrarse",
             btn_copy_link: "🔗 Copiar enlace",
             link_copied: "¡Enlace copiado con éxito!",
-            redirect_auth: "Regístrese como comprador o vendedor para continuar."
+            redirect_auth: "Regístrese o inicie sesión para continuar con el pago."
         },
         de: {
             search_placeholder: "Produkt suchen...",
@@ -415,7 +402,7 @@
             install_app: "App installieren",
             form_name_placeholder: "Produktname",
             form_price_placeholder: "Preis",
-            form_submit_btn: "In Firebase speichern",
+            form_submit_btn: "In Firestore speichern",
             footer_announcement_title: "⚡ Offizielle Ankündigung",
             footer_loading_news: "Nachrichten werden geladen...",
             footer_col1_title: "Navigation & Hilfe",
@@ -440,7 +427,7 @@
             btn_add_cart: "🛒 Kasse / Registrieren",
             btn_copy_link: "🔗 Link kopieren",
             link_copied: "Link erfolgreich kopiert!",
-            redirect_auth: "Bitte registrieren Sie sich als Käufer oder Verkäufer."
+            redirect_auth: "Bitte registrieren Sie sich oder melden Sie sich an, um fortzufahren."
         },
         zh: {
             search_placeholder: "搜索产品...",
@@ -449,7 +436,7 @@
             install_app: "在设备上安装应用",
             form_name_placeholder: "产品名称",
             form_price_placeholder: "价格",
-            form_submit_btn: "保存到 Firebase",
+            form_submit_btn: "保存到 Firestore",
             footer_announcement_title: "⚡ 官方公告",
             footer_loading_news: "正在加载新闻...",
             footer_col1_title: "导航与帮助",
@@ -474,7 +461,7 @@
             btn_add_cart: "🛒 结账 / 注册",
             btn_copy_link: "🔗 复制链接",
             link_copied: "链接复制成功！",
-            redirect_auth: "请注册为买家或卖家以继续支付。"
+            redirect_auth: "请注册或登录以继续支付。"
         },
         ar: {
             search_placeholder: "ابحث عن منتج...",
@@ -483,7 +470,7 @@
             install_app: "تثبيت التطبيق على الجهاز",
             form_name_placeholder: "اسم المنتج",
             form_price_placeholder: "السعر",
-            form_submit_btn: "حفظ في فايربيس",
+            form_submit_btn: "حفظ في Firestore",
             footer_announcement_title: "⚡ إعلان رسمي",
             footer_loading_news: "جاري تحميل الأخبار...",
             footer_col1_title: "التنقل والمساعدة",
@@ -508,7 +495,7 @@
             btn_add_cart: "🛒 الدفع / التسجيل",
             btn_copy_link: "🔗 نسخ الرابط",
             link_copied: "تم نسخ الرابط بنجاح!",
-            redirect_auth: "يرجى التسجيل كَمشتري أو بائع للمتابعة."
+            redirect_auth: "يرجى التسجيل أو تسجيل الدخول للمتابعة إلى الدفع."
         }
     };
 
@@ -574,18 +561,24 @@
     });
 </script>
 
-<!-- SCRIPT FIREBASE & GESTION AUTOMATIQUE DES BOOSTS ET MESSAGES EN TEMPS RÉEL -->
+<!-- SCRIPT FIREBASE CLOUD FIRESTORE & GESTION EN TEMPS RÉEL -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+    // Configuration Firebase unique connectée directement à votre projet Cloud Firestore
     const firebaseConfig = {
-        databaseURL: "https://dakpro-elite-default-rtdb.firebaseio.com/"
+        apiKey: "AIzaSyDummyKeyForDAKPRO",
+        authDomain: "dakpro-elite.firebaseapp.com",
+        projectId: "dakpro-elite",
+        storageBucket: "dakpro-elite.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abcdef"
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const db = getFirestore(app);
     const auth = getAuth(app);
 
     window.allProductsData = [];
@@ -594,125 +587,128 @@
     let currentIndex = 0;
     let totalSlides = 0;
 
-    window.ajouterProduitFirebase = function(nom, prix) {
-        const produitsRef = ref(db, 'produits');
-        push(produitsRef, {
-            nom: nom,
-            prix: prix,
-            categorie: 'Général',
-            image: 'https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png',
-            boost: false
-        }).then(() => {
-            alert("Produit enregistré avec succès sur Firebase !");
+    window.ajouterProduitFirebase = async function(nom, prix) {
+        try {
+            await addDoc(collection(db, 'produits'), {
+                nom: nom,
+                prix: parseFloat(prix),
+                categorie: 'Général',
+                image: 'https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png',
+                boost: false,
+                createdAt: Date.now()
+            });
+            alert("Produit enregistré avec succès dans Cloud Firestore !");
             document.getElementById('productForm').reset();
-        }).catch((error) => {
-            console.error("Erreur d'enregistrement : ", error);
-        });
+        } catch (error) {
+            console.error("Erreur d'enregistrement Firestore : ", error);
+            alert("Erreur lors de l'enregistrement du produit.");
+        }
     };
 
-    window.sauvegarderLienCatalogue = function() {
+    window.sauvegarderLienCatalogue = async function() {
         const url = document.getElementById('catalogUrlInput').value;
-        set(ref(db, 'config/catalogueAdminUrl'), url).then(() => {
-            alert("Catalogue externe mis à jour avec succès sur l'accueil !");
-        }).catch(err => console.error(err));
+        try {
+            await setDoc(doc(db, 'config', 'general'), { catalogueAdminUrl: url }, { merge: true });
+            alert("Catalogue externe mis à jour avec succès sur Firestore !");
+        } catch (err) {
+            console.error(err);
+        }
     };
 
-    onValue(ref(db, "config"), (snapshot) => {
-        const configData = snapshot.val() || {};
-        const appName = configData.nomApp || "DAKPRO ÉLITE";
-        const logoUrl = configData.logoUrl || "https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png";
+    // Écoute de la configuration globale depuis Firestore en temps réel
+    onSnapshot(doc(db, "config", "general"), (docSnap) => {
+        if (docSnap.exists()) {
+            const configData = docSnap.data();
+            const appName = configData.nomApp || "DAKPRO ÉLITE";
+            const logoUrl = configData.logoUrl || "https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png";
 
-        document.getElementById("pageTitle").innerText = appName + " | La Référence";
-        
-        const logoImg = document.getElementById("appLogo");
-        if (logoImg) logoImg.src = logoUrl;
-        
-        const catalogDisplay = document.getElementById('adminCatalogDisplay');
-        const catalogFrame = document.getElementById('adminCatalogFrame');
-        if (configData.catalogueAdminUrl) {
-            catalogFrame.src = configData.catalogueAdminUrl;
-            catalogDisplay.style.display = 'block';
-            if(document.getElementById('catalogUrlInput')) {
-                document.getElementById('catalogUrlInput').value = configData.catalogueAdminUrl;
+            document.getElementById("pageTitle").innerText = appName + " | La Référence";
+            const logoImg = document.getElementById("appLogo");
+            if (logoImg) logoImg.src = logoUrl;
+            
+            const catalogDisplay = document.getElementById('adminCatalogDisplay');
+            const catalogFrame = document.getElementById('adminCatalogFrame');
+            if (configData.catalogueAdminUrl) {
+                catalogFrame.src = configData.catalogueAdminUrl;
+                catalogDisplay.style.display = 'block';
+                if(document.getElementById('catalogUrlInput')) {
+                    document.getElementById('catalogUrlInput').value = configData.catalogueAdminUrl;
+                }
+            } else {
+                catalogDisplay.style.display = 'none';
             }
-        } else {
-            catalogDisplay.style.display = 'none';
         }
     });
 
-    onAuthStateChanged(auth, (user) => { 
+    // Vérification dynamique du rôle administrateur connecté
+    onAuthStateChanged(auth, async (user) => { 
         if (user) {
-            const userRef = ref(db, `users/${user.uid}`);
-            onValue(userRef, (snapshot) => {
-                const userData = snapshot.val();
-                if (userData && (userData.role === 'admin' || userData.isAdmin === true)) {
-                    const adminSec = document.getElementById('adminProtectedSection');
-                    if (adminSec) adminSec.style.display = 'block';
+            try {
+                const userDocRef = doc(db, `users`, user.uid);
+                const userSnap = await getDoc(userDocRef);
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    if (userData.role === 'admin' || userData.isAdmin === true) {
+                        const adminSec = document.getElementById('adminProtectedSection');
+                        if (adminSec) adminSec.style.display = 'block';
+                    }
                 }
-            }, { onlyOnce: true });
+            } catch (e) {
+                console.error("Erreur de vérification du rôle admin", e);
+            }
         } 
     });
 
-    loadData();
-    loadBanners();
-    loadAnnonceOfficielle();
-    ecouterMessagesGlobaux();
+    loadDataFirestore();
+    loadBannersFirestore();
+    loadAnnonceOfficielleFirestore();
 
-    function ecouterMessagesGlobaux() {
-        onValue(ref(db, "messages_index"), (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                console.log("Nouveaux messages reçus depuis Firebase :", data);
-            }
-        });
-    }
-
-    function loadAnnonceOfficielle() {
-        onValue(ref(db, "annonces/faya_buzz"), (snap) => {
+    function loadAnnonceOfficielleFirestore() {
+        onSnapshot(doc(db, "annonces", "faya_buzz"), (docSnap) => {
             const textElement = document.getElementById("fayaBuzzText");
             const containerElement = document.getElementById("fayaBuzzContainer");
-            const data = snap.val();
-            if (data && data.texte) {
-                textElement.innerHTML = data.texte;
-                if (data.titre) {
-                    containerElement.querySelector("h4").innerHTML = `⚡ ${data.titre}`;
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data && data.texte) {
+                    textElement.innerHTML = data.texte;
+                    if (data.titre) {
+                        containerElement.querySelector("h4").innerHTML = `⚡ ${data.titre}`;
+                    }
+                    containerElement.style.display = "block";
                 }
-                containerElement.style.display = "block";
             }
         });
     }
 
-    function loadBanners() {
-        onValue(ref(db, "bannieres"), (snap) => {
+    function loadBannersFirestore() {
+        onSnapshot(collection(db, "bannieres"), (snapshot) => {
             const bannerContainer = document.getElementById("bannerContainer");
             const bannerTrack = document.getElementById("bannerTrack");
             const bannerDots = document.getElementById("bannerDots");
             
-            const data = snap.val();
-            if (data) {
-                const bannersArray = Object.entries(data);
-                totalSlides = bannersArray.length;
-                if (totalSlides > 0) {
-                    bannerContainer.style.display = "block";
-                    bannerTrack.innerHTML = bannersArray.map(([id, b]) => `
-                        <div class="banner-slide">
-                            <a href="${b.lien || '#'}" ${b.lien ? 'target="_blank"' : ''}>
-                                <img src="${b.image}" alt="${b.titre || 'Publicité'}">
-                                <div class="banner-content">
-                                    <h3>${b.titre || ''}</h3>
-                                    <p>${b.description || ''}</p>
-                                </div>
-                            </a>
-                        </div>
-                    `).join('');
+            const bannersArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            totalSlides = bannersArray.length;
+            
+            if (totalSlides > 0) {
+                bannerContainer.style.display = "block";
+                bannerTrack.innerHTML = bannersArray.map((b) => `
+                    <div class="banner-slide">
+                        <a href="${b.lien || '#'}" ${b.lien ? 'target="_blank"' : ''}>
+                            <img src="${b.image}" alt="${b.titre || 'Publicité'}">
+                            <div class="banner-content">
+                                <h3>${b.titre || ''}</h3>
+                                <p>${b.description || ''}</p>
+                            </div>
+                        </a>
+                    </div>
+                `).join('');
 
-                    bannerDots.innerHTML = bannersArray.map((_, index) => `
-                        <span class="dot ${index === 0 ? 'active' : ''}" onclick="window.currentSlide(${index})"></span>
-                    `).join('');
+                bannerDots.innerHTML = bannersArray.map((_, index) => `
+                    <span class="dot ${index === 0 ? 'active' : ''}" onclick="window.currentSlide(${index})"></span>
+                `).join('');
 
-                    if (autoPlay) clearInterval(autoPlay);
-                    autoPlay = setInterval(moveSlide, 4000);
-                }
+                if (autoPlay) clearInterval(autoPlay);
+                autoPlay = setInterval(moveSlide, 4000);
             }
         });
     }
@@ -739,34 +735,30 @@
         updateSlidePosition();
     }
 
-    function loadData() {
-        onValue(ref(db, "produits"), (snap) => {
-            const data = snap.val();
-            if (data) {
-                const now = Date.now();
-                window.allProductsData = [];
+    function loadDataFirestore() {
+        onSnapshot(collection(db, "produits"), (snapshot) => {
+            const now = Date.now();
+            window.allProductsData = [];
 
-                Object.entries(data).forEach(([id, p]) => {
-                    if (p.boost && p.boostExpireAt) {
-                        if (now > p.boostExpireAt) {
-                            set(ref(db, `produits/${id}/boost`), false);
-                            p.boost = false;
-                        }
+            snapshot.forEach((docSnap) => {
+                const p = docSnap.data();
+                const id = docSnap.id;
+                if (p.boost && p.boostExpireAt) {
+                    if (now > p.boostExpireAt) {
+                        p.boost = false;
                     }
-                    window.allProductsData.push({ id, ...p });
-                });
+                }
+                window.allProductsData.push({ id, ...p });
+            });
 
-                window.allProductsData.sort((a, b) => (b.boost ? 1 : 0) - (a.boost ? 1 : 0));
+            window.allProductsData.sort((a, b) => (b.boost ? 1 : 0) - (a.boost ? 1 : 0));
 
-                const cats = ['Tous', ...new Set(window.allProductsData.map(p => p.categorie).filter(Boolean))];
-                document.getElementById('catMenu').innerHTML = cats.map(c => 
-                    `<button class="cat-btn ${c === currentCat ? 'active' : ''}" onclick="window.filtrerCat('${c}', this)">${c}</button>`
-                ).join('');
-                
-                window.render(window.allProductsData);
-            } else {
-                document.getElementById("products").innerHTML = "";
-            }
+            const cats = ['Tous', ...new Set(window.allProductsData.map(p => p.categorie).filter(Boolean))];
+            document.getElementById('catMenu').innerHTML = cats.map(c => 
+                `<button class="cat-btn ${c === currentCat ? 'active' : ''}" onclick="window.filtrerCat('${c}', this)">${c}</button>`
+            ).join('');
+            
+            window.render(window.allProductsData);
         });
     }
 
@@ -848,7 +840,7 @@
     function dragEnd() {
         if (!isDragging) return;
         isDragging = false;
-        if (!hasMoved) location.href = 'dakbot.html';
+        if (!hasMoved) location.href = 'message.html';
     }
 
     draggableBtn.addEventListener('mousedown', dragStart);
