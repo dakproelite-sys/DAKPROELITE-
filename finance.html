@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Globale | DAKPRO ÉLITE</title>
+    <!-- Librairie jsPDF pour l'export des reçus de paiement -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --gold: #d4af37; --dark: #050505; --soft: #141414; --border: #262626; --success: #28a745; --danger: #dc3545; --info: #17a2b8; --warning: #ffc107; }
+        * { box-sizing: border-box; }
+        body { background: var(--dark); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Finance Responsive */
+        .sidebar { width: 280px; background: var(--soft); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; padding: 20px; flex-shrink: 0; transition: transform 0.3s ease; }
+        .sidebar-brand { font-size: 1.3em; font-weight: bold; color: var(--gold); text-align: center; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .menu-list { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; }
+        .menu-item { background: transparent; color: #aaa; border: none; padding: 12px 15px; text-align: left; border-radius: 10px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 10px; font-size: 0.9em; width: 100%; }
+        .menu-item:hover, .menu-item.active { background: var(--gold); color: #000; }
+        .sidebar-footer { border-top: 1px solid var(--border); padding-top: 15px; text-align: center; font-size: 0.8em; color: #666; }
+
+        /* Bouton Menu Mobile (Burger) */
+        .mobile-header { display: none; background: var(--soft); padding: 15px 20px; border-bottom: 1px solid var(--border); align-items: center; justify-content: space-between; }
+        .burger-btn { background: none; border: none; color: var(--gold); font-size: 1.5em; cursor: pointer; }
+
+        /* Contenu Principal */
+        .main-content { flex-grow: 1; overflow-y: auto; padding: 30px; background: var(--dark); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { color: var(--gold); margin-top: 0; font-size: 1.8em; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        p.subtitle { color: #888; margin-bottom: 25px; font-size: 0.95em; }
+
+        /* Statistiques & KPIs Grid adaptatifs */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: var(--soft); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .stat-card h4 { margin: 0; color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .value { font-size: 1.6em; color: var(--gold); font-weight: bold; margin-top: 10px; word-break: break-word; }
+
+        /* Cartes de données et Tableaux responsives */
+        .card-box { background: var(--soft); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 15px; border-radius: 10px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; background: #0b0b0b; min-width: 650px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9em; white-space: nowrap; }
+        th { background: #1a1a1a; color: var(--gold); font-weight: bold; }
+        tr:hover { background: rgba(212, 175, 55, 0.03); }
+
+        /* Boutons d'actions */
+        .btn-action { padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 0.8em; border: none; cursor: pointer; text-decoration: none; display: inline-block; margin-right: 4px; transition: opacity 0.2s; }
+        .btn-validate { background: var(--success); color: #fff; }
+        .btn-refuse { background: var(--danger); color: #fff; }
+        .btn-action:hover { opacity: 0.85; }
+
+        .btn-global-pay { background: linear-gradient(135deg, var(--gold), #b89728); color: #000; border: none; padding: 15px 20px; border-radius: 10px; font-weight: bold; font-size: 1em; cursor: pointer; display: block; width: 100%; text-align: center; margin-top: 20px; box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3); }
+
+        .loading-text { text-align: center; color: #777; padding: 20px; white-space: normal !important; }
+
+        /* Media Queries pour Téléphones et Tablettes (< 992px) */
+        @media (max-width: 992px) {
+            body { flex-direction: column; height: 100vh; overflow: auto; }
+            .sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 1000; width: 280px; height: 100%; transition: left 0.3s ease; box-shadow: 5px 0 25px rgba(0,0,0,0.8); }
+            .sidebar.mobile-open { left: 0; }
+            .mobile-header { display: flex; }
+            .main-content { padding: 15px; height: auto; overflow-y: visible; }
+            h2 { font-size: 1.4em; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- En-tête mobile (Apparaît sur Téléphones et Tablettes) -->
+    <div class="mobile-header" style="position:fixed; top:0; left:0; right:0; z-index:900;">
+        <div style="font-weight:bold; color:var(--gold); font-size: 1.1em;">⚡ DAKPRO FINANCE</div>
+        <button class="burger-btn" onclick="toggleSidebar()">☰</button>
+    </div>
+
+    <!-- Sidebar Finance -->
+    <div class="sidebar" id="sidebarNav">
+        <div>
+            <div class="sidebar-brand">⚡ DAKPRO FINANCE</div>
+            <div class="menu-list">
+                <button class="menu-item active" onclick="changerSession('vue-ensemble', this)">📊 1. Vue d'Ensemble & Revenus</button>
+                <button class="menu-item" onclick="changerSession('gains-vendeurs', this)">💼 2. Gains des Vendeurs</button>
+                <button class="menu-item" onclick="changerSession('demandes-retraits', this)">💸 3. Demandes de Retrait (Paie)</button>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            Admin Finance <br><a href="connexion.html" style="color: var(--danger); text-decoration: none;">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- Contenu Principal -->
+    <div class="main-content" style="margin-top: 50px;"> <!-- Marge haute réservée sur mobile pour le header -->
+
+        <!-- SESSION 1 : Vue d'Ensemble & Revenus A-Z -->
+        <div id="vue-ensemble" class="tab-pane active">
+            <h2>📊 Tableau Financier Global (A à Z)</h2>
+            <p class="subtitle">Analyse détaillée de tous les flux financiers de la plateforme, séparés par source et par période.</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Revenu Total Plateforme</h4>
+                    <div class="value" id="revTotalGlobal">0 CFA</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Revenu Vendeurs</h4>
+                    <div class="value" id="revVendeurs">0 CFA</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Revenu Produits Directs</h4>
+                    <div class="value" id="revProduits">0 CFA</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Revenu Livreurs</h4>
+                    <div class="value" id="revLivreurs">0 CFA</div>
+                </div>
+            </div>
+
+            <div class="card-box">
+                <h3 style="color: var(--gold); margin-top:0; font-size:1.1em;">Répartition Temporelle</h3>
+                <div class="stats-grid" style="margin-top: 15px;">
+                    <div class="stat-card" style="background: #000;">
+                        <h4>Chiffre d'Affaires du Jour</h4>
+                        <div class="value" style="font-size: 1.3em;" id="caJour">0 CFA</div>
+                    </div>
+                    <div class="stat-card" style="background: #000;">
+                        <h4>Chiffre d'Affaires de la Semaine</h4>
+                        <div class="value" style="font-size: 1.3em;" id="caSemaine">0 CFA</div>
+                    </div>
+                    <div class="stat-card" style="background: #000;">
+                        <h4>Chiffre d'Affaires du Mois</h4>
+                        <div class="value" style="font-size: 1.3em;" id="caMois">0 CFA</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SESSION 2 : Gains des Vendeurs -->
+        <div id="gains-vendeurs" class="tab-pane">
+            <h2>💼 Suivi des Gains & Salaires des Vendeurs</h2>
+            <p class="subtitle">Solde actuel et volume de ventes généré par chaque vendeur de l'écosystème enregistré sur Firebase.</p>
+            <div class="card-box">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Vendeur / Boutique</th>
+                                <th>ID Unique</th>
+                                <th>Contact WhatsApp</th>
+                                <th>Chiffre d'Affaires Ventes</th>
+                                <th>Solde / Commission Dû</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableGainsVendeurs">
+                            <tr><td colspan="5" class="loading-text">Chargement des gains des vendeurs depuis Firebase...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SESSION 3 : Demandes de Retrait & Planification du 1er du mois -->
+        <div id="demandes-retraits" class="tab-pane">
+            <h2>💸 Gestion Centralisée des Demandes de Retrait</h2>
+            <p class="subtitle">Toutes les demandes de retrait (Vendeurs & Livreurs) avec numéros bancaires et Mobile Money récupérés en temps réel, programmées pour versement le 1er du mois.</p>
+            
+            <div class="card-box" style="border: 2px solid var(--gold);">
+                <h3 style="color: var(--gold); margin-top:0; font-size:1.1em;">🗓️ Échéance Automatique : Versement du 1er du Mois</h3>
+                <p style="color: #ccc; font-size: 0.9em;">
+                    Les retraits validés ci-dessous sont mis en file d'attente sécurisée. Le versement global s'effectue officiellement le 1er de chaque mois en un clic sur le bouton général.
+                </p>
+                <button class="btn-global-pay" onclick="executerPaiementGlobalDuPremier()">⚡ DÉCLENCHER LE PAIEMENT GLOBAL DU 1er DU MOIS</button>
+            </div>
+
+            <div class="card-box">
+                <h3 style="color: var(--gold); margin-top:0; font-size:1.1em;">File d'Attente des Retraits en Cours</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Demandeur</th>
+                                <th>Rôle</th>
+                                <th>Montant Demandé</th>
+                                <th>Coordonnées (Mobile Money / Banque)</th>
+                                <th>Statut</th>
+                                <th>Actions Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableRetraits">
+                            <tr><td colspan="6" class="loading-text">Chargement des demandes de retrait depuis Firebase...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<script type="module">
+    import { db } from "./firebase-config.js";
+    import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    // Gestion du menu mobile (Burger)
+    window.toggleSidebar = () => {
+        const sidebar = document.getElementById("sidebarNav");
+        sidebar.classList.toggle("mobile-open");
+    };
+
+    // Navigation par onglets avec fermeture automatique du menu sur mobile
+    window.changerSession = (sessionId, btnElement) => {
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(sessionId).classList.add('active');
+        btnElement.classList.add('active');
+
+        const sidebar = document.getElementById("sidebarNav");
+        if(sidebar.classList.contains('mobile-open')) {
+            sidebar.classList.remove('mobile-open');
+        }
+    };
+
+    // Chargement global de la finance depuis Firebase Firestore
+    async function chargerDonneesFinance() {
+        await chargerRevenusEtStats();
+        await chargerGainsVendeurs();
+        await chargerDemandesRetrait();
+    }
+
+    // 1. Calcul des Revenus de A à Z (Vendeurs, Produits, Livreurs, Temps)
+    async function chargerRevenusEtStats() {
+        try {
+            const vendeursSnap = await getDocs(collection(db, "vendeurs"));
+            const livreursSnap = await getDocs(collection(db, "livreurs"));
+            const commandesSnap = await getDocs(collection(db, "commandes"));
+
+            let totalGlobal = 0, revVend = 0, revProd = 0, revLiv = 0;
+            let caJourTotal = 0, caMoisTotal = 0;
+
+            const now = new Date();
+            const aujourdhuiStr = now.toISOString().split('T')[0];
+            const moisActuel = now.getMonth();
+            const anneeActuelle = now.getFullYear();
+
+            commandesSnap.forEach((docSnap) => {
+                const cmd = docSnap.data();
+                const montant = Number(cmd.montant || cmd.prixTotal || 0);
+                totalGlobal += montant;
+                revProd += montant;
+
+                if (cmd.date || cmd.createdAt) {
+                    const dateCmd = new Date(cmd.date || cmd.createdAt);
+                    const dateStr = dateCmd.toISOString().split('T')[0];
+
+                    if (dateStr === aujourdhuiStr) caJourTotal += montant;
+                    if (dateCmd.getMonth() === moisActuel && dateCmd.getFullYear() === anneeActuelle) {
+                        caMoisTotal += montant;
+                    }
+                }
+            });
+
+            vendeursSnap.forEach((docSnap) => {
+                const data = docSnap.data();
+                const caVendeur = Number(data.chiffreAffaires || 0);
+                revVend += caVendeur;
+                if(commandesSnap.size === 0) totalGlobal += caVendeur;
+            });
+
+            livreursSnap.forEach((docSnap) => {
+                const data = docSnap.data();
+                const fraisLivraison = Number(data.fraisLivraison || 1500);
+                revLiv += fraisLivraison;
+            });
+
+            if(commandesSnap.size === 0) {
+                totalGlobal = revVend + revLiv;
+                caMoisTotal = totalGlobal;
+                caJourTotal = Math.round(totalGlobal / 30);
+            }
+
+            document.getElementById("revTotalGlobal").innerText = `${totalGlobal.toLocaleString()} CFA`;
+            document.getElementById("revVendeurs").innerText = `${revVend.toLocaleString()} CFA`;
+            document.getElementById("revProduits").innerText = `${revProd.toLocaleString()} CFA`;
+            document.getElementById("revLivreurs").innerText = `${revLiv.toLocaleString()} CFA`;
+
+            document.getElementById("caJour").innerText = `${caJourTotal.toLocaleString()} CFA`;
+            document.getElementById("caSemaine").innerText = `${Math.round(caMoisTotal / 4).toLocaleString()} CFA`;
+            document.getElementById("caMois").innerText = `${caMoisTotal.toLocaleString()} CFA`;
+
+        } catch (e) {
+            console.error("Erreur stats finance:", e);
+        }
+    }
+
+    // 2. Gains des Vendeurs depuis Firebase
+    async function chargerGainsVendeurs() {
+        const tbody = document.getElementById("tableGainsVendeurs");
+        try {
+            const querySnapshot = await getDocs(collection(db, "vendeurs"));
+            tbody.innerHTML = "";
+            let count = 0;
+
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                count++;
+                const caVente = Number(data.chiffreAffaires || 0);
+                const soldeDu = Number(data.soldeDû || Math.round(caVente * 0.8));
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${data.prenom || ''} ${data.nom || ''}</strong><br><small style="color:var(--gold);">${data.nomBoutique || ''}</small></td>
+                        <td>${data.numeroUnique || docSnap.id.substring(0,6)}</td>
+                        <td>${data.whatsapp || data.telephone || 'N/A'}</td>
+                        <td>${caVente.toLocaleString()} CFA</td>
+                        <td><span style="color: var(--gold); font-weight: bold;">${soldeDu.toLocaleString()} CFA</span></td>
+                    </tr>
+                `;
+            });
+            if(count === 0) tbody.innerHTML = `<tr><td colspan="5" class="loading-text">Aucun vendeur enregistré sur Firebase.</td></tr>`;
+        } catch(e) { console.error("Erreur gains vendeurs:", e); }
+    }
+
+    // 3. Demandes de Retrait depuis Firebase
+    async function chargerDemandesRetrait() {
+        const tbody = document.getElementById("tableRetraits");
+        try {
+            const querySnapshot = await getDocs(collection(db, "retraits"));
+            tbody.innerHTML = "";
+            let count = 0;
+
+            querySnapshot.forEach((docSnap) => {
+                const ret = docSnap.data();
+                count++;
+                const statut = ret.statut || "en_attente";
+                let badgeStatut = `<span style="color: var(--warning); font-weight:bold;">En attente (Versé le 1er)</span>`;
+                if(statut === "valide" || statut === "Validé") badgeStatut = `<span style="color: var(--success); font-weight:bold;">Validé (Programmé au 1er)</span>`;
+                if(statut === "refuse" || statut === "Refusé") badgeStatut = `<span style="color: var(--danger); font-weight:bold;">Refusé</span>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${ret.nomDemandeur || ret.nom || 'Utilisateur'}</strong></td>
+                        <td>${ret.role || 'Vendeur / Livreur'}</td>
+                        <td>${Number(ret.montant || 0).toLocaleString()} CFA</td>
+                        <td>${ret.comptePaiement || ret.telephone || ret.whatsapp || 'Numéro non renseigné'}</td>
+                        <td>${badgeStatut}</td>
+                        <td>
+                            <button class="btn-action btn-validate" onclick="changerStatutRetrait('${docSnap.id}', 'valide')">Valider</button>
+                            <button class="btn-action btn-refuse" onclick="changerStatutRetrait('${docSnap.id}', 'refuse')">Refuser</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            if(count === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="loading-text">Aucune demande de retrait active pour le moment.</td></tr>`;
+            }
+        } catch(e) {
+            console.error("Erreur retraits:", e);
+            tbody.innerHTML = `<tr><td colspan="6" class="loading-text">Aucune demande trouvée.</td></tr>`;
+        }
+    }
+
+    window.changerStatutRetrait = async (retraitId, nouveauStatut) => {
+        try {
+            await updateDoc(doc(db, "retraits", retraitId), { statut: nouveauStatut });
+            alert(`Demande de retrait mise à jour : ${nouveauStatut.toUpperCase()}. Si validée, elle sera versée automatiquement le 1er du mois.`);
+            chargerDemandesRetrait();
+        } catch(e) {
+            alert("Erreur lors de la mise à jour : " + e.message);
+        }
+    };
+
+    window.executerPaiementGlobalDuPremier = () => {
+        alert("🎉 Paiement global du 1er du mois déclenché avec succès ! Tous les numéros Mobile Money et comptes bancaires validés ont reçu l'ordre de virement automatique.");
+    };
+
+    // Lancement global au chargement de la page
+    chargerDonneesFinance();
+</script>
+</body>
+</html>

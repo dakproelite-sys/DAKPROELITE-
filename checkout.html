@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="fr" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate="page_title">PAIEMENT SÉCURISÉ - DAKPRO ÉLITE</title>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!--intl-tel-input pour les sélecteurs de pays et drapeaux dynamiques-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/css/intlTelInput.css">
+    
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-gold: #FFD700;
+            --accent-blue: #00bfff;
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-light: #ffffff;
+            --text-muted: #b0b0b0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            padding-bottom: 90px;
+        }
+
+        .gold-shimmer { color: var(--primary-gold); }
+        .blue-shimmer { color: var(--accent-blue); }
+
+        header {
+            background-color: #000;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-gold);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 5px 12px 5px 5px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+        }
+
+        .brand-logo {
+            width: 58px;
+            height: 58px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--primary-gold);
+            background-color: #000;
+        }
+
+        .brand-text-group { display: flex; flex-direction: column; }
+        .brand-title { font-size: 1.35rem; font-weight: bold; color: var(--primary-gold); line-height: 1.1; }
+        .brand-subtitle { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; }
+
+        .header-right-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Style du Widget de Traduction Universelle */
+        .translator-container {
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .translator-container i {
+            color: var(--accent-blue);
+            font-size: 0.9rem;
+        }
+
+        #google_translate_element select {
+            background-color: #121212;
+            color: var(--primary-gold);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 0.8rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .header-icons { display: flex; gap: 15px; align-items: center; }
+        .header-nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; font-size: 0.7rem; font-weight: 600; }
+        .header-nav-item i { font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 3px; }
+        .header-nav-item span { color: var(--primary-gold); }
+
+        .checkout-container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .checkout-title { font-size: 1.6rem; font-weight: bold; color: var(--primary-gold); margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        .checkout-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        @media(min-width: 768px) { .checkout-grid { grid-template-columns: 1.2fr 0.8fr; } }
+
+        .checkout-card { background-color: var(--card-bg); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px; padding: 20px; }
+        .checkout-card h2 { font-size: 1.1rem; color: var(--primary-gold); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
+        .form-control { width: 100%; padding: 10px 12px; background-color: #121212; border: 1px solid #333; border-radius: 6px; color: var(--text-light); font-size: 0.95rem; }
+        .form-control:focus { border-color: var(--primary-gold); outline: none; }
+
+        /* Ajustement spécial pour l'input téléphone intelligent intl-tel-input */
+        .iti {
+            width: 100%;
+        }
+        .iti__flag-container {
+            background-color: #121212;
+            border-radius: 6px 0 0 6px;
+        }
+        .iti__selected-flag {
+            background-color: #1a1a1a !important;
+            border-radius: 6px 0 0 6px;
+        }
+        .iti__country-list {
+            background-color: #1e1e1e !important;
+            color: #ffffff !important;
+            border: 1px solid var(--primary-gold) !important;
+        }
+        .iti__country {
+            padding: 8px 10px;
+        }
+        .iti__country:hover {
+            background-color: #333 !important;
+        }
+        .iti input {
+            padding-left: 52px !important;
+        }
+
+        .order-summary-list { margin-bottom: 15px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
+        .summary-item { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 10px; color: var(--text-muted); }
+        .summary-total { border-top: 1px solid #333; padding-top: 12px; display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold; color: var(--primary-gold); }
+
+        .btn-submit-order { background: var(--primary-gold); color: #000; border: none; padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 15px; transition: opacity 0.2s; }
+        .btn-submit-order:hover { opacity: 0.9; }
+
+        footer { background-color: #080808; border-top: 1px solid #222; padding: 20px; text-align: center; font-size: 0.65rem; color: #555; margin-top: 60px; }
+
+        /* Cacher la barre supérieure automatique de Google Translate pour garder le design propre */
+        .goog-te-banner-frame { display: none !important; }
+        body { top: 0px !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="brand-container">
+            <img src="https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png" alt="Logo DAKPRO ÉLITE" class="brand-logo">
+            <div class="brand-text-group">
+                <span class="brand-title">DAKPRO<br>ÉLITE</span>
+                <span class="brand-subtitle">E-COMMERCE INTERNATIONAL</span>
+            </div>
+        </a>
+
+        <div class="header-right-group">
+            <!-- Traducteur Universel (Toutes les langues du monde) -->
+            <div class="translator-container">
+                <i class="fa-solid fa-globe"></i>
+                <div id="google_translate_element"></div>
+            </div>
+
+            <div class="header-icons">
+                <a href="panier.html" class="header-nav-item">
+                    <i class="fa-solid fa-cart-shopping blue-shimmer"></i>
+                    <span class="gold-shimmer">Panier</span>
+                </a>
+                <a href="profil.html" class="header-nav-item">
+                    <i class="fa-solid fa-user blue-shimmer"></i>
+                    <span class="gold-shimmer">Compte</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="checkout-container">
+        <h1 class="checkout-title"><i class="fa-solid fa-shield-halved"></i> Validation et Commande</h1>
+        
+        <div class="checkout-grid">
+            <!-- Formulaire -->
+            <div class="checkout-card">
+                <h2><i class="fa-solid fa-truck-fast blue-shimmer"></i> Coordonnées & Paiement</h2>
+                <form id="checkoutForm" onsubmit="submitOrder(event)">
+                    <div class="form-group">
+                        <label>Nom complet</label>
+                        <input type="text" id="fullName" class="form-control" required placeholder="Ex: Jean Dupont">
+                    </div>
+
+                    <!-- Champ Téléphone intelligent avec Sélecteur d'indicatifs mondiaux et Drapeaux -->
+                    <div class="form-group">
+                        <label>Numéro de Téléphone (Contact / WhatsApp avec indicatif)</label>
+                        <input type="tel" id="phone" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mode de Paiement</label>
+                        <select id="paymentMethod" class="form-control" onchange="updatePaymentField()">
+                            <optgroup label="Paiements Locaux (Afrique & International)">
+                                <option value="Mobile Money">Mobile Money (MTN / Moov / Orange / Wave)</option>
+                                <option value="Paiement à la livraison">Paiement à la livraison (Espèces)</option>
+                            </optgroup>
+                            <optgroup label="Paiements Internationaux & Bancaires">
+                                <option value="Carte Bancaire">Carte Bancaire / Numéro de Compte</option>
+                                <option value="Crypto-monnaie">Crypto-monnaie (USDT / BTC)</option>
+                                <option value="PayPal">PayPal</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Champ dynamique selon le choix de paiement -->
+                    <div class="form-group" id="dynamicFieldGroup">
+                        <label id="dynamicLabel">Numéro Mobile Money (pour le débit)</label>
+                        <input type="text" id="paymentDetailsInput" class="form-control" placeholder="Ex: +229 XX XX XX XX">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Adresse de résidence / Ville / Pays</label>
+                        <textarea id="address" class="form-control" rows="3" required placeholder="Quartier, Ville, Pays..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit-order">
+                        <i class="fa-solid fa-check-circle"></i> Confirmer la Commande
+                    </button>
+                </form>
+            </div>
+
+            <!-- Résumé -->
+            <div class="checkout-card">
+                <h2><i class="fa-solid fa-receipt blue-shimmer"></i> Résumé</h2>
+                <div class="order-summary-list" id="orderSummaryList">
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Chargement des articles...</p>
+                </div>
+                <div class="summary-total">
+                    <span>Total à payer :</span>
+                    <span id="summaryTotalAmount">0.00 USD</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 DAKPRO ÉLITE / DAKPRO NEXUS. Tous droits réservés.
+    </footer>
+
+    <!-- Script Google Translate (Traduction universelle mondiale automatique) -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'fr',
+                includedLanguages: 'en,fr,es,de,zh-CN,ar,pt,ru,hi,ja,it,yo,ig,ha,sw', // Principales langues mondiales et africaines
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <!-- Script intl-tel-input pour les drapeaux et indicatifs internationaux -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/intlTelInput.min.js"></script>
+
+    <script>
+        // Initialisation de l'input téléphone intelligent avec détection automatique du pays et drapeaux
+        const phoneInputField = document.querySelector("#phone");
+        const phoneInput = window.intlTelInput(phoneInputField, {
+            initialCountry: "auto",
+            geoIpLookup: function(callback) {
+                fetch("https://ipapi.co/json")
+                    .then(res => res.json())
+                    .then(data => callback(data.country_code))
+                    .catch(() => callback("bj")); // Par défaut Bénin si hors ligne/bloqué
+            },
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/utils.js",
+        });
+
+        const firebaseConfig = {
+            apiKey: "VOTRE_API_KEY",
+            authDomain: "votre-projet.firebaseapp.com",
+            databaseURL: "https://votre-projet-default-rtdb.firebaseio.com",
+            projectId: "votre-projet",
+            storageBucket: "votre-projet.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123:web:abc"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        let currentUser = null;
+        let orderItemsToProcess = [];
+        let calculatedTotal = 0;
+
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+        });
+
+        // Fonction pour adapter le champ de paiement dynamiquement
+        function updatePaymentField() {
+            const method = document.getElementById('paymentMethod').value;
+            const label = document.getElementById('dynamicLabel');
+            const input = document.getElementById('paymentDetailsInput');
+            const group = document.getElementById('dynamicFieldGroup');
+
+            if (method === 'Mobile Money') {
+                group.style.display = 'block';
+                label.innerText = "Numéro Mobile Money (MTN / Moov / Orange / Wave)";
+                input.placeholder = "Ex: +229 01020304";
+                input.required = true;
+            } else if (method === 'Carte Bancaire') {
+                group.style.display = 'block';
+                label.innerText = "Informations Bancaires / Référence de Carte";
+                input.placeholder = "Nom sur la carte ou derniers chiffres";
+                input.required = false;
+            } else if (method === 'Crypto-monnaie') {
+                group.style.display = 'block';
+                label.innerText = "ID de Transaction / Réseau Crypto";
+                input.placeholder = "Ex: Réseau TRC20 (USDT)";
+                input.required = false;
+            } else {
+                group.style.display = 'none';
+                input.required = false;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updatePaymentField();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const directProductId = urlParams.get('id');
+
+            if (directProductId) {
+                database.ref('products/' + directProductId).once('value').then((snapshot) => {
+                    const prod = snapshot.val();
+                    if (prod) {
+                        orderItemsToProcess = [{ id: directProductId, name: prod.name, price: prod.price, quantity: 1 }];
+                        renderSummary(orderItemsToProcess);
+                    }
+                });
+            } else {
+                let cart = JSON.parse(localStorage.getItem('dakpro_cart')) || [];
+                if (cart.length === 0) {
+                    alert("Votre panier est vide.");
+                    window.location.href = "index.html";
+                    return;
+                }
+
+                database.ref('products').once('value').then((snapshot) => {
+                    const allProducts = snapshot.val() || {};
+                    orderItemsToProcess = [];
+
+                    cart.forEach(item => {
+                        const prodInfo = allProducts[item.id];
+                        if (prodInfo) {
+                            orderItemsToProcess.push({
+                                id: item.id,
+                                name: prodInfo.name,
+                                price: prodInfo.price,
+                                quantity: item.quantity
+                            });
+                        }
+                    });
+
+                    renderSummary(orderItemsToProcess);
+                });
+            }
+        });
+
+        function renderSummary(items) {
+            const listContainer = document.getElementById('orderSummaryList');
+            let html = '';
+            calculatedTotal = 0;
+
+            items.forEach(item => {
+                let numericPrice = parseFloat(item.price.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
+                let itemTotal = numericPrice * item.quantity;
+                calculatedTotal += itemTotal;
+
+                html += `
+                    <div class="summary-item">
+                        <span>${item.name} (x${item.quantity})</span>
+                        <span class="gold-shimmer">${item.price}</span>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+            document.getElementById('summaryTotalAmount').innerText = calculatedTotal.toFixed(2) + " USD";
+        }
+
+        function submitOrder(event) {
+            event.preventDefault();
+
+            // Récupération sécurisée du numéro complet incluant l'indicatif international sélectionné via le drapeau
+            const fullPhoneNumber = phoneInput.getNumber();
+            
+            if (!phoneInput.isValidNumber()) {
+                alert("Veuillez entrer un numéro de téléphone valide avec son indicatif international.");
+                return;
+            }
+
+            const fullName = document.getElementById('fullName').value;
+            const address = document.getElementById('address').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const paymentDetails = document.getElementById('paymentDetailsInput').value;
+
+            const orderData = {
+                userId: currentUser ? currentUser.uid : "invite_" + Date.now(),
+                customerName: fullName,
+                customerPhone: fullPhoneNumber,
+                customerAddress: address,
+                paymentMethod: paymentMethod,
+                paymentDetails: paymentDetails || "Aucun détail supplémentaire",
+                items: orderItemsToProcess,
+                totalAmount: calculatedTotal,
+                status: "En attente de paiement",
+                createdAt: new Date().toISOString()
+            };
+
+            database.ref('orders').push(orderData).then(() => {
+                alert("Commande validée avec succès ! Merci de votre confiance.");
+                localStorage.removeItem('dakpro_cart');
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Erreur lors de la commande :", error);
+                alert("Une erreur est survenue lors de l'enregistrement de votre commande.");
+            });
+        }
+    </script>
+</body>
+</html>

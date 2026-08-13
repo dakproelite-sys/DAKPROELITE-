@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>DAKPRO ÉLITE | Redirection...</title>
+    <style>
+        body { background: #0b0c10; color: #d4af37; font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>DAKPRO ÉLITE</h2>
+        <p>Redirection sécurisée vers votre espace...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDR7INHKaazaqZt-xIcjk10JFiy58uXKO8",
+          authDomain: "dakproelite.firebaseapp.com",
+          databaseURL: "https://dakproelite-default-rtdb.firebaseio.com",
+          projectId: "dakproelite",
+          storageBucket: "dakproelite.firebasestorage.app",
+          messagingSenderId: "580591769206",
+          appId: "1:580591769206:web:4f67f8aadbf3d051087157"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const docRef = doc(db, "vendeurs", user.uid);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const role = data.role ? data.role.toLowerCase().trim() : "";
+
+                        // Redirection basée sur la valeur exacte trouvée dans Firestore ("livreur")
+                        if (role === "livreur") {
+                            window.location.replace("livreur.html");
+                        } else if (role === "vendeur" || role === "e-commerçant") {
+                            window.location.replace("dashboard-vendeur.html");
+                        } else if (role === "administration" || role === "admin") {
+                            window.location.replace("administration.html");
+                        } else {
+                            window.location.replace("compte.html");
+                        }
+                    } else {
+                        alert("Erreur : Aucun profil associé à ce compte dans la base de données.");
+                        window.location.replace("connexion.html");
+                    }
+                } catch (error) {
+                    console.error("Erreur de récupération du rôle :", error);
+                    alert("Erreur de connexion à la base de données.");
+                }
+            } else {
+                window.location.replace("connexion.html");
+            }
+        });
+    </script>
+</body>
+</html>

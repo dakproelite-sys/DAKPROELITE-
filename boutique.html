@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boutique Officielle | DAKPRO ÉLITE</title>
+    <style>
+        :root { --gold: #d4af37; --dark: #050505; --soft: #141414; --border: #262626; --success: #28a745; }
+        body { background: var(--dark); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 50px; }
+        
+        /* En-tête de la Boutique (Profil Dynamique) */
+        .store-header { background: linear-gradient(to bottom, #1f1a0a, var(--soft)); border-bottom: 2px solid var(--gold); padding: 40px 20px; text-align: center; position: relative; }
+        .store-avatar { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid var(--gold); box-shadow: 0 0 25px rgba(212, 175, 55, 0.3); margin-bottom: 15px; background: #000; }
+        .store-title { font-size: 2.2em; color: var(--gold); margin: 0 0 5px 0; font-weight: bold; }
+        .store-badge { display: inline-block; background: #000; color: var(--gold); padding: 6px 15px; border-radius: 20px; border: 1px dashed var(--gold); font-size: 0.9em; font-weight: bold; margin-bottom: 15px; }
+        .store-meta { font-size: 0.95em; color: #ccc; max-width: 600px; margin: auto; line-height: 1.6; }
+        .store-meta span { margin: 0 8px; }
+
+        /* Bouton Partager Global */
+        .share-container { margin-top: 20px; }
+        .btn-share { background: var(--gold); color: #000; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1em; transition: opacity 0.3s, transform 0.2s; box-shadow: 0 4px 15px rgba(212,175,55,0.3); }
+        .btn-share:hover { opacity: 0.85; transform: translateY(-2px); }
+
+        /* Catalogue des Produits de l'Accueil */
+        .container { max-width: 1200px; margin: auto; padding: 30px 20px; }
+        h3 { color: var(--gold); text-align: center; font-size: 1.6em; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .product-card { background: var(--soft); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s, box-shadow 0.3s; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(212,175,55,0.15); border-color: var(--gold); }
+        .product-img { width: 100%; height: 200px; object-fit: cover; background: #000; }
+        .product-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-title { font-size: 1.1em; font-weight: bold; margin: 0 0 8px 0; color: #fff; }
+        .product-cat { font-size: 0.8em; color: var(--gold); margin-bottom: 8px; }
+        .product-price { font-size: 1.2em; font-weight: bold; color: var(--success); margin-bottom: 15px; }
+        
+        .btn-buy-aff { background: #222; color: var(--gold); border: 1px solid var(--gold); padding: 10px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: bold; font-size: 0.9em; display: block; transition: background 0.3s; }
+        .btn-buy-aff:hover { background: var(--gold); color: #000; }
+
+        .loading-text { text-align: center; color: #888; font-size: 1.2em; padding: 40px; }
+    </style>
+</head>
+<body>
+
+<!-- En-tête Dynamique de la Boutique du Vendeur -->
+<div class="store-header" id="storeHeader">
+    <div class="loading-text">Chargement de la boutique...</div>
+</div>
+
+<!-- Catalogue Global des Produits de l'Application -->
+<div class="container">
+    <h3>🛒 Catalogue Officiel & Produits Disponibles (Affiliation Active)</h3>
+    <div class="products-grid" id="catalogGrid">
+        <div class="loading-text" style="grid-column: 1 / -1;">Chargement du catalogue global...</div>
+    </div>
+</div>
+
+<script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    // Récupération de l'ID du vendeur depuis l'URL (ex: boutique.html?id=XYZ123)
+    const urlParams = new URLSearchParams(window.location.search);
+    const vendeurUid = urlParams.get('id');
+
+    async function initialiserBoutique() {
+        if (!vendeurUid) {
+            document.getElementById("storeHeader").innerHTML = `<h2>⚠️ Boutique introuvable</h2><p>Aucun identifiant de vendeur spécifié dans le lien.</p>`;
+            return;
+        }
+
+        try {
+            // 1. Récupération des informations du profil vendeur depuis Firestore
+            const vendeurSnap = await getDoc(doc(db, "vendeurs", vendeurUid));
+            
+            if (!vendeurSnap.exists()) {
+                document.getElementById("storeHeader").innerHTML = `<h2>⚠️ Boutique introuvable</h2><p>Ce profil vendeur n'existe pas ou a été désactivé.</p>`;
+                return;
+            }
+
+            const vendeur = vendeurSnap.data();
+
+            // Affichage dynamique de l'en-tête de la boutique
+            document.getElementById("storeHeader").innerHTML = `
+                <img class="store-avatar" src="${vendeur.avatar || 'https://via.placeholder.com/130'}" alt="Avatar">
+                <h1 class="store-title">${vendeur.nomBoutique || 'Boutique DAKPRO ÉLITE'}</h1>
+                <div class="store-badge">🆔 ${vendeur.numeroUnique || '#DPV-XXXX'}</div>
+                <div class="store-meta">
+                    <p><strong>Propriétaire :</strong> ${vendeur.prenom || ''} ${vendeur.nom || ''} <span>|</span> <strong>WhatsApp :</strong> <a href="https://wa.me/${vendeur.whatsapp ? vendeur.whatsapp.replace(/\D/g,'') : ''}" target="_blank" style="color: #25d366; text-decoration: none;">${vendeur.whatsapp || 'Non renseigné'}</a></p>
+                    <p>📍 <strong>Localisation :</strong> ${vendeur.quartier || ''}, ${vendeur.commune || ''}, ${vendeur.departement || ''} (${vendeur.pays || 'Bénin'})</p>
+                </div>
+                <div class="share-container">
+                    <button class="btn-share" onclick="partagerBoutique()">🔗 Partager cette Boutique</button>
+                </div>
+            `;
+
+            // 2. Chargement de l'accueil complet (produits de la Realtime Database)
+            chargerCatalogueAccueil(vendeurUid, `${vendeur.prenom || ''} ${vendeur.nom || ''}`.trim());
+
+        } catch (e) {
+            console.error("Erreur de chargement :", e);
+            document.getElementById("storeHeader").innerHTML = `<h2>Erreur</h2><p>Impossible de charger les données de la boutique.</p>`;
+        }
+    }
+
+    // Chargement de l'accueil complet avec application dynamique du lien d'affiliation du vendeur
+    async function chargerCatalogueAccueil(uidVendeur, nomVendeur) {
+        const catalogGrid = document.getElementById("catalogGrid");
+        const dbRef = ref(db);
+        
+        try {
+            const snapshot = await get(child(dbRef, "produits"));
+            catalogGrid.innerHTML = "";
+
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnap) => {
+                    const prod = childSnap.val();
+                    
+                    // Génération du lien d'affiliation personnalisé pour ce vendeur sur chaque produit
+                    const lienAffiliationPerso = `https://dakproelite.com/produit.html?id=${prod.id || childSnap.key}&ref=${uidVendeur}&auteur=${encodeURIComponent(nomVendeur)}`;
+
+                    const card = document.createElement("div");
+                    card.className = "product-card";
+                    card.innerHTML = `
+                        <img class="product-img" src="${prod.image || 'https://via.placeholder.com/280x200'}" alt="${prod.nom}">
+                        <div class="product-body">
+                            <div>
+                                <div class="product-cat">${prod.categorie || 'Général'}</div>
+                                <div class="product-title">${prod.nom}</div>
+                                <div class="product-price">${Number(prod.prix).toLocaleString()} CFA</div>
+                            </div>
+                            <a href="${lienAffiliationPerso}" target="_blank" class="btn-buy-aff">🛒 Acheter / Gagner Commission</a>
+                        </div>
+                    `;
+                    catalogGrid.appendChild(card);
+                });
+            } else {
+                catalogGrid.innerHTML = `<p class="loading-text" style="grid-column: 1 / -1;">Aucun produit disponible dans le catalogue pour le moment.</p>`;
+            }
+        } catch (err) {
+            console.error("Erreur catalogue:", err);
+            catalogGrid.innerHTML = `<p class="loading-text" style="grid-column: 1 / -1;">Erreur lors du chargement des produits.</p>`;
+        }
+    }
+
+    // Fonction de partage global de la boutique complète
+    window.partagerBoutique = () => {
+        const urlActuelle = window.location.href;
+        if (navigator.share) {
+            navigator.share({
+                title: 'Boutique Officielle DAKPRO ÉLITE',
+                text: 'Découvrez tous les produits exclusifs de cette boutique !',
+                url: urlActuelle,
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(urlActuelle);
+            alert("Lien de la boutique copié dans le presse-papier ! Vous pouvez le partager partout.");
+        }
+    };
+
+    // Lancement au chargement de la page
+    initialiserBoutique();
+</script>
+</body>
+</html>

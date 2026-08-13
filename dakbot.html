@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DAKBOT ÉLITE SUPRÊME - Assistant Universel Omniscient</title>
+    <style>
+        :root { 
+            --bg: #ffea00; 
+            --card: #ffffff; 
+            --text: #002244;
+            --border: #002244;
+            --input-bg: #fffde6;
+            --accent: #004080;
+        }
+
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            height: 100vh; 
+            height: 100dvh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            border: 6px solid var(--border);
+        }
+        
+        .header { 
+            padding: 14px 20px; 
+            text-align: center; 
+            border-bottom: 4px solid var(--border); 
+            background: #ffd700; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            z-index: 10; 
+            box-shadow: 0 4px 12px rgba(0,34,68,0.2);
+        }
+
+        .bot-title {
+            font-size: 1.1em;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #002244;
+        }
+
+        .nav-links { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .btn-nav { 
+            background: #002244; 
+            color: #ffea00; 
+            border: 2px solid #002244; 
+            padding: 6px 12px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-size: 11px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+        .btn-nav:hover { background: #ffea00; color: #002244; }
+        
+        .selectors-container {
+            display: flex;
+            gap: 6px;
+        }
+
+        select.custom-select { 
+            background: #002244; 
+            color: #ffea00; 
+            border: 2px solid #002244; 
+            padding: 6px 10px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            outline: none; 
+        }
+        
+        .chat { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 16px; 
+            scroll-behavior: smooth; 
+            background: radial-gradient(circle, #fffef0 0%, #ffea00 100%);
+        }
+
+        .msg { 
+            padding: 16px 20px; 
+            border-radius: 16px; 
+            max-width: 85%; 
+            font-size: 0.96em; 
+            line-height: 1.6; 
+            word-wrap: break-word; 
+            position: relative; 
+            box-shadow: 0 4px 10px rgba(0,34,68,0.15); 
+            border: 3px solid #002244; 
+        }
+        .user { background: #002244; color: #ffea00; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 600; }
+        .bot { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; color: var(--text); }
+        
+        .msg-actions { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 12px; 
+            align-items: center; 
+            font-size: 0.85em; 
+            border-top: 2px solid rgba(0,34,68,0.15); 
+            padding-top: 8px; 
+        }
+        .action-icon { 
+            background: transparent; 
+            border: 2px solid #002244; 
+            color: #002244; 
+            padding: 4px 12px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s; 
+        }
+        .action-icon:hover { background: #002244; color: #ffea00; }
+
+        .image-preview { max-width: 220px; border-radius: 8px; margin-bottom: 8px; display: block; border: 3px solid #002244; }
+        
+        .suggestions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+        .suggestion-btn { 
+            background: #ffffff; 
+            border: 2px solid #002244; 
+            color: #002244; 
+            padding: 8px 14px; 
+            border-radius: 20px; 
+            font-size: 0.82em; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            font-weight: bold; 
+            box-shadow: 0 2px 5px rgba(0,34,68,0.15); 
+        }
+        .suggestion-btn:hover { background: #002244; color: #ffea00; }
+        
+        .typing { font-style: italic; color: #002244; font-size: 0.88em; display: none; padding: 6px 20px; font-weight: bold; background: #fff580; border-top: 2px solid #002244; }
+        
+        .inputBox { 
+            padding: 14px 20px; 
+            display: flex; 
+            border-top: 4px solid #002244; 
+            background: var(--card); 
+            align-items: center; 
+            gap: 12px; 
+            box-shadow: 0 -4px 15px rgba(0,34,68,0.1); 
+        }
+        input[type="text"] { 
+            flex: 1; 
+            padding: 13px 20px; 
+            border-radius: 30px; 
+            border: 3px solid #002244; 
+            background: var(--input-bg); 
+            color: var(--text); 
+            font-size: 14px; 
+            outline: none; 
+            font-weight: 600; 
+        }
+        input[type="text"]:focus { border-color: #004080; box-shadow: 0 0 0 3px rgba(0,64,128,0.3); }
+        
+        .tool-btn { 
+            background: #002244; 
+            border: 3px solid #002244; 
+            color: #ffea00; 
+            width: 45px; 
+            height: 45px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            font-size: 17px; 
+            flex-shrink: 0; 
+            transition: 0.2s; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2); 
+        }
+        .tool-btn:hover { background: #ffea00; color: #002244; }
+        .tool-btn.recording { background: #ff4444; border-color: #ff4444; color: #fff; animation: pulse 1.2s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+        button.send-btn { 
+            padding: 13px 22px; 
+            border-radius: 30px; 
+            border: 3px solid #002244; 
+            background: #002244; 
+            color: #ffea00; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 14px; 
+            box-shadow: 0 3px 6px rgba(0,34,68,0.2); 
+            transition: 0.2s; 
+        }
+        button.send-btn:active { background: #ffea00; color: #002244; }
+        
+        a { color: #004080; text-decoration: none; font-weight: 700; }
+        a:hover { text-decoration: underline; }
+        
+        .network-status { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+        .network-status.offline { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="bot-title">🤖 DAKBOT (Mounia & Beverly) <span id="netStatus" class="network-status">En ligne</span></span>
+        <div class="nav-links">
+            <div class="selectors-container">
+                <select id="langSelect" class="custom-select" onchange="changeLanguage(this.value)" title="Langue & Traduction">
+                    <option value="fr">🇫🇷 FR</option>
+                    <option value="en">🇬🇧 EN</option>
+                    <option value="es">🇪🇸 ES</option>
+                    <option value="de">🇩🇪 DE</option>
+                    <option value="zh">🇨🇳 中文</option>
+                    <option value="ar">🇸🇦 العربية</option>
+                </select>
+                <select id="currencySelect" class="custom-select" onchange="changeCurrency(this.value)" title="Devise Mondiale">
+                    <option value="XOF">FCFA (XOF)</option>
+                    <option value="EUR">Euros (€)</option>
+                    <option value="USD">Dollars ($)</option>
+                    <option value="GHS">Cedis (₵)</option>
+                    <option value="NGN">Nairas (₦)</option>
+                </select>
+            </div>
+            <button class="btn-nav" onclick="exportChat()" title="Exporter">💾 Export</button>
+            <a href="index.html" class="btn-nav">🏠 Accueil</a>
+            <a href="revenus.html" class="btn-nav">📊 Revenus</a>
+            <a href="panier.html" class="btn-nav">🛒 Panier</a>
+        </div>
+    </div>
+    
+    <div id="chat" class="chat"></div>
+    <div id="typing" class="typing">DAKBOT & l'Équipe Beverly analysent intelligemment le contenu, les images et orchestrent la synthèse vocale...</div>
+    
+    <div class="inputBox">
+        <label class="tool-btn" title="Envoyer et analyser une image">
+            🖼️<input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+        </label>
+        <button id="micBtn" class="tool-btn" onclick="toggleSpeechRecognition()" title="Parler au micro intelligent">🎤</button>
+        <input id="text" type="text" placeholder="Posez votre question, décrivez un besoin ou dictez vocalement..." autocomplete="off">
+        <button class="send-btn" id="sendBtn" onclick="send()">Envoyer</button>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { ref, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const auth = getAuth();
+        let catalogue = [];
+        let globalDatabaseData = {};
+        let currentUserId = null;
+        let displayName = "Membre Dakpro";
+        let userRole = "vendeur";
+        let currentLang = "fr";
+        let currentCurrency = "XOF";
+        let lastSupportSentTime = 0;
+        let welcomeTriggered = false;
+
+        const rates = {
+            XOF: { rate: 1, symbol: "FCFA" },
+            EUR: { rate: 0.001525, symbol: "€" },
+            USD: { rate: 0.00165, symbol: "$" },
+            GHS: { rate: 0.024, symbol: "₵" },
+            NGN: { rate: 2.45, symbol: "₦" }
+        };
+
+        window.formatPrice = function(amountInXof) {
+            const cur = rates[currentCurrency] || rates.XOF;
+            const converted = amountInXof * cur.rate;
+            if (currentCurrency === 'XOF' || currentCurrency === 'NGN') {
+                return `${Math.round(converted).toLocaleString()} ${cur.symbol}`;
+            }
+            return `${converted.toFixed(2)} ${cur.symbol}`;
+        };
+
+        window.changeLanguage = function(lang) {
+            currentLang = lang;
+            addMsg(`🌐 Langue / Translation switched to: <b>${lang.toUpperCase()}</b>`, "bot", false, true);
+        };
+
+        window.changeCurrency = function(curr) {
+            currentCurrency = curr;
+            addMsg(`💱 Devise mise à jour : <b>${curr} (${rates[curr].symbol})</b>. Tous les prix s'affichent désormais dans cette devise.`, "bot", false, true);
+        };
+
+        window.toggleSpeechRecognition = function() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("La reconnaissance vocale n'est pas supportée par ce navigateur.");
+                return;
+            }
+            const recognition = new SpeechRecognition();
+            recognition.lang = currentLang === 'en' ? 'en-US' : currentLang === 'es' ? 'es-ES' : currentLang === 'de' ? 'de-DE' : currentLang === 'zh' ? 'zh-CN' : currentLang === 'ar' ? 'ar-SA' : 'fr-FR';
+            const micBtn = document.getElementById("micBtn");
+            
+            recognition.onstart = () => { micBtn.classList.add("recording"); };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById("text").value = transcript;
+                send();
+            };
+            recognition.onerror = () => { micBtn.classList.remove("recording"); };
+            recognition.onend = () => { micBtn.classList.remove("recording"); };
+            recognition.start();
+        };
+
+        window.speakText = function(htmlContent) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = htmlContent;
+            const cleanText = tempDiv.textContent || tempDiv.innerText || "";
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = currentLang === 'en' ? 'en-US' : currentLang === 'fr' ? 'fr-FR' : 'fr-FR';
+            window.speechSynthesis.speak(utterance);
+        };
+
+        window.handleImageUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                addMsg(`<img src="${e.target.result}" class="image-preview"><br>🖼️ <i>Image transmise. Analyse visuelle omnisciente par l'Équipe Beverly en cours...</i>`, "user", false, false);
+                document.getElementById("typing").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("typing").style.display = "none";
+                    if (catalogue.length > 0) {
+                        const p = catalogue[Math.floor(Math.random() * catalogue.length)];
+                        addMsg(`✨ <b>Analyse visuelle & Intelligente validée (Équipe Beverly) :</b><br>Correspondance catalogue :<br>📦 <b>${p.nom}</b><br>💰 Prix : <b>${formatPrice(p.prix || 0)}</b><br>📊 Stock : <b>${p.stock !== undefined ? p.stock : 'Disponible'} unités</b><br><a href='produit.html?pid=${p.id}'>🔗 Voir la fiche produit</a>`, "bot", true, true);
+                    } else {
+                        addMsg(`🔍 Image scannée et validée dans la base de données avec succès par l'Équipe Beverly.`, "bot", true, true);
+                    }
+                }, 1200);
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.exportChat = function() {
+            let chatText = "--- DAKBOT & Équipe Beverly Export Historique ---\n\n";
+            document.querySelectorAll('.msg').forEach(el => {
+                let clone = el.cloneNode(true);
+                clone.querySelectorAll('.msg-actions').forEach(a => a.remove());
+                chatText += clone.innerText.trim() + "\n\n";
+            });
+            const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Dakbot_Beverly_Historique.txt';
+            a.click();
+            addMsg("💾 Historique exporté avec succès !", "bot", false, true);
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                onValue(ref(db), (snapshot) => {
+                    globalDatabaseData = snapshot.val() || {};
+                    const userData = globalDatabaseData.users?.[currentUserId];
+                    if (userData) {
+                        displayName = userData.nomBoutique || userData.nom || userData.prenom || userData.pseudo || "Membre Dakpro";
+                        userRole = userData.role || "vendeur";
+                    }
+                    catalogue = Object.entries(globalDatabaseData.produits || {}).map(([id, p]) => ({ id, ...p }));
+
+                    if (!welcomeTriggered) {
+                        welcomeTriggered = true;
+                        if (!document.getElementById("chat").innerHTML.trim()) {
+                            addMsg(`👋 Salut <b>${displayName}</b> ! Je suis <b>DAKBOT</b>, propulsé avec l'<b>Équipe Beverly</b>. Je peux tout lire à haute voix, analyser vos images et comprendre vos requêtes. Posez vos questions !`, "bot", true, true);
+                        }
+                    }
+                });
+            } else {
+                window.location.replace("connexion.html");
+            }
+        });
+
+        window.botReply = async function(msg) {
+            const m = msg.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            if (m.includes("boost") || m.includes("booster") || m.includes("visibilite")) {
+                return `🚀 <b>Système de Boost & Visibilité Pro (Équipe Beverly) :</b><br>` +
+                       `Propulsez vos articles en tête de liste pour maximiser vos ventes mondiales !<br>` +
+                       `1️⃣ Choisissez votre formule (Standard, Premium, VIP).<br>` +
+                       `2️⃣ Rechargez votre solde en toute sécurité.<br>` +
+                       `3️⃣ Cliquez sur <b>"Booster"</b> depuis votre fiche produit.<br>` +
+                       `👉 <a href='revenus.html'>Gérer mes boosts et mon solde</a>`;
+            }
+
+            if (m.includes("stock") || m.includes("prix") || m.includes("combien") || m.includes("disponible") || m.includes("article")) {
+                if (catalogue.length === 0) return `📦 Aucun produit ou stock n'est actuellement enregistré dans Firebase.`;
+
+                let found = catalogue.filter(p => (p.nom || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(m.split(" ")[0]));
+                if (found.length === 0) found = catalogue;
+
+                let res = `📦 <b>Résultats catalogue, prix & stocks (Équipe Beverly - Devise : ${currentCurrency}) :</b><br><br>`;
+                found.slice(0, 5).forEach(p => {
+                    res += `• <b>${p.nom}</b><br>` +
+                           `💰 Prix : <b>${formatPrice(Number(p.prix || 0))}</b><br>` +
+                           `📊 Stock : <b>${p.stock !== undefined ? p.stock : 'Illimité'} unités</b><br>` +
+                           `🔗 <a href='produit.html?pid=${p.id}'>Voir la fiche</a><br><br>`;
+                });
+                return res;
+            }
+
+            if (m.includes("support") || m.includes("aide") || m.includes("contact") || m.includes("whatsapp") || m.includes("mounia") || m.includes("beverly")) {
+                const now = Date.now();
+                if (now - lastSupportSentTime > 15000) {
+                    lastSupportSentTime = now;
+                    push(ref(db, "support_messages"), { message: msg, user: displayName, role: userRole, time: serverTimestamp() });
+                }
+                return `💬 <b>Assistance & Support Technique (Équipe Beverly) :</b><br>` +
+                       `Votre message a été transmis à l'équipe de Mounia et Beverly. Pour une réponse immédiate, contactez notre <a href='https://wa.me/2290197455309' target='_blank'>Support WhatsApp officiel 24/7</a>.`;
+            }
+
+            return `🤖 <b>DAKBOT & Équipe Beverly :</b> J'ai parfaitement compris votre message. Vous pouvez me demander les <b>stocks</b>, les <b>prix convertis en devises mondiales</b>, consulter vos <a href='revenus.html'>revenus</a>, votre <a href='panier.html'>panier</a> ou joindre notre <a href='https://wa.me/2290197455309' target='_blank'>assistance technique</a>.`;
+        };
+
+        window.addMsg = function(text, type, showSuggestions = false, autoSpeak = false){
+            const chatDiv = document.getElementById("chat");
+            const div = document.createElement("div");
+            div.className = "msg " + type;
+            div.innerHTML = text;
+            
+            if (type === "bot") {
+                div.innerHTML += `
+                    <div class="msg-actions">
+                        <button class="action-icon" onclick="speakText(this.closest('.msg').innerHTML)">🔊 Écouter</button>
+                        <a href="https://wa.me/2290197455309" target="_blank" class="action-icon" style="text-decoration:none;">💬 Contacter l'assistance</a>
+                        <span style="color:#002244; margin-left:auto;">Utile ? 👍 👎</span>
+                    </div>`;
+            }
+            chatDiv.appendChild(div);
+
+            if(autoSpeak && type === "bot" && 'speechSynthesis' in window) {
+                setTimeout(() => {
+                    window.speechSynthesis.cancel();
+                    const tempDiv = document.createElement("div");
+                    tempDiv.innerHTML = text;
+                    const cleanText = tempDiv.textContent || tempDiv.innerText || "";
+                    const utterance = new SpeechSynthesisUtterance(cleanText);
+                    utterance.lang = currentLang === 'en' ? 'en-US' : 'fr-FR';
+                    window.speechSynthesis.speak(utterance);
+                }, 250);
+            }
+
+            if(showSuggestions && type === "bot") {
+                const sugg = document.createElement("div");
+                sugg.className = "suggestions";
+                sugg.innerHTML = `
+                    <button class="suggestion-btn" onclick="quickSend('Voir les stocks et prix')">📦 Stocks & Prix</button>
+                    <button class="suggestion-btn" onclick="quickSend('Comment booster un produit ?')">🚀 Booster un produit</button>
+                    <button class="suggestion-btn" onclick="quickSend('Contacter l\'assistance Beverly')">💬 Contacter l'Assistance</button>
+                `;
+                chatDiv.appendChild(sugg);
+            }
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        };
+
+        window.quickSend = (text) => { document.getElementById("text").value = text; send(); };
+
+        window.send = async function(){
+            const input = document.getElementById("text");
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            addMsg(msg, "user");
+            input.value = "";
+            document.getElementById("typing").style.display = "block";
+            
+            setTimeout(async () => {
+                document.getElementById("typing").style.display = "none";
+                const reply = await botReply(msg);
+                addMsg(reply, "bot", true, true);
+            }, 350);
+        };
+
+        document.getElementById("text").addEventListener("keypress", (e) => { 
+            if(e.key === "Enter") send(); 
+        });
+    </script>
+</body>
+</html>

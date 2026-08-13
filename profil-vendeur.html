@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAKPRO ÉLITE | Profil Vendeur</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #d4af37;
+            --text-color: #ffffff;
+            --text-muted: #aaaaaa;
+            --border-color: #222222;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Barre latérale (Menu) --- */
+        aside {
+            width: 280px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .logo-area {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .menu-list li {
+            margin-bottom: 10px;
+        }
+
+        .menu-list a {
+            display: block;
+            padding: 12px 15px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-list a:hover, .menu-list a.active {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent-color);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #ff4d4d;
+            color: #ff4d4d;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #ff4d4d;
+            color: #fff;
+        }
+
+        /* --- Contenu Principal --- */
+        main {
+            flex-grow: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            margin-top: 0;
+            font-size: 26px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .card h3 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .card a {
+            display: inline-block;
+            background: var(--accent-color);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: opacity 0.3s ease;
+        }
+
+        .card a:hover {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menu de navigation latéral (Profil Vendeur) -->
+    <aside>
+        <div>
+            <div class="logo-area">DAKPRO ÉLITE</div>
+            <ul class="menu-list">
+                <li><a href="profil-vendeur.html" class="active">📊 Tableau de Bord Vendeur</a></li>
+                <li><a href="publier.html">📢 Publier</a></li>
+                <li><a href="boutique.html">🛒 Boutique</a></li>
+                <li><a href="booster.html">⚡ Booster</a></li>
+                <li><a href="abonnement.html">⭐ Abonnement</a></li>
+                <li><a href="dashboard-vendeur.html">📈 Dashboard Vendeur</a></li>
+                <li><a href="index.html">🌐 Accueil Principal</a></li>
+            </ul>
+        </div>
+        <div>
+            <!-- Utilisation de la fonction globale de déconnexion sécurisée -->
+            <button class="logout-btn" onclick="window.deconnecter()">Se Déconnecter</button>
+        </div>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main>
+        <header>
+            <h1>Espace Profil Vendeur</h1>
+            <p>Gérez vos produits, suivez vos performances commerciales et développez votre activité depuis votre tableau de bord.</p>
+        </header>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3>Publier</h3>
+                <p>Ajoutez de nouveaux produits ou articles à vendre sur la plateforme.</p>
+                <a href="publier.html">Accéder</a>
+            </div>
+
+            <div class="card">
+                <h3>Boutique</h3>
+                <p>Consultez votre vitrine et vos articles en ligne.</p>
+                <a href="boutique.html">Accéder</a>
+            </div>
+
+            <div class="card">
+                <h3>Booster</h3>
+                <p>Mettez en avant vos produits pour maximiser vos ventes.</p>
+                <a href="booster.html">Accéder</a>
+            </div>
+
+            <div class="card">
+                <h3>Abonnement</h3>
+                <p>Choisissez les meilleures options pour booster votre statut de vendeur.</p>
+                <a href="abonnement.html">Accéder</a>
+            </div>
+
+            <div class="card">
+                <h3>Dashboard Vendeur</h3>
+                <p>Analysez vos statistiques de ventes et vos gains en temps réel.</p>
+                <a href="dashboard-vendeur.html">Accéder</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script de gestion de la déconnexion lié au fichier de configuration -->
+    <script type="module">
+        import { auth } from "./firebase-config.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        window.deconnecter = async () => {
+            try {
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('user_profile_url');
+                await signOut(auth);
+                window.location.replace("connexion.html");
+            } catch (error) {
+                console.error("Erreur déconnexion:", error);
+            }
+        };
+    </script>
+</body>
+</html>

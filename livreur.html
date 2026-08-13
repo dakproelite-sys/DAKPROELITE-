@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Livreur | DAKPRO ÉLITE</title>
+    <!-- Intégration de la librairie pour scanner les QR codes (html5-qrcode) -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root { --gold: #d4af37; --dark: #050505; --soft: #141414; --border: #262626; --success: #28a745; --danger: #dc3545; --info: #17a2b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--dark); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Navigation */
+        .sidebar { width: 280px; background: var(--soft); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; padding: 20px; flex-shrink: 0; transition: transform 0.3s ease; }
+        .sidebar-brand { font-size: 1.3em; font-weight: bold; color: var(--gold); text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .menu-list { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; }
+        .menu-item { background: transparent; color: #aaa; border: none; padding: 12px 15px; text-align: left; border-radius: 10px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 10px; font-size: 0.9em; width: 100%; }
+        .menu-item:hover, .menu-item.active { background: var(--gold); color: #000; }
+        .sidebar-footer { border-top: 1px solid var(--border); padding-top: 15px; text-align: center; font-size: 0.8em; color: #666; }
+
+        /* Contenu Principal */
+        .main-content { flex-grow: 1; overflow-y: auto; padding: 30px; background: var(--dark); width: 100%; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { color: var(--gold); margin-top: 0; font-size: 1.8em; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        p.subtitle { color: #888; margin-bottom: 25px; font-size: 0.95em; }
+
+        /* Cartes & Formulaires */
+        .card-box { background: var(--soft); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; overflow-x: auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .field { margin-bottom: 15px; }
+        label { color: #aaa; font-size: 0.85em; display: block; margin-bottom: 5px; font-weight: 500; }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #000; color: #fff; box-sizing: border-box; outline: none; font-size: 0.95em; }
+        input:focus, select:focus { border-color: var(--gold); }
+        .btn-save { background: var(--gold); color: #000; border: none; padding: 14px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1em; margin-top: 10px; width: 100%; transition: opacity 0.3s; }
+        .btn-save:hover { opacity: 0.85; }
+
+        /* Tableaux */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #0b0b0b; border-radius: 10px; overflow: hidden; min-width: 600px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9em; }
+        th { background: #1a1a1a; color: var(--gold); font-weight: bold; }
+        tr:hover { background: rgba(212, 175, 55, 0.03); }
+
+        /* Aperçu Photo */
+        .avatar-preview { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); margin-top: 10px; display: none; }
+        
+        /* Scanner QR Code Section */
+        #reader { width: 100%; max-width: 400px; margin: 0 auto 20px auto; border-radius: 10px; overflow: hidden; border: 2px solid var(--border); }
+        
+        /* Carte Professionnelle Livreur Style */
+        .pro-card { background: linear-gradient(135deg, #111 0%, #222 100%); border: 2px solid var(--gold); border-radius: 16px; padding: 25px; max-width: 450px; margin: 0 auto; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2); text-align: center; position: relative; }
+        .pro-card img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; margin-bottom: 15px; }
+        .pro-card h3 { color: var(--gold); margin: 5px 0; font-size: 1.4em; }
+        .pro-card p { color: #ccc; margin: 5px 0; font-size: 0.9em; }
+        .badge-status { display: inline-block; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8em; margin-top: 15px; }
+        .badge-pending { background: #d39e00; color: #000; }
+        .badge-valid { background: var(--success); color: #fff; }
+
+        .loading-text { text-align: center; color: #777; padding: 20px; }
+
+        /* Media Queries pour la compatibilité Android et mobiles */
+        @media screen and (max-width: 900px) {
+            body { flex-direction: column; height: auto; overflow: auto; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 15px; }
+            .sidebar-brand { margin-bottom: 15px; padding-bottom: 10px; }
+            .main-content { padding: 15px; height: auto; overflow: visible; }
+            .form-grid { grid-template-columns: 1fr; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar de Navigation Livreur -->
+    <div class="sidebar">
+        <div>
+            <div class="sidebar-brand">⚡ DAKPRO LIVREUR</div>
+            <div class="menu-list">
+                <button class="menu-item active" onclick="changerSession('mon-profil', this)">👤 1. Mon Profil & Infos</button>
+                <button class="menu-item" onclick="changerSession('mes-documents', this)">📁 2. Documents & Carte Pro</button>
+                <button class="menu-item" onclick="changerSession('scanner-qr', this)">📷 3. Scanner QR Produit</button>
+                <button class="menu-item" onclick="changerSession('mes-livraisons', this)">📦 4. Tableau des Livraisons</button>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            Livreur DAKPRO ÉLITE <br><a href="connexion.html" style="color: var(--danger); text-decoration: none;">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- Contenu Central -->
+    <div class="main-content">
+
+        <!-- SESSION 1 : Profil & Infos Géographiques -->
+        <div id="mon-profil" class="tab-pane active">
+            <h2>👤 Mon Profil Livreur</h2>
+            <p class="subtitle">Renseignez vos coordonnées personnelles et géographiques exactes.</p>
+            <div class="card-box">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Nom</label>
+                        <input id="livNom" placeholder="Votre Nom">
+                    </div>
+                    <div class="field">
+                        <label>Prénom</label>
+                        <input id="livPrenom" placeholder="Votre Prénom">
+                    </div>
+                    <div class="field">
+                        <label>Numéro de Téléphone WhatsApp</label>
+                        <input id="livWhatsApp" placeholder="Ex: +229 97000000">
+                    </div>
+                    <div class="field">
+                        <label>Pays</label>
+                        <input id="livPays" value="Bénin">
+                    </div>
+                    <div class="field">
+                        <label>Département</label>
+                        <input id="livDepartement" placeholder="Ex: Littoral">
+                    </div>
+                    <div class="field">
+                        <label>Commune</label>
+                        <input id="livCommune" placeholder="Ex: Cotonou">
+                    </div>
+                    <div class="field">
+                        <label>Arrondissement</label>
+                        <input id="livArrondissement" placeholder="Ex: 12ème Arrondissement">
+                    </div>
+                    <div class="field">
+                        <label>Quartier</label>
+                        <input id="livQuartier" placeholder="Ex: Cadjèhoun">
+                    </div>
+                </div>
+                <div class="field" style="margin-top: 15px;">
+                    <label>Photo de Profil (Compression automatique)</label>
+                    <input type="file" id="livPhotoInput" accept="image/*" onchange="compresserImage(this, 'avatarPreview', 'base64Avatar')">
+                    <img id="avatarPreview" class="avatar-preview" alt="Aperçu Photo">
+                    <input type="hidden" id="base64Avatar">
+                </div>
+                <button class="btn-save" onclick="sauvegarderProfilLivreur()">💾 Enregistrer mon Profil</button>
+            </div>
+        </div>
+
+        <!-- SESSION 2 : Documents & Carte Professionnelle -->
+        <div id="mes-documents" class="tab-pane">
+            <h2>📁 Documents Administratifs & Carte Pro</h2>
+            <p class="subtitle">Fournissez vos pièces officielles. Une fois validées par l'administrateur, votre carte pro s'activera.</p>
+            
+            <div class="card-box">
+                <h3 style="color: var(--gold); margin-top:0;">Soumission des Pièces Justificatives</h3>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Type de Document</label>
+                        <select id="docType">
+                            <option value="CNI">Carte Nationale d'Identité (CNI)</option>
+                            <option value="Passeport">Passeport</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Fichier du Document (Image compressée)</label>
+                        <input type="file" id="docFichierInput" accept="image/*" onchange="compresserImage(this, null, 'base64Doc')">
+                        <input type="hidden" id="base64Doc">
+                    </div>
+                </div>
+                <button class="btn-save" onclick="soumettreDocuments()">📤 Envoyer les documents à l'Admin</button>
+            </div>
+
+            <!-- Espace Carte Professionnelle -->
+            <div class="card-box" style="text-align: center;">
+                <h3 style="color: var(--gold); margin-top:0;">Ma Carte Professionnelle Numérique</h3>
+                <div id="zoneCartePro">
+                    <p style="color: #777;">Enregistrez votre profil et soumettez vos documents pour débloquer votre carte pro.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SESSION 3 : Scanner QR Code Produit -->
+        <div id="scanner-qr" class="tab-pane">
+            <h2>📷 Scanner un QR Code de Produit</h2>
+            <p class="subtitle">Scannez le QR code du produit pour récupérer son prix et valider instantanément la livraison.</p>
+            
+            <div class="card-box" style="text-align: center;">
+                <div id="reader"></div>
+                <button class="btn-save" onclick="demarrerScanner()" style="max-width: 250px; margin: 0 auto;">🎥 Démarrer la Caméra</button>
+                
+                <div id="infoProduitScanne" style="margin-top: 25px; display: none; text-align: left; background: #000; padding: 20px; border-radius: 10px; border: 1px solid var(--gold);">
+                    <h3 style="color: var(--gold); margin-top: 0;">Produit Détecté</h3>
+                    <p><strong>Nom :</strong> <span id="scanNom"></span></p>
+                    <p><strong>Prix du Produit :</strong> <span id="scanPrix"></span> CFA</p>
+                    <p><strong>Frais de Livraison (Définis par Admin) :</strong> <span id="scanFraisLivraison" style="color: var(--success); font-weight: bold;"></span> CFA</p>
+                    <button class="btn-save" onclick="validerEtEnregistrerLivraison()">✅ Confirmer et Enregistrer la Livraison</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SESSION 4 : Tableau des Livraisons -->
+        <div id="mes-livraisons" class="tab-pane">
+            <h2>📦 Tableau de mes Livraisons</h2>
+            <p class="subtitle">Historique de toutes vos livraisons effectuées et gains cumulés.</p>
+            
+            <div class="card-box">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Commande</th>
+                            <th>Produit</th>
+                            <th>Montant perçu (Frais)</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableMesLivraisons">
+                        <tr><td colspan="5" class="loading-text">Chargement de vos livraisons...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+<script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { ref, get, child, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { dbRealtime } from "./firebase-config.js";
+
+    // ID temporaire ou récupéré de la session connectée (À adapter selon votre système d'authentification)
+    const livreurId = localStorage.getItem("dakpro_user_uid") || "livreur_demo_" + Math.floor(Math.random() * 1000);
+
+    // Navigation par onglets
+    window.changerSession = (sessionId, btnElement) => {
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(sessionId).classList.add('active');
+        btnElement.classList.add('active');
+    };
+
+    // 1. Compression Automatique des images pour ne pas surcharger Firebase
+    window.compresserImage = (inputElement, previewId, hiddenInputId) => {
+        const file = inputElement.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 400; // Taille max optimisée
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // Compression JPEG à 70% de qualité
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById(hiddenInputId).value = compressedBase64;
+
+                if (previewId) {
+                    const preview = document.getElementById(previewId);
+                    preview.src = compressedBase64;
+                    preview.style.display = 'block';
+                }
+            };
+        };
+    };
+
+    // Enregistrement du profil livreur
+    window.sauvegarderProfilLivreur = async () => {
+        const data = {
+            nom: document.getElementById("livNom").value.trim(),
+            prenom: document.getElementById("livPrenom").value.trim(),
+            whatsapp: document.getElementById("livWhatsApp").value.trim(),
+            pays: document.getElementById("livPays").value.trim(),
+            departement: document.getElementById("livDepartement").value.trim(),
+            commune: document.getElementById("livCommune").value.trim(),
+            arrondissement: document.getElementById("livArrondissement").value.trim(),
+            quartier: document.getElementById("livQuartier").value.trim(),
+            photo: document.getElementById("base64Avatar").value,
+            updatedAt: new Date().toISOString()
+        };
+
+        if(!data.nom || !data.prenom || !data.whatsapp) {
+            return alert("Veuillez remplir au moins votre nom, prénom et numéro WhatsApp.");
+        }
+
+        try {
+            await setDoc(doc(db, "livreurs", livreurId), data, { merge: true });
+            alert("Profil enregistré avec succès !");
+            chargerProfilEtCarte();
+        } catch (e) {
+            alert("Erreur lors de l'enregistrement : " + e.message);
+        }
+    };
+
+    // 2. Soumission des documents administratifs
+    window.soumettreDocuments = async () => {
+        const typeDoc = document.getElementById("docType").value;
+        const fichierDoc = document.getElementById("base64Doc").value;
+
+        if(!fichierDoc) {
+            return alert("Veuillez choisir un document depuis votre galerie.");
+        }
+
+        try {
+            await setDoc(doc(db, "livreurs", livreurId), {
+                documentType: typeDoc,
+                documentFichier: fichierDoc,
+                documentStatut: "en_attente",
+                dateSoumission: new Date().toLocaleDateString()
+            }, { merge: true });
+
+            alert("Documents envoyés à l'administrateur avec succès ! En attente de validation.");
+            chargerProfilEtCarte();
+        } catch(e) {
+            alert("Erreur : " + e.message);
+        }
+    };
+
+    // Chargement profil et gestion de l'affichage de la carte pro
+    async function chargerProfilEtCarte() {
+        try {
+            const docSnap = await getDoc(doc(db, "livreurs", livreurId));
+            const zoneCarte = document.getElementById("zoneCartePro");
+
+            if(docSnap.exists()) {
+                const data = docSnap.data();
+                if(data.nom) {
+                    document.getElementById("livNom").value = data.nom || "";
+                    document.getElementById("livPrenom").value = data.prenom || "";
+                    document.getElementById("livWhatsApp").value = data.whatsapp || "";
+                    document.getElementById("livPays").value = data.pays || "Bénin";
+                    document.getElementById("livDepartement").value = data.departement || "";
+                    document.getElementById("livCommune").value = data.commune || "";
+                    document.getElementById("livArrondissement").value = data.arrondissement || "";
+                    document.getElementById("livQuartier").value = data.quartier || "";
+                    if(data.photo) {
+                        document.getElementById("avatarPreview").src = data.photo;
+                        document.getElementById("avatarPreview").style.display = 'block';
+                        document.getElementById("base64Avatar").value = data.photo;
+                    }
+                }
+
+                // Gestion de la carte pro selon le statut validé par l'admin
+                if(data.documentStatut === "valide") {
+                    zoneCarte.innerHTML = `
+                        <div class="pro-card">
+                            <img src="${data.photo || 'https://via.placeholder.com/100'}" alt="Avatar">
+                            <h3>${data.prenom || ''} ${data.nom || ''}</h3>
+                            <p><strong>ID Livreur :</strong> #DP-LIV-${livreurId.substring(0,6).toUpperCase()} </p>
+                            <p><strong>Zone :</strong> ${data.commune || ''} (${data.quartier || ''})</p>
+                            <p><strong>WhatsApp :</strong> ${data.whatsapp || ''}</p>
+                            <span class="badge-status badge-valid">✅ COMPTE VÉRIFIÉ & VALIDÉ</span>
+                            <br><br>
+                            <button class="btn-save" onclick="window.print()">📥 Télécharger / Imprimer ma Carte Pro</button>
+                        </div>
+                    `;
+                } else {
+                    zoneCarte.innerHTML = `
+                        <div class="pro-card">
+                            <img src="${data.photo || 'https://via.placeholder.com/100'}" alt="Avatar">
+                            <h3>${data.prenom || 'Nom'} ${data.nom || 'Prénom'}</h3>
+                            <span class="badge-status badge-pending">⏳ DOCUMENTS EN ATTENTE DE VALIDATION ADMIN</span>
+                            <p style="margin-top:15px; font-size:0.85em; color:#aaa;">Votre carte professionnelle sera disponible au téléchargement dès que l'administrateur aura validé vos pièces justificatives.</p>
+                        </div>
+                    `;
+                }
+            }
+        } catch(e) {
+            console.error("Erreur chargement profil:", e);
+        }
+    }
+
+    // 3. Scanner QR Code avec html5-qrcode
+    let html5QrcodeScanner = null;
+    let produitActuelScanne = null;
+
+    window.demarrerScanner = () => {
+        if (html5QrcodeScanner) return;
+        
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 }, false);
+        
+        html5QrcodeScanner.render((decodedText) => {
+            // Le QR code renvoie l'ID du produit ou un lien contenant l'ID
+            traiterCodeScanne(decodedText);
+            html5QrcodeScanner.clear();
+            html5QrcodeScanner = null;
+        }, (errorMessage) => {
+            // Erreurs de scan en direct ignorées
+        });
+    };
+
+    async function traiterCodeScanne(produitIdOuLien) {
+        // Extraction de l'ID si c'est une URL
+        let produitId = produitIdOuLien.split("=").pop().trim();
+
+        try {
+            // Récupérer les détails du produit depuis Firebase Realtime Database
+            const prodSnap = await get(child(ref(db), `produits/${produitId}`));
+            // Récupérer aussi les frais de livraison définis dans l'administration (ex: configuration_plateforme ou table dédiée)
+            const configSnap = await get(doc(db, "systeme", "configuration_plateforme"));
+            let fraisLivraisonStandard = 1500; // Valeur par défaut en CFA
+            if(configSnap.exists() && configSnap.data().fraisLivraison) {
+                fraisLivraisonStandard = Number(configSnap.data().fraisLivraison);
+            }
+
+            if (prodSnap.exists()) {
+                produitActuelScanne = prodSnap.val();
+                produitActuelScanne.fraisLivraison = fraisLivraisonStandard;
+
+                document.getElementById("scanNom").innerText = produitActuelScanne.nom;
+                document.getElementById("scanPrix").innerText = Number(produitActuelScanne.prix).toLocaleString();
+                document.getElementById("scanFraisLivraison").innerText = fraisLivraisonStandard.toLocaleString();
+                document.getElementById("infoProduitScanne").style.display = "block";
+            } else {
+                alert("Produit introuvable dans le catalogue global.");
+            }
+        } catch(e) {
+            alert("Erreur lors de la lecture du QR code : " + e.message);
+        }
+    }
+
+    // Enregistrement de la livraison effectuée
+    window.validerEtEnregistrerLivraison = async () => {
+        if(!produitActuelScanne) return;
+
+        try {
+            const livraisonRef = push(ref(db, "livraisons"));
+            await set(livraisonRef, {
+                id: livraisonRef.key,
+                livreurId: livreurId,
+                produitNom: produitActuelScanne.nom,
+                produitPrix: produitActuelScanne.prix,
+                montantFrais: produitActuelScanne.fraisLivraison,
+                date: new Date().toISOString(),
+                statut: "Livré"
+            });
+
+            alert("Livraison enregistrée avec succès ! Vos gains ont été mis à jour.");
+            document.getElementById("infoProduitScanne").style.display = "none";
+            chargerMesLivraisons();
+        } catch(e) {
+            alert("Erreur lors de l'enregistrement de la livraison : " + e.message);
+        }
+    };
+
+    // 4. Charger le tableau des livraisons du livreur
+    async function chargerMesLivraisons() {
+        const tbody = document.getElementById("tableMesLivraisons");
+        try {
+            const snapshot = await get(child(ref(db), "livraisons"));
+            tbody.innerHTML = "";
+            let count = 0;
+
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnap) => {
+                    const liv = childSnap.val();
+                    if(liv.livreurId === livreurId) {
+                        count++;
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>#${childSnap.key.substring(0, 6)}</td>
+                                <td>${liv.produitNom}</td>
+                                <td>${Number(liv.montantFrais || 0).toLocaleString()} CFA</td>
+                                <td>${new Date(liv.date).toLocaleDateString()}</td>
+                                <td><span style="color: var(--success); font-weight: bold;">${liv.statut}</span></td>
+                            </tr>
+                        `;
+                    }
+                });
+            }
+            if(count === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="loading-text">Aucune livraison enregistrée pour le moment.</td></tr>`;
+            }
+        } catch(e) {
+            console.error("Erreur livraisons:", e);
+        }
+    }
+
+    // Initialisation au chargement de la page
+    chargerProfilEtCarte();
+    chargerMesLivraisons();
+</script>
+</body>
+</html>

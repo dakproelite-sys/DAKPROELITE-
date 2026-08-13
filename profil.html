@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MON COMPTE & COMMANDES - DAKPRO ÉLITE</title>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-gold: #FFD700;
+            --accent-blue: #00bfff;
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-light: #ffffff;
+            --text-muted: #b0b0b0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            padding-bottom: 90px;
+        }
+
+        .gold-shimmer { color: var(--primary-gold); }
+        .blue-shimmer { color: var(--accent-blue); }
+
+        header {
+            background-color: #000;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-gold);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 5px 12px 5px 5px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+        }
+
+        .brand-logo {
+            width: 58px;
+            height: 58px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--primary-gold);
+            background-color: #000;
+        }
+
+        .brand-text-group { display: flex; flex-direction: column; }
+        .brand-title { font-size: 1.35rem; font-weight: bold; color: var(--primary-gold); line-height: 1.1; }
+        .brand-subtitle { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; }
+
+        .header-icons { display: flex; gap: 20px; align-items: center; }
+        .header-nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; font-size: 0.7rem; font-weight: 600; }
+        .header-nav-item i { font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 3px; }
+        .header-nav-item span { color: var(--primary-gold); }
+
+        /* Barre globale d'internationalisation et devises */
+        .global-tools-bar {
+            background: #181818;
+            border-bottom: 1px solid #333;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.8rem;
+        }
+
+        .tool-select-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #222;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+        }
+
+        .tool-select-group i {
+            color: var(--primary-gold);
+        }
+
+        .tool-select-group select {
+            background: transparent;
+            color: var(--text-light);
+            border: none;
+            outline: none;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .tool-select-group select option {
+            background: #222;
+            color: var(--text-light);
+        }
+
+        .profile-container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .profile-title { font-size: 1.6rem; font-weight: bold; color: var(--primary-gold); margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+
+        .profile-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        @media(min-width: 768px) { .profile-grid { grid-template-columns: 1fr 1.6fr; } }
+
+        .profile-card { background-color: var(--card-bg); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .profile-card h2 { font-size: 1.1rem; color: var(--primary-gold); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+
+        .info-group { margin-bottom: 12px; font-size: 0.9rem; word-break: break-word; }
+        .info-group strong { color: var(--text-muted); display: inline-block; width: 130px; }
+
+        /* Styles de la liste des commandes organisée */
+        .orders-list { display: flex; flex-direction: column; gap: 15px; max-height: 650px; overflow-y: auto; padding-right: 5px; }
+        .order-item-card { background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px; transition: border-color 0.2s; }
+        .order-item-card:hover { border-color: var(--primary-gold); }
+        
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.85rem; border-bottom: 1px solid #222; padding-bottom: 8px; }
+        .order-id { color: var(--accent-blue); font-weight: bold; }
+        .order-date { color: var(--text-muted); font-size: 0.8rem; }
+        
+        .order-details-line { font-size: 0.85rem; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .order-products-box { background: rgba(255, 255, 255, 0.02); border-radius: 6px; padding: 10px; margin-top: 8px; border: 1px solid #222; }
+        .product-subline { display: flex; font-size: 0.85rem; color: var(--text-light); margin-bottom: 6px; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 4px; }
+        .product-subline:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .order-total-box { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #333; font-weight: bold; font-size: 0.95rem; color: var(--primary-gold); }
+
+        .badge-status { background: rgba(0, 191, 255, 0.1); color: var(--accent-blue); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; border: 1px solid rgba(0, 191, 255, 0.3); }
+
+        .global-stats-banner { background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .global-stats-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+
+        .btn-auth { background: var(--primary-gold); color: #000; border: none; padding: 10px; font-size: 0.9rem; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 10px; }
+        .btn-logout { background: #ff4d4d; color: #fff; margin-top: 15px; text-decoration: none; display: inline-block; text-align: center; }
+
+        footer { background-color: #080808; border-top: 1px solid #222; padding: 20px; text-align: center; font-size: 0.65rem; color: #555; margin-top: 60px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="brand-container">
+            <img src="https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png" alt="Logo DAKPRO ÉLITE" class="brand-logo">
+            <div class="brand-text-group">
+                <span class="brand-title">DAKPRO<br>ÉLITE</span>
+                <span class="brand-subtitle">E-COMMERCE INTERNATIONAL</span>
+            </div>
+        </a>
+        <div class="header-icons">
+            <a href="panier.html" class="header-nav-item">
+                <i class="fa-solid fa-cart-shopping blue-shimmer"></i>
+                <span class="gold-shimmer">Panier</span>
+            </a>
+            <a href="profil.html" class="header-nav-item">
+                <i class="fa-solid fa-user blue-shimmer"></i>
+                <span class="gold-shimmer">Compte</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Barre de sélecteurs mondiaux : Devise et Langue (Google Translate Widget Integration) -->
+    <div class="global-tools-bar">
+        <!-- Sélecteur de Devise Mondiale -->
+        <div class="tool-select-group">
+            <i class="fa-solid fa-coins"></i>
+            <select id="currencySelector" onchange="changeCurrency(this.value)">
+                <option value="USD" selected>USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="XOF">XOF (FCFA)</option>
+                <option value="CAD">CAD ($)</option>
+            </select>
+        </div>
+
+        <!-- Sélecteur de Langue Mondiale / Traducteur -->
+        <div class="tool-select-group">
+            <i class="fa-solid fa-globe"></i>
+            <div id="google_translate_element"></div>
+        </div>
+    </div>
+
+    <div class="profile-container">
+        <h1 class="profile-title"><i class="fa-solid fa-id-card"></i> Mon Profil & Historique d'Achats</h1>
+        
+        <div class="profile-grid">
+            <!-- Section Informations Détaillées du Compte -->
+            <div>
+                <div class="profile-card">
+                    <h2><i class="fa-solid fa-user-circle blue-shimmer"></i> Informations Personnelles</h2>
+                    <div id="accountInfo">
+                        <div class="info-group"><strong>Nom Complet :</strong> <span id="profileFullName" class="gold-shimmer">Chargement...</span></div>
+                        <div class="info-group"><strong>Email :</strong> <span id="userEmail">Non connecté</span></div>
+                        <div class="info-group"><strong>Téléphone :</strong> <span id="profilePhone">Non renseigné</span></div>
+                        <div class="info-group"><strong>Statut :</strong> <span id="userStatus" class="blue-shimmer">Vérification...</span></div>
+                        <div class="info-group"><strong>ID Client :</strong> <span id="userId" style="font-size: 0.7rem; color: var(--text-muted);">-</span></div>
+                    </div>
+                    <div id="authActions">
+                        <!-- Bouton de déconnexion -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Historique et Totalité des Commandes & Dépenses -->
+            <div>
+                <div class="profile-card">
+                    <h2><i class="fa-solid fa-bag-shopping blue-shimmer"></i> Commandes & Dépenses Globales</h2>
+                    <div class="orders-list" id="ordersListContainer">
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Chargement de vos commandes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 DAKPRO ÉLITE / DAKPRO NEXUS. Tous droits réservés.
+    </footer>
+
+    <!-- Script Google Translate Widget -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'fr',
+                includedLanguages: 'fr,en,es,de,zh,ar,pt,it,ru',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "VOTRE_API_KEY",
+            authDomain: "votre-projet.firebaseapp.com",
+            databaseURL: "https://votre-projet-default-rtdb.firebaseio.com",
+            projectId: "votre-projet",
+            storageBucket: "votre-projet.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123:web:abc"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // Taux de change approximatifs basés sur USD
+        const exchangeRates = {
+            USD: { rate: 1.0, symbol: 'USD' },
+            EUR: { rate: 0.92, symbol: 'EUR' },
+            GBP: { rate: 0.79, symbol: 'GBP' },
+            XOF: { rate: 605.0, symbol: 'FCFA' },
+            CAD: { rate: 1.36, symbol: 'CAD' }
+        };
+
+        let currentCurrency = localStorage.getItem('dakpro_currency') || 'USD';
+        document.getElementById('currencySelector').value = currentCurrency;
+
+        function changeCurrency(currency) {
+            currentCurrency = currency;
+            localStorage.setItem('dakpro_currency', currency);
+            // Recharger l'état de l'utilisateur si connecté pour actualiser les affichages de prix
+            const user = auth.currentUser;
+            if (user) {
+                loadUserDataAndOrders(user.uid, document.getElementById('profileFullName'), document.getElementById('profilePhone'));
+            }
+        }
+
+        function formatPrice(amountInUSD) {
+            const currConfig = exchangeRates[currentCurrency] || exchangeRates.USD;
+            const converted = amountInUSD * currConfig.rate;
+            return `${converted.toFixed(2)} ${currConfig.symbol}`;
+        }
+
+        auth.onAuthStateChanged((user) => {
+            const statusEl = document.getElementById('userStatus');
+            const emailEl = document.getElementById('userEmail');
+            const idEl = document.getElementById('userId');
+            const fullNameEl = document.getElementById('profileFullName');
+            const phoneEl = document.getElementById('profilePhone');
+            const actionsEl = document.getElementById('authActions');
+
+            if (user) {
+                statusEl.innerText = "Connecté";
+                emailEl.innerText = user.email || "Non renseigné via Auth";
+                idEl.innerText = user.uid;
+                
+                loadUserDataAndOrders(user.uid, fullNameEl, phoneEl);
+
+                // Bouton de déconnexion redirigeant directement vers index.html
+                actionsEl.innerHTML = `
+                    <button class="btn-auth btn-logout" onclick="logoutUser()">
+                        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+                    </button>
+                `;
+            } else {
+                statusEl.innerText = "Mode Invité / Non connecté";
+                emailEl.innerText = "Aucun email associé";
+                fullNameEl.innerText = "Visiteur";
+                phoneEl.innerText = "-";
+                idEl.innerText = "Non authentifié";
+                
+                actionsEl.innerHTML = `
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">Connectez-vous pour retrouver l'historique permanent de vos achats et vos informations personnelles.</p>
+                `;
+
+                document.getElementById('ordersListContainer').innerHTML = `
+                    <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">
+                        Aucune commande active trouvée. Veuillez vous connecter.
+                    </p>
+                `;
+            }
+        });
+
+        function loadUserDataAndOrders(uid, fullNameEl, phoneEl) {
+            const ordersRef = database.ref('orders');
+            
+            ordersRef.orderByChild('userId').equalTo(uid).once('value').then((snapshot) => {
+                const ordersContainer = document.getElementById('ordersListContainer');
+                
+                if (!snapshot.exists()) {
+                    fullNameEl.innerText = "Client Actif";
+                    phoneEl.innerText = "Non renseigné";
+                    ordersContainer.innerHTML = `
+                        <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">
+                            Vous n'avez pas encore passé de commande.
+                        </p>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                let totalSpentAllTimeUSD = 0;
+                let totalOrdersCount = 0;
+                let latestCustomerName = "Client Actif";
+                let latestCustomerPhone = "Non renseigné";
+
+                snapshot.forEach((childSnapshot) => {
+                    totalOrdersCount++;
+                    const orderKey = childSnapshot.key;
+                    const order = childSnapshot.val();
+
+                    if (order.customerName) latestCustomerName = order.customerName;
+                    if (order.customerPhone) latestCustomerPhone = order.customerPhone;
+                    
+                    let orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('fr-FR', {
+                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }) : "Date inconnue";
+
+                    let itemsHtml = '';
+                    if (order.items && Array.isArray(order.items)) {
+                        order.items.forEach(item => {
+                            let itemPriceNum = parseFloat(item.price) || 0;
+                            itemsHtml += `
+                                <div class="product-subline">
+                                    <span>• ${item.name} (x${item.quantity})</span>
+                                    <span class="gold-shimmer">${formatPrice(itemPriceNum)}</span>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    let orderAmountUSD = parseFloat(order.totalAmount || 0);
+                    totalSpentAllTimeUSD += orderAmountUSD;
+
+                    html += `
+                        <div class="order-item-card">
+                            <div class="order-header">
+                                <span class="order-id"><i class="fa-solid fa-receipt"></i> CMD #${orderKey.slice(-6).toUpperCase()}</span>
+                                <span class="badge-status">${order.status || 'En attente'}</span>
+                            </div>
+                            <div class="order-details-line">
+                                <strong>Date :</strong> <span class="order-date">${orderDate}</span>
+                            </div>
+                            <div class="order-details-line">
+                                <strong>Paiement :</strong> <span>${order.paymentMethod || 'Non spécifié'}</span>
+                            </div>
+                            <div class="order-details-line">
+                                <strong>Destinataire :</strong> <span>${order.customerName || 'N/A'}</span>
+                            </div>
+                            
+                            <div class="order-products-box">
+                                <div style="font-size: 0.75rem; color: var(--primary-gold); margin-bottom: 6px; font-weight: bold; text-transform: uppercase;">Articles achetés :</div>
+                                ${itemsHtml}
+                            </div>
+
+                            <div class="order-total-box">
+                                <span>Total Commande :</span>
+                                <span class="gold-shimmer">${formatPrice(orderAmountUSD)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                fullNameEl.innerText = latestCustomerName;
+                phoneEl.innerText = latestCustomerPhone;
+
+                const summaryBanner = `
+                    <div class="global-stats-banner">
+                        <div class="global-stats-row">
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">Nombre total de commandes :</span>
+                            <strong style="color: var(--accent-blue);">${totalOrdersCount}</strong>
+                        </div>
+                        <div class="global-stats-row" style="border-top: 1px dashed rgba(255,215,0,0.2); padding-top: 5px; margin-top: 3px;">
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">Total cumulé dépensé :</span>
+                            <strong style="color: var(--primary-gold); font-size: 1.1rem;">${formatPrice(totalSpentAllTimeUSD)}</strong>
+                        </div>
+                    </div>
+                `;
+
+                ordersContainer.innerHTML = summaryBanner + html;
+
+            }).catch((error) => {
+                console.error("Erreur chargement commandes :", error);
+                document.getElementById('ordersListContainer').innerHTML = `
+                    <p style="color: #ff4d4d; font-size: 0.85rem; text-align: center;">Erreur lors du chargement de l'historique.</p>
+                `;
+            });
+        }
+
+        function logoutUser() {
+            auth.signOut().then(() => {
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Erreur de déconnexion", error);
+                window.location.href = "index.html";
+            });
+        }
+    </script>
+</body>
+</html>
