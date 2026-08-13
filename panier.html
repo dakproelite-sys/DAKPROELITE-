@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAKPRO ÉLITE | Mon Panier</title>
+    <!-- Configuration PWA & SEO -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --card-bg: #12161a;
+            --accent-color: #d4af37;
+            --text-color: #c5c6c7;
+            --text-white: #ffffff;
+            --border-color: #262626;
+            --danger: #ff4d4d;
+            --success: #2ecc71;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Barre latérale --- */
+        aside {
+            width: 280px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .menu-list li {
+            margin-bottom: 8px;
+        }
+
+        .menu-list a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85em;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-list a:hover, .menu-list a.active {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        /* --- Contenu Principal --- */
+        main {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: var(--bg-color);
+            width: 100%;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            margin-top: 0;
+            font-size: 1.6em;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        header p {
+            color: #888;
+            margin-bottom: 25px;
+            font-size: 0.9em;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85em;
+        }
+
+        th {
+            color: var(--accent-color);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        td {
+            color: var(--text-color);
+        }
+
+        .btn-action {
+            background: var(--danger);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8em;
+        }
+
+        .cart-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .total-price {
+            font-size: 1.3em;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .checkout-btn {
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: opacity 0.3s ease;
+        }
+
+        .checkout-btn:hover {
+            opacity: 0.9;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #777;
+            padding: 25px;
+        }
+
+        @media screen and (max-width: 900px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                overflow: auto;
+            }
+            aside {
+                width: 100%;
+                height: auto;
+            }
+            main {
+                height: auto;
+                overflow: visible;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barre latérale -->
+    <aside>
+        <div>
+            <div class="logo-area">⚡ DAKPRO ÉLITE</div>
+            <ul class="menu-list">
+                <li><a href="index.html">🌐 Accueil / Boutique</a></li>
+                <li><a href="panier.html" class="active">🛍️ Mon Panier</a></li>
+                <li><a href="acheteur.html">👤 Mon Profil</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main>
+        <header>
+            <h1>Mon Panier d'Achats</h1>
+            <p>Vérifiez vos articles sélectionnés avant de valider et de transférer votre commande vers le paiement sécurisé.</p>
+        </header>
+
+        <div class="card">
+            <h3>Articles sélectionnés</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produit</th>
+                            <th>Prix Unitaire</th>
+                            <th>Quantité</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items-container">
+                        <tr>
+                            <td colspan="5" class="no-data">Votre panier est vide.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="cart-summary">
+                <div>
+                    <span>Total Général : </span>
+                    <span class="total-price" id="cart-total">0 XOF</span>
+                </div>
+                <button class="checkout-btn" id="proceed-checkout-btn" onclick="validerEtTransfereVersPaiement()">Procéder au Paiement ➔</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script de gestion du panier et liaison Firestore -->
+    <script type="module">
+        import { auth, db } from "./firebase-config.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        let currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+        });
+
+        // Fonction pour charger et afficher le panier depuis localStorage
+        function chargerPanier() {
+            let panier = JSON.parse(localStorage.getItem('dakpro_cart')) || [];
+            const container = document.getElementById('cart-items-container');
+            const totalEl = document.getElementById('cart-total');
+
+            if (panier.length === 0) {
+                container.innerHTML = `<tr><td colspan="5" class="no-data">Votre panier est vide.</td></tr>`;
+                totalEl.textContent = "0 XOF";
+                return;
+            }
+
+            let html = '';
+            let totalGeneral = 0;
+
+            panier.forEach((item, index) => {
+                const prixNum = Number(item.prix) || 0;
+                const quantiteNum = Number(item.quantite) || 1;
+                const totalItem = prixNum * quantiteNum;
+                totalGeneral += totalItem;
+
+                html += `
+                    <tr>
+                        <td>${item.nom || item.titre || 'Produit Dakpro'}</td>
+                        <td>${prixNum.toLocaleString('fr-FR')} XOF</td>
+                        <td>${quantiteNum}</td>
+                        <td>${totalItem.toLocaleString('fr-FR')} XOF</td>
+                        <td><button class="btn-action" onclick="supprimerArticle(${index})">Supprimer</button></td>
+                    </tr>
+                `;
+            });
+
+            container.innerHTML = html;
+            totalEl.textContent = totalGeneral.toLocaleString('fr-FR') + ' XOF';
+        }
+
+        // Supprimer un article du panier
+        window.supprimerArticle = (index) => {
+            let panier = JSON.parse(localStorage.getItem('dakpro_cart')) || [];
+            panier.splice(index, 1);
+            localStorage.setItem('dakpro_cart', JSON.stringify(panier));
+            chargerPanier();
+        };
+
+        // Enregistrer la commande dans Firestore et rediriger vers le paiement
+        window.validerEtTransfereVersPaiement = async () => {
+            let panier = JSON.parse(localStorage.getItem('dakpro_cart')) || [];
+            if (panier.length === 0) {
+                alert("Votre panier est vide !");
+                return;
+            }
+
+            let totalGeneral = panier.reduce((sum, item) => sum + (Number(item.prix) * Number(item.quantite)), 0);
+
+            try {
+                // Création d'une commande dans la collection Firestore "commandes"
+                const commandeRef = await addDoc(collection(db, "commandes"), {
+                    acheteurId: currentUser ? currentUser.uid : "invite_anonyme",
+                    acheteurEmail: currentUser ? currentUser.email : "invite@dakproelite.com",
+                    articles: panier,
+                    montantTotal: totalGeneral,
+                    statut: "En attente de paiement",
+                    date: serverTimestamp()
+                });
+
+                // Stockage temporaire de l'ID de commande pour la page de paiement
+                localStorage.setItem('current_order_id', commandeRef.id);
+                localStorage.setItem('current_order_amount', totalGeneral);
+
+                // Redirection vers la page de paiement sécurisée
+                window.location.href = "checkout.html";
+
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement de la commande dans Firestore :", error);
+                alert("Une erreur est survenue lors du transfert vers le paiement.");
+            }
+        };
+
+        // Chargement initial au démarrage de la page
+        document.addEventListener('DOMContentLoaded', chargerPanier);
+    </script>
+</body>
+</html>

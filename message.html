@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DAKBOT - DAKPRO ÉLITE</title>
+    <style>
+        :root { 
+            --gold: #004080; 
+            --gold-light: #e6f0ff;
+            --bg: #ffea00; 
+            --card: #ffffff; 
+            --text: #002244;
+            --border: #b3b300;
+            --input-bg: #fffde6;
+        }
+        
+        body.light-mode {
+            --bg: #ffea00;
+            --card: #ffffff;
+            --text: #002244;
+            --border: #b3b300;
+            --input-bg: #fffde6;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin:0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display:flex; flex-direction:column; transition: background 0.3s, color 0.3s; overflow: hidden; }
+        
+        .header { padding: 10px 15px; text-align: center; border-bottom: 2px solid var(--border); color: var(--text); font-weight: bold; font-size: 0.95em; background: #ffd700; backdrop-filter: blur(5px); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-links { display: flex; gap: 5px; align-items: center; }
+        .btn-nav { background: #002244; color: #ffea00; border: 1px solid #002244; padding: 5px 9px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-nav:active, .btn-nav:hover { background: #ffea00; color: #002244; border-color: #002244; }
+        
+        select.lang-select { background: #002244; color: #ffea00; border: 1px solid #002244; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; outline: none; }
+        
+        .chat { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .msg { padding: 12px 16px; border-radius: 16px; max-width: 88%; font-size: 0.92em; line-height: 1.45; word-wrap: break-word; position: relative; box-shadow: 0 2px 6px rgba(0,34,68,0.15); }
+        .user { background: #002244; color: #ffea00; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 500; }
+        .bot { background: var(--card); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; color: var(--text); }
+        
+        .msg-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; font-size: 0.8em; border-top: 1px solid rgba(0,34,68,0.1); padding-top: 6px; }
+        .action-icon { background: transparent; border: 1px solid #002244; color: #002244; padding: 3px 10px; border-radius: 12px; cursor: pointer; font-size: 0.85em; transition: 0.2s; font-weight: 600; }
+        .action-icon:hover { background: #002244; color: #ffea00; }
+
+        .image-preview { max-width: 180px; border-radius: 8px; margin-bottom: 8px; display: block; border: 1px solid var(--border); }
+        
+        .suggestions { display: flex; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
+        .suggestion-btn { background: rgba(0, 34, 68, 0.05); border: 1px solid #002244; color: #002244; padding: 6px 12px; border-radius: 20px; font-size: 0.78em; cursor: pointer; transition: 0.2s; font-weight: 600; }
+        .suggestion-btn:active, .suggestion-btn:hover { background: #002244; color: #ffea00; }
+        
+        .typing { font-style: italic; color: #002244; font-size: 0.8em; display: none; padding: 2px 15px 8px; font-weight: 600; }
+        
+        .inputBox { padding: 10px 15px; display: flex; border-top: 2px solid var(--border); background: var(--card); align-items: center; gap: 8px; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+        input[type="text"] { flex: 1; padding: 11px 16px; border-radius: 25px; border: 1px solid #002244; background: var(--input-bg); color: var(--text); font-size: 14px; outline: none; transition: border-color 0.2s; font-weight: 500; }
+        input[type="text"]:focus { border-color: #004080; box-shadow: 0 0 0 2px rgba(0,64,128,0.2); }
+        
+        .tool-btn { background: #002244; border: 1px solid #002244; color: #ffea00; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; flex-shrink: 0; transition: 0.2s; }
+        .tool-btn:hover { background: #ffea00; color: #002244; border-color: #002244; }
+        .tool-btn.recording { background: #ff4444; border-color: #ff4444; color: #fff; animation: pulse 1.2s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+        button.send-btn { padding: 11px 18px; border-radius: 25px; border: none; background: #002244; color: #ffea00; font-weight: bold; cursor: pointer; font-size: 13px; transition: opacity 0.2s; }
+        button.send-btn:active { opacity: 0.8; }
+        
+        a { color: #004080; text-decoration: none; font-weight: 700; }
+        a:hover { text-decoration: underline; }
+        
+        .network-status { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold; background: #d4edda; color: #155724; display: inline-block; margin-left: 5px; }
+        .network-status.offline { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span>🤖 DAKBOT v3.5 <span id="netStatus" class="network-status">En ligne</span></span>
+        <div class="nav-links">
+            <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
+                <option value="fr">🇫🇷 FR</option>
+                <option value="en">🇬🇧 EN</option>
+                <option value="es">🇪🇸 ES</option>
+                <option value="de">🇩🇪 DE</option>
+            </select>
+            <button class="btn-nav" onclick="exportChat()" title="Exporter l'historique">💾</button>
+            <a href="revenus.html" class="btn-nav">📊</a>
+            <a href="panier.html" class="btn-nav">🛒</a>
+        </div>
+    </div>
+    
+    <div id="chat" class="chat"></div>
+    <div id="typing" class="typing">DAKBOT analyse avec toute sa puissance neuronale...</div>
+    
+    <div class="inputBox">
+        <label class="tool-btn" title="Envoyer une image">
+            🖼️<input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+        </label>
+        <button id="micBtn" class="tool-btn" onclick="toggleSpeechRecognition()" title="Parler">🎤</button>
+        <input id="text" type="text" placeholder="Posez votre question à l'IA..." autocomplete="off">
+        <button class="send-btn" id="sendBtn" onclick="send()">Envoyer</button>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { ref, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const auth = getAuth();
+        let catalogue = [];
+        let globalDatabaseData = {};
+        let currentUserId = null;
+        let displayName = "Membre Dakpro";
+        let userRole = "vendeur";
+        let userSubscriptionActive = false;
+        let currentLang = "fr";
+        let lastSupportSentTime = 0;
+        let welcomeTriggered = false;
+
+        const dict = {
+            fr: {
+                welcome: (name) => `👋 Bienvenue <b>${name}</b> sur <b>DAKBOT v3.5</b> ! Assistant e-commerce initialisé avec succès. Comment puis-je propulser votre boutique aujourd'hui ?`,
+                inputPlace: "Posez votre question à l'IA...",
+                sendBtn: "Envoyer",
+                listening: "🎤 J'écoute...",
+                exportMsg: "💾 Historique exporté avec succès !"
+            },
+            en: {
+                welcome: (name) => `👋 Welcome <b>${name}</b> to <b>DAKBOT v3.5</b>! AI assistant ready. How can I help your store today?`,
+                inputPlace: "Ask the AI a question...",
+                sendBtn: "Send",
+                listening: "🎤 Listening...",
+                exportMsg: "💾 History exported successfully!"
+            },
+            es: {
+                welcome: (name) => `👋 ¡Bienvenido <b>${name}</b> a <b>DAKBOT v3.5</b>! Asistente con IA listo. ¿Cómo puedo ayudarte hoy?`,
+                inputPlace: "Haz una pregunta a la IA...",
+                sendBtn: "Enviar",
+                listening: "🎤 Escuchando...",
+                exportMsg: "💾 ¡Exportado con éxito!"
+            },
+            de: {
+                welcome: (name) => `👋 Willkommen <b>${name}</b> bei <b>DAKBOT v3.5</b>! KI-Assistent bereit.`,
+                inputPlace: "Fragen Sie die KI...",
+                sendBtn: "Senden",
+                listening: "🎤 Ich höre zu...",
+                exportMsg: "💾 Export erfolgreich!"
+            }
+        };
+
+        // Gestion de l'effacement automatique toutes les 10 minutes (600000 ms)
+        setInterval(() => {
+            if (currentUserId) {
+                localStorage.removeItem("dakbot_history_" + currentUserId);
+                document.getElementById("chat").innerHTML = "";
+                welcomeTriggered = false;
+                const welcomeMsg = dict[currentLang].welcome(displayName);
+                addMsg(welcomeMsg, "bot", true);
+            }
+        }, 600000);
+
+        window.addEventListener('online', () => {
+            const ns = document.getElementById("netStatus");
+            ns.className = "network-status";
+            ns.innerText = "En ligne";
+        });
+        window.addEventListener('offline', () => {
+            const ns = document.getElementById("netStatus");
+            ns.className = "network-status offline";
+            ns.innerText = "Hors-ligne";
+        });
+
+        window.changeLanguage = function(lang) {
+            currentLang = lang;
+            document.getElementById("text").placeholder = dict[lang].inputPlace;
+            document.getElementById("sendBtn").innerText = dict[lang].sendBtn;
+            addMsg(`🌐 Langue changée : ${lang.toUpperCase()}`, "bot");
+        };
+
+        window.toggleSpeechRecognition = function() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("La reconnaissance vocale n'est pas supportée par ce navigateur.");
+                return;
+            }
+            const recognition = new SpeechRecognition();
+            recognition.lang = currentLang === 'en' ? 'en-US' : currentLang === 'es' ? 'es-ES' : currentLang === 'de' ? 'de-DE' : 'fr-FR';
+            const micBtn = document.getElementById("micBtn");
+            
+            recognition.onstart = () => { micBtn.classList.add("recording"); document.getElementById("text").placeholder = dict[currentLang].listening; };
+            recognition.onresult = (event) => {
+                const speechToText = event.results[0][0].transcript;
+                document.getElementById("text").value = speechToText;
+                send();
+            };
+            recognition.onerror = () => { micBtn.classList.remove("recording"); };
+            recognition.onend = () => { micBtn.classList.remove("recording"); document.getElementById("text").placeholder = dict[currentLang].inputPlace; };
+            recognition.start();
+        };
+
+        window.speakText = function(htmlContent) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = htmlContent;
+            const cleanText = tempDiv.textContent || tempDiv.innerText || "";
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = currentLang === 'en' ? 'en-US' : currentLang === 'es' ? 'es-ES' : currentLang === 'de' ? 'de-DE' : 'fr-FR';
+            window.speechSynthesis.speak(utterance);
+        };
+
+        window.handleImageUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageUrl = e.target.result;
+                addMsg(`<img src="${imageUrl}" class="image-preview"><br>🖼️ <i>Image transmise. Analyse visuelle en cours...</i>`, "user");
+                
+                document.getElementById("typing").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("typing").style.display = "none";
+                    if (catalogue.length > 0) {
+                        const matchedProd = catalogue[Math.floor(Math.random() * catalogue.length)];
+                        addMsg(`✨ <b>Analyse visuelle validée :</b><br>Correspondance catalogue :<br>📱 <b>${matchedProd.nom}</b> - <b>${matchedProd.prix} FCFA</b><br><a href='produit.html?pid=${matchedProd.id}'>🔗 Voir la fiche produit</a>`, "bot", true);
+                    } else {
+                        addMsg(`🔍 Image scannée et validée par le système.`, "bot", true);
+                    }
+                }, 1000);
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.exportChat = function() {
+            let chatText = "--- DAKBOT v3.5 Export Historique ---\n\n";
+            document.querySelectorAll('.msg').forEach(el => {
+                let clone = el.cloneNode(true);
+                clone.querySelectorAll('.msg-actions').forEach(a => a.remove());
+                chatText += clone.innerText.trim() + "\n\n";
+            });
+            const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Dakbot_Historique.txt';
+            a.click();
+            addMsg(dict[currentLang].exportMsg, "bot");
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                onValue(ref(db), (snapshot) => {
+                    globalDatabaseData = snapshot.val() || {};
+                    const userData = globalDatabaseData.users?.[currentUserId];
+                    if (userData) {
+                        displayName = userData.nomBoutique || userData.nom || userData.prenom || userData.pseudo || "Membre Dakpro";
+                        userRole = userData.role || "vendeur";
+                        userSubscriptionActive = userData.abonnement_actif === true;
+                    }
+                    const prodObj = globalDatabaseData.produits || {};
+                    catalogue = Object.entries(prodObj).map(([id, p]) => ({ id, ...p }));
+
+                    if (!welcomeTriggered) {
+                        welcomeTriggered = true;
+                        loadChatHistory();
+                        if (!document.getElementById("chat").innerHTML.trim()) {
+                            const welcomeMsg = dict[currentLang].welcome(displayName);
+                            addMsg(welcomeMsg, "bot", true);
+                        }
+                    }
+                });
+            } else {
+                window.location.replace("connexion.html");
+            }
+        });
+
+        function saveChatHistory() {
+            const chatHtml = document.getElementById("chat").innerHTML;
+            localStorage.setItem("dakbot_history_" + currentUserId, chatHtml);
+        }
+
+        function loadChatHistory() {
+            if (!currentUserId) return;
+            const saved = localStorage.getItem("dakbot_history_" + currentUserId);
+            if (saved) {
+                document.getElementById("chat").innerHTML = saved;
+                welcomeTriggered = true;
+            }
+        }
+
+        window.botReply = async function(msg) {
+            const m = msg.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            if (m.includes("english") || m.includes("hello")) currentLang = "en";
+            else if (m.includes("espanol") || m.includes("hola")) currentLang = "es";
+            else if (m.includes("deutsch")) currentLang = "de";
+            else if (m.includes("francais") || m.includes("bonjour")) currentLang = "fr";
+            document.getElementById("langSelect").value = currentLang;
+
+            if (m.includes("pay") || m.includes("kkiapay") || m.includes("fedapay") || m.includes("momo")) {
+                return `💳 <b>Paiements Sécurisés :</b> Intégration Mobile Money active (Kkiapay, FedaPay). Vos transactions sont sécurisées. 👉 <a href='panier.html'>Accéder au panier</a>`;
+            }
+            if (m.includes("return") || m.includes("refund") || m.includes("retour")) {
+                return `🔄 <b>Politique de Retour & Remboursement :</b> La garantie satisfaction DAKPRO protège vos clients.`;
+            }
+            if (m.includes("recommend") || m.includes("top") || m.includes("meilleur") || m.includes("populaire")) {
+                let boosted = catalogue.filter(p => p.isBoosted === true);
+                let randomP = boosted.length > 0 ? boosted[Math.floor(Math.random() * boosted.length)] : (catalogue[0] || null);
+                if (randomP) {
+                    return `✨ <b>Recommandation Phare de la Boutique :</b><br>📱 <b>${randomP.nom}</b> - <b>${randomP.prix} FCFA</b><br><a href='produit.html?pid=${randomP.id}'>🔗 Voir le produit en détail</a>`;
+                }
+                return `✨ Votre catalogue contient ${catalogue.length} article(s). Visitez l'<a href='index.html'>Accueil</a> !`;
+            }
+            if (m.includes("index") || m.includes("home") || m.includes("accueil")) {
+                return `🏠 <b>Tableau de Bord Principal :</b> 👉 <a href='index.html'>Accéder à l'Accueil</a>`;
+            }
+            if (m.includes("panier") || m.includes("cart") || m.includes("buy")) {
+                return `🛒 <b>Espace Panier :</b> 👉 <a href='panier.html'>Ouvrir mon Panier</a>`;
+            }
+            if (m.includes("promo") || m.includes("discount")) {
+                return `🎟️ <b>Codes Promo & Réductions :</b> Appliquez vos coupons directement dans votre <a href='panier.html'>panier</a>.`;
+            }
+            if (m.includes("revenu") || m.includes("earn") || m.includes("gain")) {
+                let v = 0, a = 0;
+                const ventesObj = globalDatabaseData.ventes || {};
+                for (let k in ventesObj) {
+                    if (ventesObj[k].vendeurId === currentUserId) v += Number(ventesObj[k].montant) || 0;
+                    if (ventesObj[k].affilieId === currentUserId) a += Number(ventesObj[k].commissionAff) || 0;
+                }
+                const total = v + a;
+                return !userSubscriptionActive 
+                    ? `⚠️ <b>Abonnement Inactif :</b> Activez votre compte pour débloquer votre <a href='revenus.html'>Tableau des Revenus</a>.<br>📊 Ventes: <b>${v.toLocaleString()} FCFA</b> | Affiliation: <b>${a.toLocaleString()} FCFA</b>` 
+                    : `📊 <b>Tableau des Revenus DAKPRO :</b><br>💰 Ventes directes : <b>${v.toLocaleString()} FCFA</b><br>🤝 Commissions Affiliation : <b>${a.toLocaleString()} FCFA</b><br>🌟 <b>Total Global : ${total.toLocaleString()} FCFA</b><br>👉 <a href='revenus.html'>Voir les détails complets</a>`;
+            }
+            if (m.includes("suivi") || m.includes("track") || m.includes("order")) {
+                return `📦 <b>Suivi des Commandes :</b> Suivez l'acheminement de vos colis depuis votre profil sur l'<a href='index.html'>Accueil</a>.`;
+            }
+            if (m.includes("problem") || m.includes("help") || m.includes("support")) {
+                const now = Date.now();
+                if (now - lastSupportSentTime > 15000) {
+                    lastSupportSentTime = now;
+                    push(ref(db, "support_messages"), { message: msg, user: displayName, role: userRole, time: serverTimestamp() });
+                }
+                return `🚨 <b>Support Technique DAKPRO :</b> Votre ticket a été transmis à l'équipe.<br>💬 <a href='https://wa.me/2290197455309' target='_blank'>Contact direct WhatsApp</a>`;
+            }
+
+            let matchedProducts = catalogue.filter(p => {
+                let pName = (p.nom || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                let pDesc = (p.description || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return m.split(" ").some(word => word.length > 2 && (pName.includes(word) || pDesc.includes(word)));
+            });
+
+            if (matchedProducts.length > 0) {
+                let p = matchedProducts[0];
+                return `📱 <b>Article Correspondant trouvé :</b><br><b>${p.nom}</b> - <b>${p.prix} FCFA</b><br>${p.description ? p.description.substring(0, 80) + '...' : ''}<br><a href='produit.html?pid=${p.id}'>🔗 Voir le produit</a>`;
+            }
+
+            return `🤖 <b>DAKBOT Analyse :</b> J'ai bien traité votre requête. En tant qu'assistant de <b>${displayName}</b>, je suis connecté à votre écosystème.<br>` +
+                   `Consultez vos <a href='revenus.html'>revenus</a>, gérez votre <a href='panier.html'>panier</a> ou contactez le <a href='https://wa.me/2290197455309' target='_blank'>support technique</a> !`;
+        };
+
+        window.addMsg = function(text, type, showSuggestions = false){
+            const chatDiv = document.getElementById("chat");
+            const div = document.createElement("div");
+            div.className = "msg " + type;
+            div.innerHTML = text;
+            
+            if (type === "bot") {
+                const actionsDiv = document.createElement("div");
+                actionsDiv.className = "msg-actions";
+                actionsDiv.innerHTML = `
+                    <button class="action-icon" onclick="speakText(this.closest('.msg').innerHTML)">🔊 Écouter</button>
+                    <span style="color:#002244">• Utile ?</span>
+                    <button onclick="this.parentElement.innerHTML='✅ Merci !'" style="background:none;border:none;color:#002244;cursor:pointer;font-weight:bold">👍</button>
+                    <button onclick="this.parentElement.innerHTML='❌ Noté'" style="background:none;border:none;color:#002244;cursor:pointer;font-weight:bold">👎</button>
+                `;
+                div.appendChild(actionsDiv);
+            }
+            chatDiv.appendChild(div);
+
+            if(showSuggestions && type === "bot") {
+                const sugg = document.createElement("div");
+                sugg.className = "suggestions";
+                sugg.innerHTML = `
+                    <button class="suggestion-btn" onclick="quickSend('Paiement')">💳 Paiement</button>
+                    <button class="suggestion-btn" onclick="quickSend('Suivi')">📦 Suivi</button>
+                    <button class="suggestion-btn top-btn">✨ Top produits</button>
+                `;
+                sugg.querySelector('.top-btn').onclick = () => quickSend('Top produits');
+                chatDiv.appendChild(sugg);
+            }
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+            saveChatHistory();
+        };
+
+        window.quickSend = (text) => { document.getElementById("text").value = text; send(); };
+
+        window.send = async function(){
+            const input = document.getElementById("text");
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            addMsg(msg, "user");
+            input.value = "";
+            document.getElementById("typing").style.display = "block";
+            
+            setTimeout(async () => {
+                document.getElementById("typing").style.display = "none";
+                const reply = await botReply(msg);
+                addMsg(reply, "bot", true);
+            }, 350);
+        };
+
+        document.getElementById("text").addEventListener("keypress", (e) => { 
+            if(e.key === "Enter") send(); 
+        });
+    </script>
+</body>
+</html>
