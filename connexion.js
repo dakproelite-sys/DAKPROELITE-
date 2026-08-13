@@ -12,14 +12,15 @@ import {
     getDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// --- REMPLACEZ CES CONFIGURATIONS PAR LES VÔTRES SI BESOIN ---
+// --- VOS VRAIES CONFIGURATIONS FIREBASE ---
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_AUTH_DOMAIN",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_STORAGE_BUCKET",
-  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+  apiKey: "AIzaSyDR7INHKaazaqZt-xIcjk10JFiy58uXKO8",
+  authDomain: "dakproelite.firebaseapp.com",
+  databaseURL: "https://dakproelite-default-rtdb.firebaseio.com",
+  projectId: "dakproelite",
+  storageBucket: "dakproelite.firebasestorage.app",
+  messagingSenderId: "580591769206",
+  appId: "1:580591769206:web:4f67f8aadbf3d051087157"
 };
 
 // Initialisation de Firebase
@@ -95,7 +96,7 @@ window.gererAuthentification = async function() {
                 roleUtilisateur = userDoc.data().role || "acheteur";
             }
 
-            // Sécurité additionnelle : forcer admin ou livreur même si le compte existait déjà avec un autre rôle
+            // Sécurité additionnelle : forcer admin ou livreur selon l'email
             const emailMinuscule = email.toLowerCase();
             if (emailMinuscule === "jubiledak@gmail.com") {
                 roleUtilisateur = "administrateur";
@@ -133,10 +134,10 @@ window.reinitialiserMotDePasse = async function() {
 // Fonction de redirection selon le rôle de l'utilisateur
 function redirectionSelonRole(role) {
     if (role === "administrateur") {
-        window.location.href = "admin.html"; // Remplacez par votre page admin si besoin
+        window.location.href = "admin.html";
     } else if (role === "livreur") {
-        window.location.href = "livreur.html"; // Remplacez par votre page livreur si besoin
+        window.location.href = "livreur.html";
     } else {
-        window.location.href = "index.html"; // Page d'accueil classique pour acheteur/vendeur
+        window.location.href = "index.html";
     }
 }
