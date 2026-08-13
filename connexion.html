@@ -10,14 +10,14 @@
     
     <!-- Icônes & Font -->
     <link rel="icon" type="image/png" href="https://i.postimg.cc/WpSc29mX/file-00000000ca8872438c17222eb828bc0c.png">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root { 
             --gold: #d4af37; 
             --gold-light: #f3e5ab;
             --dark: #0b0c10; 
-            --soft-dark: #12161a; 
+            --soft-dark: #141922; 
             --card-bg: #1f2833;
             --blue-accent: #00b4d8;
             --blue-hover: #0077b6;
@@ -36,57 +36,98 @@
             min-height: 100vh; 
             justify-content: center; 
             align-items: center; 
+            padding: 20px;
+            box-sizing: border-box;
         }
         
         .auth-container {
             background: var(--soft-dark); 
-            border: 1px solid var(--gold); 
-            border-radius: 15px;
-            padding: 30px; 
-            width: 90%; 
+            border: 2px solid var(--gold); 
+            border-radius: 20px;
+            padding: 35px 25px; 
+            width: 100%; 
             max-width: 450px; 
             box-sizing: border-box;
-            box-shadow: 0 4px 25px rgba(0, 180, 216, 0.15); 
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.2); 
             text-align: center;
         }
 
+        /* Logo agrandi et stylisé */
         .auth-logo {
-            width: 70px; 
-            height: 70px; 
+            width: 100px; 
+            height: 100px; 
             border-radius: 50%; 
-            border: 2px solid var(--gold);
+            border: 3px solid var(--gold);
             object-fit: cover; 
-            margin-bottom: 15px; 
+            margin-bottom: 20px; 
             background: #000;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
         }
 
-        .auth-container h2 { color: var(--gold); margin-top: 0; font-size: 22px; margin-bottom: 5px; }
-        .auth-subtitle { font-size: 12px; color: var(--text-main); margin-bottom: 20px; line-height: 1.4; }
+        .auth-container h2 { 
+            color: var(--gold); 
+            margin-top: 0; 
+            font-size: 24px; 
+            font-weight: 600;
+            margin-bottom: 8px; 
+        }
+        
+        .auth-subtitle { 
+            font-size: 13px; 
+            color: var(--text-main); 
+            margin-bottom: 25px; 
+            line-height: 1.5; 
+        }
 
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; color: var(--text-white); font-size: 13px; margin-bottom: 5px; }
+        .form-group { 
+            margin-bottom: 18px; 
+            text-align: left; 
+        }
+        
+        .form-group label { 
+            display: block; 
+            color: var(--text-white); 
+            font-size: 13px; 
+            font-weight: 500;
+            margin-bottom: 6px; 
+        }
+        
         .form-group input, .form-group select {
-            width: 100%; padding: 10px 15px; background: #000; border: 1px solid var(--blue-accent);
-            color: #fff; border-radius: 8px; box-sizing: border-box; font-family: 'Poppins', sans-serif; outline: none;
-            transition: border-color 0.3s;
+            width: 100%; 
+            padding: 12px 15px; 
+            background: #000000; 
+            border: 1px solid rgba(0, 180, 216, 0.5);
+            color: #fff; 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            font-family: 'Poppins', sans-serif; 
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
-        .form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+        
+        .form-group input:focus, .form-group select:focus { 
+            border-color: var(--gold); 
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+        }
 
         .password-wrapper {
             position: relative;
             display: flex;
             align-items: center;
         }
+        
         .password-wrapper input {
             padding-right: 45px;
         }
+        
         .toggle-password {
             position: absolute;
             right: 12px;
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
             color: var(--blue-accent);
             padding: 0;
             display: flex;
@@ -94,33 +135,61 @@
             justify-content: center;
             transition: color 0.3s;
         }
+        
         .toggle-password:hover {
             color: var(--gold);
         }
 
         .forgot-password-container {
             text-align: right;
-            margin-top: 5px;
+            margin-top: 6px;
         }
+        
         .forgot-password {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--blue-accent);
             text-decoration: none;
             cursor: pointer;
             transition: color 0.3s;
         }
+        
         .forgot-password:hover {
             color: var(--gold);
             text-decoration: underline;
         }
 
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--blue-accent), var(--blue-hover)); color: #fff; font-weight: bold; cursor: pointer; margin-top: 10px; transition: opacity 0.2s; font-size: 14px; }
-        .btn:hover { opacity: 0.9; }
+        .btn { 
+            width: 100%; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 10px; 
+            background: linear-gradient(135deg, var(--gold), #b38f27); 
+            color: #000; 
+            font-weight: 700; 
+            cursor: pointer; 
+            margin-top: 15px; 
+            transition: transform 0.2s, opacity 0.2s; 
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
         
-        .btn-gold { background: linear-gradient(135deg, var(--gold), #b38f27); color: #000; }
+        .btn:hover { 
+            opacity: 0.95; 
+            transform: translateY(-1px);
+        }
 
-        .toggle-auth { margin-top: 15px; font-size: 13px; color: var(--text-main); }
-        .toggle-auth span { color: var(--gold); cursor: pointer; font-weight: 600; text-decoration: underline; }
+        .toggle-auth { 
+            margin-top: 20px; 
+            font-size: 13px; 
+            color: var(--text-main); 
+        }
+        
+        .toggle-auth span { 
+            color: var(--gold); 
+            cursor: pointer; 
+            font-weight: 600; 
+            text-decoration: underline; 
+        }
     </style>
 </head>
 <body>
@@ -130,10 +199,13 @@
     <h2 id="formTitle">Connexion à DAKPRO ÉLITE</h2>
     <p id="formSubtitle" class="auth-subtitle">Bienvenue sur le marché international d'achat, de vente et de dropshipping. Accédez à votre espace sécurisé.</p>
 
+    <!-- Formulaire global relié à votre script externe -->
     <form id="authForm" onsubmit="event.preventDefault(); gererAuthentification();">
+        
+        <!-- Champ Nom complet (Visible uniquement en mode Inscription) -->
         <div class="form-group" id="nameGroup" style="display: none;">
             <label for="nomInput">Nom complet</label>
-            <input type="text" id="nomInput" placeholder="Votre nom">
+            <input type="text" id="nomInput" placeholder="Ex: DAK JUBILE">
         </div>
 
         <div class="form-group">
@@ -152,7 +224,7 @@
             </div>
         </div>
 
-        <!-- Champ de confirmation du mot de passe -->
+        <!-- Champ de confirmation du mot de passe (Visible uniquement en mode Inscription) -->
         <div class="form-group" id="confirmPasswordGroup" style="display: none;">
             <label for="confirmPasswordInput">Confirmer le mot de passe</label>
             <div class="password-wrapper">
@@ -161,7 +233,7 @@
             </div>
         </div>
 
-        <!-- Choix du rôle restreint uniquement à Acheteur et Vendeur pour l'inscription publique -->
+        <!-- Choix du rôle (Visible uniquement en mode Inscription) -->
         <div class="form-group" id="roleGroup" style="display: none;">
             <label for="roleSelect">Je souhaite m'inscrire en tant que :</label>
             <select id="roleSelect">
@@ -170,7 +242,7 @@
             </select>
         </div>
 
-        <button type="submit" class="btn btn-gold" id="submitBtn">Se Connecter</button>
+        <button type="submit" class="btn" id="submitBtn">Se Connecter</button>
     </form>
 
     <div class="toggle-auth">
@@ -178,7 +250,7 @@
     </div>
 </div>
 
-<!-- Script de gestion du basculement d'interface -->
+<!-- Script de gestion dynamique de l'interface -->
 <script>
     let estEnModeInscription = false;
 
@@ -227,7 +299,7 @@
     }
 </script>
 
-<!-- Liaison avec le fichier JS externe -->
+<!-- Liaison avec votre fichier JavaScript externe (connexion.js) -->
 <script type="module" src="connexion.js"></script>
 
 </body>

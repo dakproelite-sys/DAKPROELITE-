@@ -1,156 +1,142 @@
-/**
- * DAKPRO ÉLITE - Logique d'authentification et gestion dynamique multiplateforme
- * Fichier : connexion.js
- * Compatible : Ordinateur, Tablette et Android (Responsive Design & PWA)
- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+    getAuth, 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword, 
+    sendPasswordResetEmail 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { 
+    getFirestore, 
+    doc, 
+    setDoc, 
+    getDoc 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-    // Détection dynamique de l'appareil pour adapter l'expérience utilisateur
-    detecterEtAdapterAppareil();
-    
-    // Écouteur de redimensionnement pour les changements d'orientation (tablette/mobile)
-    window.addEventListener("resize", detecterEtAdapterAppareil);
-});
+// --- REMPLACEZ CES CONFIGURATIONS PAR LES VÔTRES SI BESOIN ---
+const firebaseConfig = {
+  apiKey: "VOTRE_API_KEY",
+  authDomain: "VOTRE_AUTH_DOMAIN",
+  projectId: "VOTRE_PROJECT_ID",
+  storageBucket: "VOTRE_STORAGE_BUCKET",
+  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
+  appId: "VOTRE_APP_ID"
+};
 
-/**
- * Détecte le type d'appareil (Mobile, Tablette, Ordinateur) 
- * et ajuste dynamiquement l'interface ou le comportement si nécessaire.
- */
-function detecterEtAdapterAppareil() {
-    const largeurFenetre = window.innerWidth;
-    const conteneurAuth = document.querySelector(".auth-container");
+// Initialisation de Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    if (!conteneurAuth) return;
-
-    if (largeurFenetre <= 480) {
-        // Mode Android / Smartphone compact
-        conteneurAuth.classList.add("appareil-mobile");
-        conteneurAuth.classList.remove("appareil-tablette", "appareil-desktop");
-    } else if (largeurFenetre > 480 && largeurFenetre <= 1024) {
-        // Mode Tablette
-        conteneurAuth.classList.add("appareil-tablette");
-        conteneurAuth.classList.remove("appareil-mobile", "appareil-desktop");
-    } else {
-        // Mode Ordinateur (Desktop)
-        conteneurAuth.classList.add("appareil-desktop");
-        conteneurAuth.classList.remove("appareil-mobile", "appareil-tablette");
-    }
-}
-
-/**
- * Fonction principale appelée lors de la soumission du formulaire (Connexion ou Inscription)
- */
-window.gererAuthentification = function() {
+// Fonction principale appelée lors de la soumission du formulaire
+window.gererAuthentification = async function() {
     const email = document.getElementById("emailInput").value.trim();
     const password = document.getElementById("passwordInput").value;
-    
-    // Vérification de l'état actuel (Connexion ou Inscription) basé sur le titre du formulaire
-    const titreFormulaire = document.getElementById("formTitle").innerText;
-    const estInscription = titreFormulaire.includes("Créer un compte");
 
-    if (estInscription) {
-        const nom = document.getElementById("nomInput").value.trim();
+    // Détection automatique du mode (Connexion ou Inscription) selon l'affichage du champ nom
+    const estEnModeInscription = document.getElementById("nameGroup").style.display === "block";
+
+    if (estEnModeInscription) {
+        // --- PROCESSUS D'INSCRIPTION ---
+        const nomComplet = document.getElementById("nomInput").value.trim();
         const confirmPassword = document.getElementById("confirmPasswordInput").value;
-        const role = document.getElementById("roleSelect").value;
-
-        // Validation de base des champs d'inscription
-        if (!nom) {
-            afficherNotification("Veuillez entrer votre nom complet.", "erreur");
-            return;
-        }
+        const roleChoisi = document.getElementById("roleSelect").value;
 
         if (password !== confirmPassword) {
-            afficherNotification("Les mots de passe ne correspondent pas.", "erreur");
+            alert("Les mots de passe ne correspondent pas !");
             return;
         }
 
-        if (password.length < 6) {
-            afficherNotification("Le mot de passe doit contenir au moins 6 caractères.", "erreur");
-            return;
+        try {
+            // 1. Création dans Firebase Authentication
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // 2. Attribution automatique des rôles spécifiques selon l'email
+            let roleFinal = roleChoisi;
+            const emailMinuscule = email.toLowerCase();
+
+            if (emailMinuscule === "jubiledak@gmail.com") {
+                roleFinal = "administrateur";
+            } else if (emailMinuscule === "aglignamou@gmail.com") {
+                roleFinal = "livreur";
+            }
+
+            // 3. Enregistrement direct des informations dans Firestore (collection "users")
+            await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid,
+                nomComplet: nomComplet,
+                email: email,
+                role: roleFinal,
+                createdAt: new Date()
+            });
+
+            alert(`Compte créé avec succès ! Rôle attribué : ${roleFinal}`);
+            redirigerSelonRole(roleFinal);
+
+        } catch (error) {
+            console.error("Erreur lors de l'inscription :", error.message);
+            alert("Erreur : " + error.message);
         }
 
-        traiterInscription(nom, email, password, role);
     } else {
-        // Logique de connexion
-        if (!email || !password) {
-            afficherNotification("Veuillez remplir tous les champs obligatoires.", "erreur");
-            return;
-        }
+        // --- PROCESSUS DE CONNEXION ---
+        try {
+            // 1. Connexion via Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-        traiterConnexion(email, password);
+            // 2. Récupération du rôle existant dans Firestore
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            let roleUtilisateur = "acheteur"; // Rôle par défaut
+
+            if (userDoc.exists()) {
+                roleUtilisateur = userDoc.data().role || "acheteur";
+            }
+
+            // Sécurité additionnelle : forcer admin ou livreur même si le compte existait déjà avec un autre rôle
+            const emailMinuscule = email.toLowerCase();
+            if (emailMinuscule === "jubiledak@gmail.com") {
+                roleUtilisateur = "administrateur";
+            } else if (emailMinuscule === "aglignamou@gmail.com") {
+                roleUtilisateur = "livreur";
+            }
+
+            alert("Connexion réussie ! Redirection...");
+            redirigerSelonRole(roleUtilisateur);
+
+        } catch (error) {
+            console.error("Erreur de connexion :", error.message);
+            alert("Email ou mot de passe incorrect.");
+        }
     }
 };
 
-/**
- * Traitement de l'inscription utilisateur
- */
-function traiterInscription(nom, email, password, role) {
-    console.log("Tentative d'inscription pour :", email, "en tant que", role);
-    afficherNotification(`Compte ${role} créé avec succès pour ${nom} !`, "succes");
-}
-
-/**
- * Traitement de la connexion utilisateur
- */
-function traiterConnexion(email, password) {
-    console.log("Tentative de connexion pour :", email);
-    afficherNotification("Connexion réussie ! Redirection...", "succes");
-}
-
-/**
- * Gestion de la réinitialisation du mot de passe (Mot de passe oublié)
- */
-window.reinitialiserMotDePasse = function() {
+// Fonction de réinitialisation du mot de passe
+window.reinitialiserMotDePasse = async function() {
     const email = document.getElementById("emailInput").value.trim();
-
     if (!email) {
-        afficherNotification("Veuillez d'abord saisir votre adresse email ci-dessus.", "erreur");
-        document.getElementById("emailInput").focus();
+        alert("Veuillez d'abord entrer votre adresse email, puis cliquer sur 'Mot de passe oublié ?'.");
         return;
     }
 
-    console.log("Demande de réinitialisation pour :", email);
-    afficherNotification("Un lien de réinitialisation a été envoyé à " + email, "succes");
+    try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Un e-mail de réinitialisation a été envoyé à : " + email);
+    } catch (error) {
+        console.error("Erreur réinitialisation :", error.message);
+        alert("Erreur : " + error.message);
+    }
 };
 
-/**
- * Système de notification dynamique (alerte visuelle propre)
- */
-function afficherNotification(message, type) {
-    // Supprimer l'ancienne notification si elle existe
-    const ancienneAlerte = document.getElementById("notificationAlerte");
-    if (ancienneAlerte) ancienneAlerte.remove();
-
-    const alerte = document.createElement("div");
-    alerte.id = "notificationAlerte";
-    alerte.innerText = message;
-    
-    // Styles dynamiques pour l'alerte
-    alerte.style.position = "fixed";
-    alerte.style.top = "20px";
-    alerte.style.left = "50%";
-    alerte.style.transform = "translateX(-50%)";
-    alerte.style.padding = "12px 20px";
-    alerte.style.borderRadius = "8px";
-    alerte.style.fontSize = "13px";
-    alerte.style.fontWeight = "600";
-    alerte.style.zIndex = "1000";
-    alerte.style.boxShadow = "0 4px 15px rgba(0,0,0,0.3)";
-    alerte.style.transition = "all 0.3s ease";
-
-    if (type === "erreur") {
-        alerte.style.background = "#ff4d4d";
-        alerte.style.color = "#ffffff";
+// Fonction de redirection selon le rôle de l'utilisateur
+function redirectionSelonRole(role) {
+    if (role === "administrateur") {
+        window.location.href = "admin.html"; // Remplacez par votre page admin si besoin
+    } else if (role === "livreur") {
+        window.location.href = "livreur.html"; // Remplacez par votre page livreur si besoin
     } else {
-        alerte.style.background = "#d4af37";
-        alerte.style.color = "#000000";
+        window.location.href = "index.html"; // Page d'accueil classique pour acheteur/vendeur
     }
-
-    document.body.appendChild(alerte);
-
-    // Disparition automatique après 4 secondes
-    setTimeout(() => {
-        alerte.style.opacity = "0";
-        setTimeout(() => alerte.remove(), 300);
-    }, 4000);
 }
