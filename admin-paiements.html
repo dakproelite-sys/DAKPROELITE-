@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="DAKPRO ÉLITE — Administration des paiements."
+    >
+
+    <title>Administration des paiements — DAKPRO ÉLITE</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        :root {
+            --or: #d4af37;
+            --or-clair: #f2d675;
+            --fond: #090909;
+            --fond2: #111111;
+            --fond3: #181818;
+            --texte: #ffffff;
+            --gris: #aaa;
+            --bordure: rgba(212,175,55,0.25);
+            --vert: #25c16f;
+            --rouge: #e74c3c;
+            --orange: #f39c12;
+            --bleu: #3498db;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--fond);
+            color: var(--texte);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+
+            padding: 15px 5%;
+
+            background: rgba(9,9,9,0.97);
+
+            border-bottom:
+                1px solid var(--bordure);
+
+            backdrop-filter: blur(12px);
+        }
+
+        .logo {
+            color: var(--or);
+            text-decoration: none;
+
+            font-size: 21px;
+            font-weight: 900;
+
+            letter-spacing: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-btn {
+            color: white;
+            text-decoration: none;
+
+            background: var(--fond3);
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 10px;
+
+            padding: 9px 13px;
+
+            font-size: 14px;
+        }
+
+        .header-btn:hover {
+            color: var(--or-clair);
+            border-color: var(--or);
+        }
+
+        .container {
+            width: min(1250px, 92%);
+            margin: 30px auto 70px;
+        }
+
+        .breadcrumb {
+            color: var(--gris);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb a {
+            color: var(--or-clair);
+            text-decoration: none;
+        }
+
+        .titre {
+            margin-bottom: 25px;
+        }
+
+        .titre h1 {
+            margin: 0 0 8px;
+            font-size: clamp(28px, 5vw, 42px);
+        }
+
+        .titre p {
+            margin: 0;
+            color: var(--gris);
+            line-height: 1.6;
+        }
+
+        .acces-refuse {
+            display: none;
+
+            padding: 20px;
+
+            border-radius: 15px;
+
+            background:
+                rgba(231,76,60,0.10);
+
+            border:
+                1px solid rgba(231,76,60,0.35);
+
+            color: #ffd3ce;
+
+            line-height: 1.6;
+        }
+
+        .chargement {
+            padding: 40px;
+            text-align: center;
+            color: var(--gris);
+        }
+
+        .contenu {
+            display: none;
+        }
+
+        .dashboard {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 14px;
+
+            margin-bottom: 22px;
+        }
+
+        .card {
+            padding: 20px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #151515,
+                    #0d0d0d
+                );
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 16px;
+        }
+
+        .card small {
+            display: block;
+
+            color: #888;
+
+            margin-bottom: 9px;
+        }
+
+        .card strong {
+            display: block;
+
+            color: var(--or-clair);
+
+            font-size: 25px;
+        }
+
+        .panel {
+            background: #111;
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 18px;
+
+            padding: 22px;
+
+            margin-bottom: 22px;
+        }
+
+        .panel h2 {
+            margin: 0 0 18px;
+
+            color: var(--or-clair);
+
+            font-size: 21px;
+        }
+
+        .filtres {
+            display: grid;
+
+            grid-template-columns:
+                1.3fr
+                1fr
+                1fr
+                auto;
+
+            gap: 12px;
+
+            margin-bottom: 20px;
+        }
+
+        .champ label {
+            display: block;
+
+            color: #ddd;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            margin-bottom: 7px;
+        }
+
+        .champ input,
+        .champ select {
+            width: 100%;
+
+            height: 46px;
+
+            padding: 0 12px;
+
+            color: white;
+
+            background: #080808;
+
+            border:
+                1px solid rgba(212,175,55,0.25);
+
+            border-radius: 10px;
+
+            outline: none;
+        }
+
+        .champ input:focus,
+        .champ select:focus {
+            border-color: var(--or);
+        }
+
+        .btn {
+            min-height: 46px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            padding: 10px 17px;
+
+            font-weight: 800;
+        }
+
+        .btn-or {
+            background: var(--or);
+            color: #000;
+        }
+
+        .btn-or:hover {
+            background: var(--or-clair);
+        }
+
+        .btn-danger {
+            background: rgba(231,76,60,0.14);
+            color: #ffbcb5;
+
+            border:
+                1px solid rgba(231,76,60,0.3);
+        }
+
+        .btn-success {
+            background: rgba(37,193,111,0.14);
+            color: #baffd5;
+
+            border:
+                1px solid rgba(37,193,111,0.3);
+        }
+
+        .btn-blue {
+            background: rgba(52,152,219,0.14);
+            color: #b9ddff;
+
+            border:
+                1px solid rgba(52,152,219,0.3);
+        }
+
+        .table-zone {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 1000px;
+        }
+
+        th,
+        td {
+            padding: 13px 10px;
+
+            text-align: left;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.06);
+
+            font-size: 13px;
+        }
+
+        th {
+            color: #888;
+
+            font-size: 11px;
+
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #ddd;
+        }
+
+        .reference {
+            color: var(--or-clair);
+
+            font-weight: 800;
+        }
+
+        .statut {
+            display: inline-block;
+
+            padding: 6px 9px;
+
+            border-radius: 999px;
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+            white-space: nowrap;
+        }
+
+        .attente {
+            color: #ffe4a3;
+            background: rgba(243,156,18,0.13);
+        }
+
+        .verification,
+        .approuve,
+        .paiement {
+            color: #cfe3ff;
+            background: rgba(52,152,219,0.13);
+        }
+
+        .paye {
+            color: #baffd5;
+            background: rgba(37,193,111,0.13);
+        }
+
+        .rejete,
+        .annule {
+            color: #ffd0cc;
+            background: rgba(231,76,60,0.13);
+        }
+
+        .actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 6px;
+        }
+
+        .actions button {
+            padding: 7px 9px;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            font-weight: 800;
+        }
+
+        .vide {
+            text-align: center;
+
+            padding: 40px 10px;
+
+            color: #777;
+        }
+
+        .alerte {
+            display: none;
+
+            padding: 13px;
+
+            margin-bottom: 18px;
+
+            border-radius: 10px;
+
+            line-height: 1.5;
+        }
+
+        .alerte.succes {
+            display: block;
+
+            color: #b9ffd6;
+
+            background:
+                rgba(37,193,111,0.10);
+
+            border:
+                1px solid rgba(37,193,111,0.3);
+        }
+
+        .alerte.erreur {
+            display: block;
+
+            color: #ffd0cc;
+
+            background:
+                rgba(231,76,60,0.10);
+
+            border:
+                1px solid rgba(231,76,60,0.3);
+        }
+
+        .modal {
+            display: none;
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 3000;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+
+            background:
+                rgba(0,0,0,0.78);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-box {
+            width: min(620px, 100%);
+
+            max-height: 90vh;
+
+            overflow-y: auto;
+
+            padding: 23px;
+
+            background: #111;
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 18px;
+        }
+
+        .modal-header {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+
+            color: var(--or-clair);
+        }
+
+        .fermer {
+            width: 38px;
+            height: 38px;
+
+            border: none;
+
+            border-radius: 50%;
+
+            background: #222;
+
+            color: white;
+
+            font-size: 18px;
+        }
+
+        .detail-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 10px;
+        }
+
+        .detail {
+            padding: 13px;
+
+            background: #080808;
+
+            border:
+                1px solid rgba(255,255,255,0.06);
+
+            border-radius: 10px;
+        }
+
+        .detail small {
+            display: block;
+
+            color: #777;
+
+            margin-bottom: 5px;
+        }
+
+        .detail strong {
+            color: white;
+
+            word-break: break-word;
+        }
+
+        .modal-actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 8px;
+
+            margin-top: 20px;
+        }
+
+        @media (max-width: 1000px) {
+
+            .dashboard {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+            .filtres {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+        }
+
+        @media (max-width: 600px) {
+
+            .header {
+                padding: 12px 4%;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .filtres {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 17px;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <a
+        href="index.html"
+        class="logo"
+    >
+        DAKPRO ÉLITE
+    </a>
+
+    <div class="header-actions">
+
+        <a
+            href="admin.html"
+            class="header-btn"
+        >
+            ⚙️ Administration
+        </a>
+
+        <a
+            href="retrait.html"
+            class="header-btn"
+        >
+            💰 Retraits
+        </a>
+
+        <a
+            href="index.html"
+            class="header-btn"
+        >
+            Accueil
+        </a>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <div class="breadcrumb">
+
+        <a href="index.html">
+            Accueil
+        </a>
+
+        &nbsp; / &nbsp;
+
+        Administration
+        &nbsp; / &nbsp;
+
+        Paiements
+
+    </div>
+
+
+    <div class="titre">
+
+        <h1>
+            💳 Administration des paiements
+        </h1>
+
+        <p>
+            Centralisez ici les demandes de retrait
+            et le suivi des paiements DAKPRO ÉLITE.
+        </p>
+
+    </div>
+
+
+    <div
+        id="chargement"
+        class="chargement"
+    >
+        Vérification des droits administrateur...
+    </div>
+
+
+    <div
+        id="accesRefuse"
+        class="acces-refuse"
+    >
+
+        <strong>
+            Accès refusé.
+        </strong>
+
+        <br><br>
+
+        Cette page est réservée aux administrateurs
+        autorisés de DAKPRO ÉLITE.
+
+        <br><br>
+
+        <a
+            href="connexion.html"
+            style="color:var(--or-clair);"
+        >
+            Retour à la connexion
+        </a>
+
+    </div>
+
+
+    <div
+        id="contenu"
+        class="contenu"
+    >
+
+        <div
+            id="alerte"
+            class="alerte"
+        ></div>
+
+
+        <!-- =================================================
+             STATISTIQUES
+             ================================================= -->
+
+        <section class="dashboard">
+
+            <div class="card">
+
+                <small>
+                    Demandes en attente
+                </small>
+
+                <strong id="statAttente">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="card">
+
+                <small>
+                    En cours de paiement
+                </small>
+
+                <strong id="statPaiement">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="card">
+
+                <small>
+                    Total payé
+                </small>
+
+                <strong id="statPaye">
+                    0 FCFA
+                </strong>
+
+            </div>
+
+
+            <div class="card">
+
+                <small>
+                    Total demandé
+                </small>
+
+                <strong id="statDemande">
+                    0 FCFA
+                </strong>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             FILTRES
+             ================================================= -->
+
+        <section class="panel">
+
+            <h2>
+                🔎 Rechercher un paiement
+            </h2>
+
+            <div class="filtres">
+
+                <div class="champ">
+
+                    <label for="recherche">
+                        Recherche
+                    </label>
+
+                    <input
+                        id="recherche"
+                        type="search"
+                        placeholder="Référence, UID, nom, numéro..."
+                    >
+
+                </div>
+
+
+                <div class="champ">
+
+                    <label for="filtreStatut">
+                        Statut
+                    </label>
+
+                    <select id="filtreStatut">
+
+                        <option value="">
+                            Tous les statuts
+                        </option>
+
+                        <option value="en_attente">
+                            En attente
+                        </option>
+
+                        <option value="en_verification">
+                            En vérification
+                        </option>
+
+                        <option value="approuve">
+                            Approuvé
+                        </option>
+
+                        <option value="en_paiement">
+                            En paiement
+                        </option>
+
+                        <option value="paye">
+                            Payé
+                        </option>
+
+                        <option value="rejete">
+                            Rejeté
+                        </option>
+
+                        <option value="annule">
+                            Annulé
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="champ">
+
+                    <label for="filtreMoyen">
+                        Moyen de paiement
+                    </label>
+
+                    <select id="filtreMoyen">
+
+                        <option value="">
+                            Tous
+                        </option>
+
+                        <option value="mobile_money">
+                            Mobile Money
+                        </option>
+
+                        <option value="virement_bancaire">
+                            Virement bancaire
+                        </option>
+
+                        <option value="paypal">
+                            PayPal
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div
+                    style="
+                        display:flex;
+                        align-items:end;
+                    "
+                >
+
+                    <button
+                        id="btnActualiser"
+                        class="btn btn-or"
+                        type="button"
+                    >
+                        🔄 Actualiser
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             TABLEAU
+             ================================================= -->
+
+        <section class="panel">
+
+            <h2>
+                📋 Liste des paiements
+            </h2>
+
+
+            <div class="table-zone">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Référence
+                            </th>
+
+                            <th>
+                                Vendeur / affilié
+                            </th>
+
+                            <th>
+                                Montant
+                            </th>
+
+                            <th>
+                                Moyen
+                            </th>
+
+                            <th>
+                                Compte
+                            </th>
+
+                            <th>
+                                Statut
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody
+                        id="listePaiements"
+                    >
+
+                        <tr>
+
+                            <td
+                                colspan="8"
+                                class="vide"
+                            >
+                                Chargement des paiements...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</main>
+
+
+<!-- ========================================================
+     MODALE DÉTAIL
+     ======================================================== -->
+
+<div
+    id="modal"
+    class="modal"
+>
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h3>
+                Détails du paiement
+            </h3>
+
+            <button
+                id="btnFermer"
+                class="fermer"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div
+            id="details"
+            class="detail-grid"
+        ></div>
+
+
+        <div
+            id="actionsModal"
+            class="modal-actions"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================
+     CONTRÔLEUR ADMINISTRATION DES PAIEMENTS
+     
+     Architecture :
+     
+     admin-paiements.html
+             ↓
+     js/admin-paiements.js
+             ↓
+     Firebase Realtime Database
+     
+     Aucun autre fichier existant n'est remplacé.
+     ======================================================== -->
+
+<script
+    type="module"
+    src="./js/admin-paiements.js"
+></script>
+
+
+</body>
+</html>

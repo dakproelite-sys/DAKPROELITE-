@@ -1,0 +1,2583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="DAKPRO ÉLITE — Administration et validation des vendeurs."
+    >
+
+    <title>Gestion des vendeurs — DAKPRO ÉLITE</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        :root {
+            --or: #d4af37;
+            --or-clair: #f2d675;
+            --fond: #070707;
+            --fond2: #101010;
+            --fond3: #181818;
+            --texte: #ffffff;
+            --gris: #9b9b9b;
+            --bordure: rgba(212,175,55,0.24);
+
+            --vert: #25c16f;
+            --rouge: #e74c3c;
+            --orange: #f39c12;
+            --bleu: #3498db;
+            --violet: #9b59b6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--fond);
+            color: var(--texte);
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+
+            padding: 14px 4%;
+
+            background:
+                rgba(7,7,7,0.97);
+
+            border-bottom:
+                1px solid var(--bordure);
+
+            backdrop-filter: blur(15px);
+        }
+
+        .logo {
+            color: var(--or);
+
+            text-decoration: none;
+
+            font-size: 21px;
+            font-weight: 900;
+
+            letter-spacing: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .header-btn {
+            padding: 9px 12px;
+
+            color: white;
+            text-decoration: none;
+
+            background: var(--fond3);
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 9px;
+
+            font-size: 13px;
+        }
+
+        .header-btn:hover {
+            color: var(--or-clair);
+            border-color: var(--or);
+        }
+
+        .container {
+            width: min(1450px, 94%);
+            margin: 28px auto 80px;
+        }
+
+        .breadcrumb {
+            margin-bottom: 18px;
+
+            color: var(--gris);
+
+            font-size: 13px;
+        }
+
+        .breadcrumb a {
+            color: var(--or-clair);
+            text-decoration: none;
+        }
+
+        .titre {
+            margin-bottom: 25px;
+        }
+
+        .titre h1 {
+            margin: 0 0 8px;
+
+            font-size:
+                clamp(27px, 5vw, 43px);
+        }
+
+        .titre p {
+            max-width: 850px;
+
+            margin: 0;
+
+            color: var(--gris);
+
+            line-height: 1.6;
+        }
+
+        .chargement {
+            padding: 45px 20px;
+
+            color: var(--gris);
+
+            text-align: center;
+        }
+
+        .acces-refuse {
+            display: none;
+
+            padding: 22px;
+
+            background:
+                rgba(231,76,60,0.10);
+
+            border:
+                1px solid rgba(231,76,60,0.35);
+
+            border-radius: 15px;
+
+            color: #ffd0cc;
+
+            line-height: 1.6;
+        }
+
+        .contenu {
+            display: none;
+        }
+
+        .alerte {
+            display: none;
+
+            margin-bottom: 18px;
+
+            padding: 13px 15px;
+
+            border-radius: 10px;
+
+            line-height: 1.5;
+        }
+
+        .alerte.succes {
+            display: block;
+
+            color: #baffd5;
+
+            background:
+                rgba(37,193,111,0.10);
+
+            border:
+                1px solid rgba(37,193,111,0.30);
+        }
+
+        .alerte.erreur {
+            display: block;
+
+            color: #ffd0cc;
+
+            background:
+                rgba(231,76,60,0.10);
+
+            border:
+                1px solid rgba(231,76,60,0.30);
+        }
+
+        .stats {
+            display: grid;
+
+            grid-template-columns:
+                repeat(6, minmax(0, 1fr));
+
+            gap: 12px;
+
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            padding: 18px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #151515,
+                    #0c0c0c
+                );
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 15px;
+        }
+
+        .stat-card small {
+            display: block;
+
+            margin-bottom: 8px;
+
+            color: #858585;
+
+            font-size: 12px;
+        }
+
+        .stat-card strong {
+            display: block;
+
+            color: var(--or-clair);
+
+            font-size: 24px;
+        }
+
+        .panel {
+            margin-bottom: 22px;
+
+            padding: 21px;
+
+            background: #111;
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 17px;
+        }
+
+        .panel-title {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+        }
+
+        .panel-title h2 {
+            margin: 0;
+
+            color: var(--or-clair);
+
+            font-size: 20px;
+        }
+
+        .filtres {
+            display: grid;
+
+            grid-template-columns:
+                1.6fr
+                1fr
+                1fr
+                1fr
+                auto;
+
+            gap: 11px;
+        }
+
+        .champ label {
+            display: block;
+
+            margin-bottom: 7px;
+
+            color: #ddd;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .champ input,
+        .champ select {
+            width: 100%;
+            height: 45px;
+
+            padding: 0 12px;
+
+            outline: none;
+
+            color: white;
+
+            background: #080808;
+
+            border:
+                1px solid rgba(212,175,55,0.23);
+
+            border-radius: 9px;
+        }
+
+        .champ input:focus,
+        .champ select:focus {
+            border-color: var(--or);
+        }
+
+        .btn {
+            min-height: 45px;
+
+            padding: 9px 14px;
+
+            border-radius: 9px;
+
+            font-weight: 800;
+        }
+
+        .btn-or {
+            color: #000;
+
+            background: var(--or);
+
+            border: none;
+        }
+
+        .btn-or:hover {
+            background: var(--or-clair);
+        }
+
+        .btn-success {
+            color: #baffd5;
+
+            background:
+                rgba(37,193,111,0.13);
+
+            border:
+                1px solid rgba(37,193,111,0.30);
+        }
+
+        .btn-danger {
+            color: #ffd0cc;
+
+            background:
+                rgba(231,76,60,0.13);
+
+            border:
+                1px solid rgba(231,76,60,0.30);
+        }
+
+        .btn-blue {
+            color: #cce7ff;
+
+            background:
+                rgba(52,152,219,0.13);
+
+            border:
+                1px solid rgba(52,152,219,0.30);
+        }
+
+        .btn-neutral {
+            color: white;
+
+            background: #202020;
+
+            border:
+                1px solid #333;
+        }
+
+        .table-zone {
+            width: 100%;
+
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+
+            min-width: 1350px;
+
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 13px 10px;
+
+            text-align: left;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.06);
+
+            vertical-align: middle;
+        }
+
+        th {
+            color: #777;
+
+            font-size: 10px;
+
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #ddd;
+
+            font-size: 13px;
+        }
+
+        .vendeur {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            overflow: hidden;
+
+            color: var(--or-clair);
+
+            background: #202020;
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 50%;
+
+            font-weight: 900;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        .vendeur-info strong {
+            display: block;
+
+            color: white;
+
+            margin-bottom: 3px;
+        }
+
+        .vendeur-info small {
+            color: #777;
+        }
+
+        .badge {
+            display: inline-block;
+
+            padding: 5px 8px;
+
+            border-radius: 999px;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            white-space: nowrap;
+        }
+
+        .badge-attente {
+            color: #ffe3a0;
+
+            background:
+                rgba(243,156,18,0.13);
+        }
+
+        .badge-valide {
+            color: #baffd5;
+
+            background:
+                rgba(37,193,111,0.13);
+        }
+
+        .badge-refuse {
+            color: #ffd0cc;
+
+            background:
+                rgba(231,76,60,0.13);
+        }
+
+        .badge-verification {
+            color: #cbe5ff;
+
+            background:
+                rgba(52,152,219,0.13);
+        }
+
+        .badge-bloque {
+            color: #e0c7ff;
+
+            background:
+                rgba(155,89,182,0.14);
+        }
+
+        .montant {
+            color: var(--or-clair);
+
+            font-weight: 900;
+        }
+
+        .actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 5px;
+        }
+
+        .actions button {
+            padding: 7px 9px;
+
+            border-radius: 7px;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .vide {
+            padding: 45px 10px;
+
+            color: #777;
+
+            text-align: center;
+        }
+
+        .pagination {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 10px;
+
+            margin-top: 18px;
+        }
+
+        .pagination-info {
+            color: #777;
+
+            font-size: 12px;
+        }
+
+        .pagination-actions {
+            display: flex;
+
+            gap: 7px;
+        }
+
+        .pagination-actions button {
+            min-width: 38px;
+            min-height: 35px;
+
+            color: white;
+
+            background: #1d1d1d;
+
+            border:
+                1px solid #333;
+
+            border-radius: 8px;
+        }
+
+        .pagination-actions button.active {
+            color: #000;
+
+            background: var(--or);
+
+            border-color: var(--or);
+        }
+
+        .modal {
+            display: none;
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 3000;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 18px;
+
+            background:
+                rgba(0,0,0,0.82);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-box {
+            width: min(950px, 100%);
+
+            max-height: 92vh;
+
+            overflow-y: auto;
+
+            padding: 22px;
+
+            background: #111;
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 18px;
+        }
+
+        .modal-header {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+
+            color: var(--or-clair);
+
+            font-size: 22px;
+        }
+
+        .fermer {
+            width: 38px;
+            height: 38px;
+
+            border: none;
+
+            border-radius: 50%;
+
+            color: white;
+
+            background: #242424;
+
+            font-size: 20px;
+        }
+
+        .profil-header {
+            display: grid;
+
+            grid-template-columns:
+                auto 1fr;
+
+            gap: 16px;
+
+            padding: 17px;
+
+            margin-bottom: 18px;
+
+            background: #090909;
+
+            border:
+                1px solid rgba(255,255,255,0.06);
+
+            border-radius: 13px;
+        }
+
+        .profil-avatar {
+            width: 72px;
+            height: 72px;
+
+            overflow: hidden;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            color: var(--or-clair);
+
+            background: #202020;
+
+            border:
+                1px solid var(--bordure);
+
+            border-radius: 50%;
+
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .profil-avatar img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        .profil-header h4 {
+            margin: 0 0 5px;
+
+            font-size: 20px;
+        }
+
+        .profil-header p {
+            margin: 3px 0;
+
+            color: #888;
+
+            font-size: 13px;
+        }
+
+        .section-label {
+            margin: 20px 0 10px;
+
+            color: var(--or-clair);
+
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .detail-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+
+            gap: 9px;
+        }
+
+        .detail {
+            padding: 12px;
+
+            background: #080808;
+
+            border:
+                1px solid rgba(255,255,255,0.06);
+
+            border-radius: 9px;
+        }
+
+        .detail small {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: #666;
+
+            font-size: 10px;
+        }
+
+        .detail strong {
+            display: block;
+
+            color: white;
+
+            word-break: break-word;
+
+            font-size: 13px;
+        }
+
+        .documents {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+
+            gap: 11px;
+        }
+
+        .document-card {
+            padding: 14px;
+
+            background: #090909;
+
+            border:
+                1px solid rgba(255,255,255,0.07);
+
+            border-radius: 11px;
+        }
+
+        .document-card h5 {
+            margin: 0 0 8px;
+
+            color: white;
+
+            font-size: 13px;
+        }
+
+        .document-preview {
+            width: 100%;
+            height: 150px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+
+            margin-bottom: 9px;
+
+            color: #666;
+
+            background: #151515;
+
+            border-radius: 8px;
+        }
+
+        .document-preview img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: contain;
+        }
+
+        .document-preview iframe {
+            width: 100%;
+            height: 100%;
+
+            border: none;
+        }
+
+        .document-actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 5px;
+        }
+
+        .document-actions button,
+        .document-actions a {
+            padding: 7px 8px;
+
+            color: white;
+
+            background: #202020;
+
+            border:
+                1px solid #333;
+
+            border-radius: 7px;
+
+            font-size: 10px;
+
+            text-decoration: none;
+        }
+
+        .modal-actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 8px;
+
+            margin-top: 20px;
+
+            padding-top: 17px;
+
+            border-top:
+                1px solid rgba(255,255,255,0.07);
+        }
+
+        .motif-box {
+            display: none;
+
+            margin-top: 15px;
+        }
+
+        .motif-box textarea {
+            width: 100%;
+
+            min-height: 100px;
+
+            padding: 12px;
+
+            resize: vertical;
+
+            color: white;
+
+            background: #080808;
+
+            border:
+                1px solid rgba(212,175,55,0.25);
+
+            border-radius: 9px;
+
+            outline: none;
+        }
+
+        .motif-box textarea:focus {
+            border-color: var(--or);
+        }
+
+        @media (max-width: 1200px) {
+
+            .stats {
+                grid-template-columns:
+                    repeat(3, minmax(0, 1fr));
+            }
+
+            .filtres {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+        }
+
+        @media (max-width: 800px) {
+
+            .documents {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-grid {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+            .profil-header {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @media (max-width: 600px) {
+
+            .header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .stats {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+            .filtres {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pagination {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <a
+        href="index.html"
+        class="logo"
+    >
+        DAKPRO ÉLITE
+    </a>
+
+    <nav class="header-actions">
+
+        <a
+            href="admin.html"
+            class="header-btn"
+        >
+            ⚙️ Administration
+        </a>
+
+        <a
+            href="admin-paiements.html"
+            class="header-btn"
+        >
+            💳 Paiements
+        </a>
+
+        <a
+            href="retrait.html"
+            class="header-btn"
+        >
+            💰 Retraits
+        </a>
+
+        <a
+            href="index.html"
+            class="header-btn"
+        >
+            🏠 Accueil
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main class="container">
+
+    <div class="breadcrumb">
+
+        <a href="index.html">
+            Accueil
+        </a>
+
+        &nbsp; / &nbsp;
+
+        <a href="admin.html">
+            Administration
+        </a>
+
+        &nbsp; / &nbsp;
+
+        Vendeurs
+
+    </div>
+
+
+    <section class="titre">
+
+        <h1>
+            👥 Gestion des vendeurs
+        </h1>
+
+        <p>
+            Contrôlez les comptes vendeurs, vérifiez leurs
+            documents administratifs, suivez leurs ventes,
+            leurs gains, leurs commissions et leur éligibilité
+            aux retraits.
+        </p>
+
+    </section>
+
+
+    <div
+        id="chargement"
+        class="chargement"
+    >
+        Vérification des droits administrateur...
+    </div>
+
+
+    <div
+        id="accesRefuse"
+        class="acces-refuse"
+    >
+
+        <strong>
+            🔒 Accès refusé.
+        </strong>
+
+        <br><br>
+
+        Cette interface est réservée aux administrateurs
+        autorisés de DAKPRO ÉLITE.
+
+        <br><br>
+
+        <a
+            href="connexion.html"
+            style="color:var(--or-clair);"
+        >
+            Retour à la connexion
+        </a>
+
+    </div>
+
+
+    <div
+        id="contenu"
+        class="contenu"
+    >
+
+        <div
+            id="alerte"
+            class="alerte"
+        ></div>
+
+
+        <!-- =================================================
+             STATISTIQUES VENDEURS
+             ================================================= -->
+
+        <section class="stats">
+
+            <div class="stat-card">
+
+                <small>
+                    Total vendeurs
+                </small>
+
+                <strong id="statTotal">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <small>
+                    Documents en attente
+                </small>
+
+                <strong id="statDocuments">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <small>
+                    Vendeurs validés
+                </small>
+
+                <strong id="statValides">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <small>
+                    Vendeurs refusés
+                </small>
+
+                <strong id="statRefuses">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <small>
+                    Vendeurs actifs
+                </small>
+
+                <strong id="statActifs">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <small>
+                    Gains à contrôler
+                </small>
+
+                <strong id="statGains">
+                    0 FCFA
+                </strong>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             RECHERCHE ET FILTRES
+             ================================================= -->
+
+        <section class="panel">
+
+            <div class="panel-title">
+
+                <h2>
+                    🔎 Recherche avancée
+                </h2>
+
+                <button
+                    id="btnActualiser"
+                    class="btn btn-or"
+                    type="button"
+                >
+                    🔄 Actualiser
+                </button>
+
+            </div>
+
+
+            <div class="filtres">
+
+                <div class="champ">
+
+                    <label for="recherche">
+                        Recherche
+                    </label>
+
+                    <input
+                        id="recherche"
+                        type="search"
+                        placeholder="Nom, UID, téléphone, email..."
+                    >
+
+                </div>
+
+
+                <div class="champ">
+
+                    <label for="filtreDocuments">
+                        Documents
+                    </label>
+
+                    <select id="filtreDocuments">
+
+                        <option value="">
+                            Tous
+                        </option>
+
+                        <option value="en_attente">
+                            Documents en attente
+                        </option>
+
+                        <option value="valide">
+                            Documents validés
+                        </option>
+
+                        <option value="refuse">
+                            Documents refusés
+                        </option>
+
+                        <option value="incomplet">
+                            Dossier incomplet
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="champ">
+
+                    <label for="filtreCompte">
+                        Compte
+                    </label>
+
+                    <select id="filtreCompte">
+
+                        <option value="">
+                            Tous
+                        </option>
+
+                        <option value="actif">
+                            Actifs
+                        </option>
+
+                        <option value="bloque">
+                            Bloqués
+                        </option>
+
+                        <option value="suspendu">
+                            Suspendus
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="champ">
+
+                    <label for="filtreRetrait">
+                        Retrait
+                    </label>
+
+                    <select id="filtreRetrait">
+
+                        <option value="">
+                            Tous
+                        </option>
+
+                        <option value="eligible">
+                            Éligible ≥ 10 000 FCFA
+                        </option>
+
+                        <option value="non_eligible">
+                            Non éligible
+                        </option>
+
+                        <option value="en_attente">
+                            Retrait en attente
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div
+                    style="
+                        display:flex;
+                        align-items:end;
+                    "
+                >
+
+                    <button
+                        id="btnReinitialiser"
+                        class="btn btn-neutral"
+                        type="button"
+                    >
+                        Réinitialiser
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             TABLEAU PRINCIPAL
+             ================================================= -->
+
+        <section class="panel">
+
+            <div class="panel-title">
+
+                <h2>
+                    📊 Tableau des vendeurs
+                </h2>
+
+                <span
+                    id="nombreResultats"
+                    style="
+                        color:#777;
+                        font-size:12px;
+                    "
+                >
+                    0 vendeur
+                </span>
+
+            </div>
+
+
+            <div class="table-zone">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Vendeur
+                            </th>
+
+                            <th>
+                                Contact
+                            </th>
+
+                            <th>
+                                Identité
+                            </th>
+
+                            <th>
+                                Documents
+                            </th>
+
+                            <th>
+                                Ventes
+                            </th>
+
+                            <th>
+                                Gains
+                            </th>
+
+                            <th>
+                                Commission
+                            </th>
+
+                            <th>
+                                Retrait disponible
+                            </th>
+
+                            <th>
+                                Compte
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody
+                        id="listeVendeurs"
+                    >
+
+                        <tr>
+
+                            <td
+                                colspan="10"
+                                class="vide"
+                            >
+                                Chargement des vendeurs...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <div class="pagination">
+
+                <div
+                    id="paginationInfo"
+                    class="pagination-info"
+                >
+                    Aucun résultat
+                </div>
+
+                <div
+                    id="paginationActions"
+                    class="pagination-actions"
+                ></div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</main>
+
+
+<!-- ========================================================
+     MODALE — DOSSIER VENDEUR
+     ======================================================== -->
+
+<div
+    id="modalVendeur"
+    class="modal"
+>
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h3>
+                Dossier vendeur
+            </h3>
+
+            <button
+                id="btnFermerVendeur"
+                class="fermer"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div
+            id="profilVendeur"
+            class="profil-header"
+        ></div>
+
+
+        <div class="section-label">
+            📋 Informations personnelles
+        </div>
+
+        <div
+            id="detailsVendeur"
+            class="detail-grid"
+        ></div>
+
+
+        <div class="section-label">
+            🪪 Documents administratifs
+        </div>
+
+        <div
+            id="documentsVendeur"
+            class="documents"
+        ></div>
+
+
+        <div class="section-label">
+            📈 Activité commerciale
+        </div>
+
+        <div
+            id="activiteVendeur"
+            class="detail-grid"
+        ></div>
+
+
+        <div class="section-label">
+            💰 Situation financière
+        </div>
+
+        <div
+            id="financesVendeur"
+            class="detail-grid"
+        ></div>
+
+
+        <div
+            id="motifBox"
+            class="motif-box"
+        >
+
+            <label
+                for="motifRefus"
+                style="
+                    display:block;
+                    margin-bottom:7px;
+                    color:#ddd;
+                    font-size:13px;
+                    font-weight:700;
+                "
+            >
+                Motif du refus
+            </label>
+
+            <textarea
+                id="motifRefus"
+                placeholder="Expliquez clairement pourquoi le document ou le dossier est refusé..."
+            ></textarea>
+
+        </div>
+
+
+        <div
+            id="actionsVendeur"
+            class="modal-actions"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================
+     MODALE — CONFIRMATION
+     ======================================================== -->
+
+<div
+    id="modalConfirmation"
+    class="modal"
+>
+
+    <div
+        class="modal-box"
+        style="max-width:520px;"
+    >
+
+        <div class="modal-header">
+
+            <h3 id="confirmationTitre">
+                Confirmation
+            </h3>
+
+            <button
+                id="btnFermerConfirmation"
+                class="fermer"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <p
+            id="confirmationMessage"
+            style="
+                color:#bbb;
+                line-height:1.6;
+            "
+        >
+            Êtes-vous certain de vouloir continuer ?
+        </p>
+
+
+        <div
+            id="confirmationActions"
+            class="modal-actions"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================
+     CONTRÔLEUR
+     ========================================================
+
+     Le contrôleur Firebase sera séparé afin de garder
+     l'architecture propre :
+
+     js/admin-vendeurs.js
+
+     Firebase Realtime Database uniquement.
+     Aucun Firestore.
+     ======================================================== -->
+
+<script type="module">
+
+    const chargement =
+        document.getElementById(
+            "chargement"
+        );
+
+    const accesRefuse =
+        document.getElementById(
+            "accesRefuse"
+        );
+
+    const contenu =
+        document.getElementById(
+            "contenu"
+        );
+
+    const modalVendeur =
+        document.getElementById(
+            "modalVendeur"
+        );
+
+    const modalConfirmation =
+        document.getElementById(
+            "modalConfirmation"
+        );
+
+
+    function afficherInterface() {
+
+        if (chargement) {
+            chargement.style.display =
+                "none";
+        }
+
+        if (accesRefuse) {
+            accesRefuse.style.display =
+                "none";
+        }
+
+        if (contenu) {
+            contenu.style.display =
+                "block";
+        }
+
+    }
+
+
+    function afficherAccesRefuse() {
+
+        if (chargement) {
+            chargement.style.display =
+                "none";
+        }
+
+        if (contenu) {
+            contenu.style.display =
+                "none";
+        }
+
+        if (accesRefuse) {
+            accesRefuse.style.display =
+                "block";
+        }
+
+    }
+
+
+    function fermerModalVendeur() {
+
+        modalVendeur.classList.remove(
+            "active"
+        );
+
+    }
+
+
+    function fermerModalConfirmation() {
+
+        modalConfirmation.classList.remove(
+            "active"
+        );
+
+    }
+
+
+    document
+        .getElementById(
+            "btnFermerVendeur"
+        )
+        .addEventListener(
+            "click",
+            fermerModalVendeur
+        );
+
+
+    document
+        .getElementById(
+            "btnFermerConfirmation"
+        )
+        .addEventListener(
+            "click",
+            fermerModalConfirmation
+        );
+
+
+    modalVendeur.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                modalVendeur
+            ) {
+
+                fermerModalVendeur();
+
+            }
+
+        }
+    );
+
+
+    modalConfirmation.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                modalConfirmation
+            ) {
+
+                fermerModalConfirmation();
+
+            }
+
+        }
+    );
+
+
+    /*
+     * Événements réservés au futur contrôleur.
+     */
+
+    window.addEventListener(
+        "dakpro:admin-vendeurs-ready",
+        afficherInterface
+    );
+
+
+    window.addEventListener(
+        "dakpro:admin-vendeurs-refused",
+        afficherAccesRefuse
+    );
+
+
+    /*
+     * Ouverture du dossier vendeur.
+     */
+
+    window.addEventListener(
+        "dakpro:ouvrir-vendeur",
+        event => {
+
+            const vendeur =
+                event.detail || {};
+
+            const profil =
+                document.getElementById(
+                    "profilVendeur"
+                );
+
+            const details =
+                document.getElementById(
+                    "detailsVendeur"
+                );
+
+            const documents =
+                document.getElementById(
+                    "documentsVendeur"
+                );
+
+            const activite =
+                document.getElementById(
+                    "activiteVendeur"
+                );
+
+            const finances =
+                document.getElementById(
+                    "financesVendeur"
+                );
+
+            const actions =
+                document.getElementById(
+                    "actionsVendeur"
+                );
+
+
+            profil.innerHTML = "";
+
+            details.innerHTML = "";
+
+            documents.innerHTML = "";
+
+            activite.innerHTML = "";
+
+            finances.innerHTML = "";
+
+            actions.innerHTML = "";
+
+
+            /*
+             * Profil
+             */
+
+            const avatar =
+                document.createElement(
+                    "div"
+                );
+
+            avatar.className =
+                "profil-avatar";
+
+
+            if (vendeur.photoProfil) {
+
+                const image =
+                    document.createElement(
+                        "img"
+                    );
+
+                image.src =
+                    vendeur.photoProfil;
+
+                image.alt =
+                    "Photo du vendeur";
+
+                avatar.appendChild(
+                    image
+                );
+
+            } else {
+
+                avatar.textContent =
+                    "👤";
+
+            }
+
+
+            const profilTexte =
+                document.createElement(
+                    "div"
+                );
+
+
+            const nom =
+                document.createElement(
+                    "h4"
+                );
+
+            nom.textContent =
+                vendeur.nomComplet ||
+                vendeur.nom ||
+                "Vendeur";
+
+
+            const uid =
+                document.createElement(
+                    "p"
+                );
+
+            uid.textContent =
+                "UID : " +
+                (
+                    vendeur.uid ||
+                    vendeur.id ||
+                    "—"
+                );
+
+
+            const statut =
+                document.createElement(
+                    "p"
+                );
+
+            statut.textContent =
+                "Statut : " +
+                (
+                    vendeur.statut ||
+                    "—"
+                );
+
+
+            profilTexte.appendChild(
+                nom
+            );
+
+            profilTexte.appendChild(
+                uid
+            );
+
+            profilTexte.appendChild(
+                statut
+            );
+
+
+            profil.appendChild(
+                avatar
+            );
+
+            profil.appendChild(
+                profilTexte
+            );
+
+
+            /*
+             * Informations personnelles
+             */
+
+            ajouterDetail(
+                details,
+                "Nom complet",
+                vendeur.nomComplet ||
+                vendeur.nom
+            );
+
+            ajouterDetail(
+                details,
+                "Prénom",
+                vendeur.prenom
+            );
+
+            ajouterDetail(
+                details,
+                "Nom",
+                vendeur.nom
+            );
+
+            ajouterDetail(
+                details,
+                "Téléphone",
+                vendeur.telephone ||
+                vendeur.phone
+            );
+
+            ajouterDetail(
+                details,
+                "WhatsApp",
+                vendeur.whatsapp
+            );
+
+            ajouterDetail(
+                details,
+                "Email",
+                vendeur.email
+            );
+
+            ajouterDetail(
+                details,
+                "Ville",
+                vendeur.ville
+            );
+
+            ajouterDetail(
+                details,
+                "Adresse",
+                vendeur.adresse
+            );
+
+            ajouterDetail(
+                details,
+                "Type de pièce",
+                vendeur.typePiece ||
+                vendeur.typeDocument
+            );
+
+            ajouterDetail(
+                details,
+                "Numéro de pièce",
+                vendeur.numeroPiece ||
+                vendeur.numeroCarte ||
+                vendeur.numeroPasseport
+            );
+
+
+            /*
+             * Documents
+             */
+
+            creerDocument(
+                documents,
+                "📷 Photo d'identité",
+                vendeur.photoIdentite ||
+                vendeur.photoID,
+                vendeur.statutPhotoIdentite
+            );
+
+            creerDocument(
+                documents,
+                "🪪 Carte d'identité",
+                vendeur.carteIdentite ||
+                vendeur.cni,
+                vendeur.statutCarteIdentite
+            );
+
+            creerDocument(
+                documents,
+                "🛂 Passeport",
+                vendeur.passeport,
+                vendeur.statutPasseport
+            );
+
+
+            /*
+             * Activité
+             */
+
+            ajouterDetail(
+                activite,
+                "Nombre de ventes",
+                vendeur.nombreVentes ??
+                vendeur.ventes
+            );
+
+            ajouterDetail(
+                activite,
+                "Produits vendus",
+                vendeur.produitsVendus
+            );
+
+            ajouterDetail(
+                activite,
+                "Clients",
+                vendeur.nombreClients
+            );
+
+            ajouterDetail(
+                activite,
+                "Affiliations",
+                vendeur.nombreAffiliations
+            );
+
+            ajouterDetail(
+                activite,
+                "Ventes affiliées",
+                vendeur.ventesAffiliees
+            );
+
+            ajouterDetail(
+                activite,
+                "Date d'inscription",
+                vendeur.dateInscription
+            );
+
+
+            /*
+             * Finances
+             */
+
+            ajouterDetail(
+                finances,
+                "Chiffre d'affaires",
+                formaterMontant(
+                    vendeur.chiffreAffaires
+                )
+            );
+
+            ajouterDetail(
+                finances,
+                "Gains vendeur",
+                formaterMontant(
+                    vendeur.gains
+                )
+            );
+
+            ajouterDetail(
+                finances,
+                "Commissions",
+                formaterMontant(
+                    vendeur.commissions
+                )
+            );
+
+            ajouterDetail(
+                finances,
+                "Disponible",
+                formaterMontant(
+                    vendeur.soldeDisponible
+                )
+            );
+
+            ajouterDetail(
+                finances,
+                "Retrait minimum",
+                "10 000 FCFA"
+            );
+
+            ajouterDetail(
+                finances,
+                "Dernier retrait",
+                vendeur.dernierRetrait
+            );
+
+
+            /*
+             * Actions
+             */
+
+            const btnValider =
+                document.createElement(
+                    "button"
+                );
+
+            btnValider.type =
+                "button";
+
+            btnValider.className =
+                "btn btn-success";
+
+            btnValider.textContent =
+                "✅ Valider le vendeur";
+
+
+            btnValider.addEventListener(
+                "click",
+                () => {
+
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "dakpro:valider-vendeur",
+                            {
+                                detail:
+                                    vendeur
+                            }
+                        )
+                    );
+
+                }
+            );
+
+
+            const btnRefuser =
+                document.createElement(
+                    "button"
+                );
+
+            btnRefuser.type =
+                "button";
+
+            btnRefuser.className =
+                "btn btn-danger";
+
+            btnRefuser.textContent =
+                "❌ Refuser le dossier";
+
+
+            btnRefuser.addEventListener(
+                "click",
+                () => {
+
+                    document
+                        .getElementById(
+                            "motifBox"
+                        )
+                        .style.display =
+                        "block";
+
+                    document
+                        .getElementById(
+                            "motifRefus"
+                        )
+                        .focus();
+
+                }
+            );
+
+
+            const btnHistorique =
+                document.createElement(
+                    "button"
+                );
+
+            btnHistorique.type =
+                "button";
+
+            btnHistorique.className =
+                "btn btn-blue";
+
+            btnHistorique.textContent =
+                "📊 Voir l'activité";
+
+
+            btnHistorique.addEventListener(
+                "click",
+                () => {
+
+                    window.dispatchEvent(
+                        new CustomEvent(
+                            "dakpro:voir-activite-vendeur",
+                            {
+                                detail:
+                                    vendeur
+                            }
+                        )
+                    );
+
+                }
+            );
+
+
+            actions.appendChild(
+                btnValider
+            );
+
+            actions.appendChild(
+                btnRefuser
+            );
+
+            actions.appendChild(
+                btnHistorique
+            );
+
+
+            modalVendeur.classList.add(
+                "active"
+            );
+
+        }
+    );
+
+
+    function ajouterDetail(
+        parent,
+        label,
+        valeur
+    ) {
+
+        const bloc =
+            document.createElement(
+                "div"
+            );
+
+        bloc.className =
+            "detail";
+
+
+        const small =
+            document.createElement(
+                "small"
+            );
+
+        small.textContent =
+            label;
+
+
+        const strong =
+            document.createElement(
+                "strong"
+            );
+
+        strong.textContent =
+            valeur ??
+            "—";
+
+
+        bloc.appendChild(
+            small
+        );
+
+        bloc.appendChild(
+            strong
+        );
+
+        parent.appendChild(
+            bloc
+        );
+
+    }
+
+
+    function creerDocument(
+        parent,
+        titre,
+        url,
+        statut
+    ) {
+
+        const carte =
+            document.createElement(
+                "div"
+            );
+
+        carte.className =
+            "document-card";
+
+
+        const h5 =
+            document.createElement(
+                "h5"
+            );
+
+        h5.textContent =
+            titre;
+
+
+        const preview =
+            document.createElement(
+                "div"
+            );
+
+        preview.className =
+            "document-preview";
+
+
+        if (url) {
+
+            if (
+                String(url)
+                    .toLowerCase()
+                    .includes(".pdf")
+            ) {
+
+                const iframe =
+                    document.createElement(
+                        "iframe"
+                    );
+
+                iframe.src =
+                    url;
+
+                iframe.title =
+                    titre;
+
+                preview.appendChild(
+                    iframe
+                );
+
+            } else {
+
+                const image =
+                    document.createElement(
+                        "img"
+                    );
+
+                image.src =
+                    url;
+
+                image.alt =
+                    titre;
+
+                preview.appendChild(
+                    image
+                );
+
+            }
+
+        } else {
+
+            preview.textContent =
+                "Document non fourni";
+
+        }
+
+
+        const actions =
+            document.createElement(
+                "div"
+            );
+
+        actions.className =
+            "document-actions";
+
+
+        if (url) {
+
+            const ouvrir =
+                document.createElement(
+                    "a"
+                );
+
+            ouvrir.href =
+                url;
+
+            ouvrir.target =
+                "_blank";
+
+            ouvrir.rel =
+                "noopener noreferrer";
+
+            ouvrir.textContent =
+                "🔎 Ouvrir";
+
+            actions.appendChild(
+                ouvrir
+            );
+
+        }
+
+
+        const badge =
+            document.createElement(
+                "span"
+            );
+
+        badge.className =
+            "badge " +
+            (
+                statut === "valide"
+                    ? "badge-valide"
+                    : statut === "refuse"
+                        ? "badge-refuse"
+                        : "badge-attente"
+            );
+
+        badge.textContent =
+            statut === "valide"
+                ? "VALIDÉ"
+                : statut === "refuse"
+                    ? "REFUSÉ"
+                    : "EN ATTENTE";
+
+
+        actions.appendChild(
+            badge
+        );
+
+
+        carte.appendChild(
+            h5
+        );
+
+        carte.appendChild(
+            preview
+        );
+
+        carte.appendChild(
+            actions
+        );
+
+        parent.appendChild(
+            carte
+        );
+
+    }
+
+
+    function formaterMontant(
+        montant
+    ) {
+
+        const valeur =
+            Number(montant) || 0;
+
+        return (
+            new Intl.NumberFormat(
+                "fr-FR"
+            ).format(
+                valeur
+            )
+            + " FCFA"
+        );
+
+    }
+
+
+    /*
+     * Par sécurité, l'interface reste masquée
+     * jusqu'à ce que admin-vendeurs.js confirme
+     * les droits administrateur.
+     */
+
+    afficherAccesRefuse();
+
+</script>
+
+
+<!-- ========================================================
+     JS PRINCIPAL DE L'INTERFACE
+     ======================================================== -->
+
+<script
+    type="module"
+    src="./js/admin-vendeurs.js"
+></script>
+
+
+</body>
+</html>
