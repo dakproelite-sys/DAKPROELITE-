@@ -1,461 +1,748 @@
-import { getDatabase, ref, get, set, update, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-function escapeHTML(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
+/* ============================================================
+   MODULE CONFIGURATION GLOBALE & CREATION DE COMPTES — DAKPROELITE
+============================================================ */
 export async function init() {
     const container = document.getElementById('module-container');
-    const auth = getAuth();
-    const db = getDatabase();
-    const currentUser = auth.currentUser;
-    const authorEmail = currentUser ? currentUser.email : "admin@dakpro.com";
+    if (!container) return;
 
+    const db = getDatabase();
+    const auth = getAuth();
+
+    // 1. Structure HTML / UI Modulaire Élite
     container.innerHTML = `
         <style>
-            .config-container { display: flex; flex-direction: column; gap: 25px; color: #f5f5f7; }
-            .config-card { background: #13131a; border: 1px solid #282836; border-radius: 12px; padding: 22px; }
-            .config-title { color: #ffcc00; font-size: 15px; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #282836; padding-bottom: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-            .cfg-group { margin-bottom: 14px; }
-            .cfg-group label { display: block; font-size: 11px; color: #a1a1aa; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
-            .cfg-group input, .cfg-group select, .cfg-group textarea { width: 100%; background: #0d0d11; border: 1px solid #282836; color: #fff; padding: 10px; border-radius: 6px; font-size: 13px; outline: none; box-sizing: border-box; }
-            .cfg-group input:focus, .cfg-group select:focus, .cfg-group textarea:focus { border-color: #ffcc00; }
-            .btn-save { background: #ffcc00; color: #000; font-weight: 800; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
-            .btn-save:hover { background: #e6b800; }
-            .btn-danger { background: #ef4444; color: #fff; font-weight: 700; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
-            .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; }
-            .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+            .cfg-container { color: #f5f5f7; font-family: system-ui, -apple-system, sans-serif; background: #0d0d11; padding: 15px; border-radius: 12px; }
+            .cfg-title { color: #ffcc00; font-size: 20px; font-weight: 800; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 0.5px; border-left: 4px solid #ffcc00; padding-left: 10px; }
+            
+            .cfg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+            .cfg-card { background: #13131a; border: 1px solid #282836; border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: space-between; }
+            .cfg-card-highlight { border: 1px solid #ffcc00; box-shadow: 0 0 15px rgba(255, 204, 0, 0.15); margin-bottom: 25px; }
+            .cfg-card-title { font-size: 14px; font-weight: 800; color: #ffcc00; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #282836; padding-bottom: 10px; }
+            
+            .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+            .form-group label { font-size: 11px; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+            .form-group input, .form-group select { background: #0d0d11; border: 1px solid #282836; color: #ffcc00; padding: 10px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; outline: none; transition: all 0.2s; }
+            .form-group input:focus, .form-group select:focus { border-color: #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, 0.3); }
+            
+            .switch-group { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1c1c26; margin-bottom: 10px; }
+            .switch-label { font-size: 12px; font-weight: 700; color: #f5f5f7; }
+            .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+            .switch input { opacity: 0; width: 0; height: 0; }
+            .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #282836; transition: .3s; border-radius: 22px; }
+            .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
+            input:checked + .slider { background-color: #ffcc00; }
+            input:checked + .slider:before { transform: translateX(22px); background-color: #000; }
 
-            /* Module Prévisualisation Bannière */
-            .banner-builder { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-            .banner-preview-box { background: #0d0d11; border: 1px dashed #ffcc00; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-            .banner-preview-card { position: relative; border-radius: 8px; overflow: hidden; min-height: 140px; background: #181820; display: flex; align-items: flex-end; padding: 15px; background-size: cover; background-position: center; border: 1px solid #282836; }
-            .banner-preview-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.2)); z-index: 1; }
-            .banner-preview-content { position: relative; z-index: 2; color: #fff; }
-
-            /* Tables & Grilles */
-            .stock-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-            .stock-table th { background: #181820; color: #ffcc00; text-align: left; padding: 10px; border-bottom: 1px solid #282836; }
-            .stock-table td { padding: 10px; border-bottom: 1px solid #282836; vertical-align: middle; }
-            .stock-input { width: 80px !important; padding: 6px !important; text-align: center; }
-            .badge-stock { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; }
-            .badge-ok { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-            .badge-empty { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-            .banner-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
-            .banner-card { background: #0d0d11; border: 1px solid #282836; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
-            .banner-card img { width: 100%; height: 110px; object-fit: cover; }
-            .banner-card-body { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+            .btn-pub-section { background: linear-gradient(135deg, #ffcc00, #e6b800); color: #000; font-weight: 900; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; font-size: 11px; margin-top: 15px; width: 100%; letter-spacing: 0.5px; }
+            .btn-pub-section:hover { background: linear-gradient(135deg, #ffe57f, #ffcc00); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255, 204, 0, 0.2); }
+            
+            .btn-role-action { background: #ffcc00; color: #000; font-weight: 800; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 11px; text-transform: uppercase; width: 100%; }
+            .btn-login-as { background: rgba(255, 204, 0, 0.15); color: #ffcc00; border: 1px solid #ffcc00; font-weight: 700; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 10px; text-transform: uppercase; width: 100%; margin-top: 5px; }
+            .section-separator { width: 100%; height: 1px; background: #282836; margin: 25px 0; }
         </style>
 
-        <div class="config-container">
+        <div class="cfg-container">
+            <div class="cfg-title">⚙️ Configuration Système & Gestion des Comptes</div>
 
-            <!-- SESSION 1 : CRÉATEUR & PRÉVISUALISATION BANNIÈRE -->
-            <div class="config-card">
-                <div class="config-title">
-                    <span>🖼️ Session 1 : Gestionnaire de Bannière avec Aperçu en Direct</span>
+            <!-- SECTION : CRÉATION DIRECTE DE COMPTE -->
+            <div class="cfg-card cfg-card-highlight">
+                <div class="cfg-card-title">
+                    <span>➕ Créer un Nouveau Compte (Livreur / Vendeur / Admin)</span>
+                    <span style="font-size: 10px; background: rgba(255, 204, 0, 0.2); padding: 3px 8px; border-radius: 4px;">AUTHENTICATION & REALTIME DB</span>
                 </div>
-                <div class="banner-builder">
-                    <form id="form-banniere">
-                        <div class="cfg-group">
-                            <label>Titre de la Diapositive</label>
-                            <input type="text" id="ban-title" placeholder="Ex: Offre Spéciale d'Été" required>
+                <form id="form-create-account" style="background: #0d0d11; border: 1px solid #282836; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div class="form-group">
+                            <label>Nom complet du livreur / utilisateur</label>
+                            <input type="text" id="new-user-name" placeholder="Ex: Jean Kouassi" required>
                         </div>
-                        <div class="cfg-group">
-                            <label>Sous-titre / Description</label>
-                            <input type="text" id="ban-subtitle" placeholder="Ex: Jusqu'à -50% sur tous les produits" required>
+                        <div class="form-group">
+                            <label>Adresse Email</label>
+                            <input type="email" id="new-user-email" placeholder="livreur@dakpro.com" required>
                         </div>
-                        <div class="cfg-group">
-                            <label>URL de l'image de fond</label>
-                            <input type="url" id="ban-img" placeholder="https://images.unsplash.com/photo-xxx.jpg" required>
-                        </div>
-                        <div class="cfg-group">
-                            <label>Lien du Bouton / Redirection</label>
-                            <input type="text" id="ban-link" placeholder="/catalog.html" required>
-                        </div>
-                        <button type="submit" class="btn-save">➕ Publier la Bannière</button>
-                    </form>
-
-                    <div class="banner-preview-box">
-                        <span style="font-size:11px; color:#ffcc00; font-weight:bold; text-transform:uppercase;">👁️ Prévisualisation Avant Publication</span>
-                        <div class="banner-preview-card" id="banner-preview-card">
-                            <div class="banner-preview-overlay"></div>
-                            <div class="banner-preview-content">
-                                <h4 id="prev-title" style="margin:0; font-size:15px; color:#ffcc00;">Titre de démonstration</h4>
-                                <p id="prev-subtitle" style="margin:4px 0 8px 0; font-size:12px; color:#e4e4e7;">Votre sous-titre s'affichera ici...</p>
-                                <span id="prev-link" style="display:inline-block; background:#ffcc00; color:#000; padding:4px 10px; font-weight:bold; font-size:10px; border-radius:4px;">Voir l'offre →</span>
-                            </div>
+                        <div class="form-group">
+                            <label>Mot de passe initial</label>
+                            <input type="password" id="new-user-pass" placeholder="••••••••" required minlength="6">
                         </div>
                     </div>
-                </div>
-
-                <h4 style="margin-top:25px; color:#a1a1aa; font-size:12px; text-transform:uppercase;">Bannières Actives sur l'Index</h4>
-                <div id="banners-container" class="banner-grid">
-                    <p style="color:#a1a1aa; font-size:12px;">Chargement...</p>
-                </div>
-            </div>
-
-            <!-- SESSION 2 : MODES DE PAIEMENT & CONFIGURATION RETRAIT -->
-            <div class="config-card">
-                <div class="config-title">
-                    <span>💳 Session 2 : Modes de Paiement & Coordonnées Réception</span>
-                </div>
-                <form id="form-paiements">
-                    <div class="grid-3">
-                        <div class="cfg-group">
-                            <label>Mobile Money (Orange/MTN/Wave)</label>
-                            <input type="text" id="pay-momo" placeholder="Ex: +225 0700000000">
-                        </div>
-                        <div class="cfg-group">
-                            <label>Adresse Crypto (USDT TRC20)</label>
-                            <input type="text" id="pay-crypto" placeholder="Ex: TXxx...99">
-                        </div>
-                        <div class="cfg-group">
-                            <label>IBAN / RIB Virement</label>
-                            <input type="text" id="pay-iban" placeholder="Ex: FR76 0000 0000 ...">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-save">⚡ Sauvegarder Modes de Paiement</button>
-                </form>
-            </div>
-
-            <!-- SESSION 3 : GESTION DES STOCKS EN TEMPS RÉEL -->
-            <div class="config-card">
-                <div class="config-title">
-                    <span>📦 Session 3 : Stock & Disponibilité Produits</span>
-                    <button class="btn-save" id="btn-update-all-stocks">💾 Tout Enregistrer</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table class="stock-table">
-                        <thead>
-                            <tr>
-                                <th>Produit</th>
-                                <th>Type</th>
-                                <th>Prix</th>
-                                <th>Stock</th>
-                                <th>Statut</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stock-table-body">
-                            <tr><td colspan="6" style="text-align: center; color: #a1a1aa;">Chargement...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SESSION 4 : CONTACT SUPPORT & RÉSEAUX SOCIAUX -->
-            <div class="config-card">
-                <div class="config-title">
-                    <span>🌐 Session 4 : Contacts Support & Réseaux Sociaux</span>
-                </div>
-                <form id="form-socials">
-                    <div class="grid-2">
-                        <div class="cfg-group">
-                            <label>Numéro WhatsApp Support</label>
-                            <input type="text" id="contact-wa" placeholder="Ex: +229 90000000">
-                        </div>
-                        <div class="cfg-group">
-                            <label>Email Support</label>
-                            <input type="email" id="contact-email" placeholder="support@dakpro.com">
-                        </div>
-                    </div>
-                    <div class="grid-2">
-                        <div class="cfg-group">
-                            <label>Lien Groupe Telegram / Canal</label>
-                            <input type="url" id="social-tg" placeholder="https://t.me/...">
-                        </div>
-                        <div class="cfg-group">
-                            <label>Lien Page Facebook</label>
-                            <input type="url" id="social-fb" placeholder="https://facebook.com/...">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-save">⚡ Enregistrer les Contacts</button>
-                </form>
-            </div>
-
-            <!-- SESSION 5 : ANNONCE FLASH & RÈGLES -->
-            <div class="config-card">
-                <div class="config-title">
-                    <span>📢 Session 5 : Annonce Flash & Conditions</span>
-                </div>
-                <form id="form-annonces" style="margin-bottom:20px;">
-                    <div class="cfg-group">
-                        <label>Titre de l'Alerte</label>
-                        <input type="text" id="ann-title" placeholder="Maintenance / Promo" required>
-                    </div>
-                    <div class="cfg-group">
-                        <label>Contenu de l'Annonce</label>
-                        <textarea id="ann-content" rows="2" required></textarea>
-                    </div>
-                    <div class="grid-2">
-                        <div class="cfg-group">
-                            <label>Type d'Alerte</label>
-                            <select id="ann-type">
-                                <option value="info">ℹ️ Information</option>
-                                <option value="success">✅ Promotion</option>
-                                <option value="warning">⚠️ Avertissement</option>
-                                <option value="danger">🚨 Urgent</option>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 5px;">
+                        <div class="form-group">
+                            <label>Rôle Attribué</label>
+                            <select id="new-user-role">
+                                <option value="livreur">🛵 Livreur Officiel</option>
+                                <option value="vendeur">🏪 Vendeur / Partenaire</option>
+                                <option value="client">👤 Client Ordinaire</option>
+                                <option value="admin">👑 Administrateur DAKPROELITE</option>
                             </select>
                         </div>
-                        <div class="cfg-group">
-                            <label>Visibilité</label>
-                            <select id="ann-status">
-                                <option value="active">🟢 Afficher</option>
-                                <option value="hidden">🔴 Masquer</option>
+                        <div class="form-group">
+                            <label>Numéro de Téléphone (Optionnel)</label>
+                            <input type="text" id="new-user-phone" placeholder="+22900000000">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-pub-section" style="margin-top: 10px;">✨ Inscrire & Attribuer le Rôle Immédiatement</button>
+                </form>
+            </div>
+
+            <!-- SECTION MODIFICATION DES ROLES EXISTANTS -->
+            <div class="cfg-card cfg-card-highlight">
+                <div class="cfg-card-title">
+                    <span>🔄 Modification de Rôle pour Utilisateur Existant</span>
+                    <span style="font-size: 10px; background: rgba(255, 204, 0, 0.2); padding: 3px 8px; border-radius: 4px;">SYNCHRO TEMPS RÉEL</span>
+                </div>
+                <div style="background: #0d0d11; border: 1px solid #282836; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                    <div class="form-group">
+                        <label>Sélectionner un compte dans la base</label>
+                        <select id="role-user-select">
+                            <option value="">Chargement du registre...</option>
+                        </select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+                        <div class="form-group">
+                            <label>Nouveau Rôle Système</label>
+                            <select id="role-target-select">
+                                <option value="livreur">🛵 Livreur Officiel</option>
+                                <option value="vendeur">🏪 Vendeur / Partenaire</option>
+                                <option value="client">👤 Client Ordinaire</option>
+                                <option value="admin">👑 Administrateur DAKPROELITE</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Statut Compte</label>
+                            <select id="role-status-select">
+                                <option value="actif">✅ Actif / Validé</option>
+                                <option value="suspendu">🚫 Suspendu</option>
                             </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn-save">⚡ Publier l'Annonce</button>
-                </form>
-
-                <form id="form-regles">
-                    <div class="grid-3">
-                        <div class="cfg-group">
-                            <label>Retrait Min. (FCFA)</label>
-                            <input type="number" id="cfg-min-withdrawal-xof" min="0" required>
-                        </div>
-                        <div class="cfg-group">
-                            <label>Retrait Min. (€)</label>
-                            <input type="number" id="cfg-min-withdrawal-eur" step="0.01" min="0" required>
-                        </div>
-                        <div class="cfg-group">
-                            <label>Délai Paiement (Heures)</label>
-                            <input type="number" id="cfg-payout-delay" min="1" required>
-                        </div>
-                    </div>
-                    <div class="cfg-group">
-                        <label>CGU & Conditions d'Affiliation</label>
-                        <textarea id="cfg-terms-text" rows="3" required></textarea>
-                    </div>
-                    <button type="submit" class="btn-save">⚡ Sauvegarder les Paramètres Financiers</button>
-                </form>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                    <button type="button" id="btn-assign-role" class="btn-role-action">⚡ Mettre à Jour le Rôle</button>
+                    <button type="button" id="btn-login-as-role" class="btn-login-as">🔑 Basculer sur cet Espace</button>
+                </div>
             </div>
 
+            <!-- CONFIGURATION PLATEFORME & LIVRAISONS -->
+            <div class="cfg-grid">
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">🌐 Identification Plateforme</div>
+                        <div class="form-group">
+                            <label>Nom Officiel de l'application</label>
+                            <input type="text" id="cfg-app-name" value="DAKPROELITE">
+                        </div>
+                        <div class="form-group">
+                            <label>Devise Système</label>
+                            <select id="cfg-currency">
+                                <option value="FCFA">FCFA (XOF / XAF)</option>
+                                <option value="EUR">Euro (€)</option>
+                                <option value="USD">Dollar ($)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Support Client</label>
+                            <input type="email" id="cfg-support-email" value="contact@dakproelite.com">
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp Support Direct</label>
+                            <input type="text" id="cfg-support-phone" value="+22900000000">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-identity" class="btn-pub-section">📢 Publier l'Identification</button>
+                </div>
+
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">📦 Tarifs & Livraisons</div>
+                        <div class="form-group">
+                            <label>Prise en charge de base (FCFA)</label>
+                            <input type="number" id="cfg-delivery-base" value="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>Frais par KM supplémentaire (FCFA)</label>
+                            <input type="number" id="cfg-delivery-km" value="200">
+                        </div>
+                        <div class="form-group">
+                            <label>Part Rétribuée au Livreur (%)</label>
+                            <input type="number" id="cfg-delivery-driver-share" value="80" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Rayon maximal de livraison (KM)</label>
+                            <input type="number" id="cfg-delivery-max-radius" value="30">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-delivery" class="btn-pub-section">📢 Publier Paramètres Livraison</button>
+                </div>
+
+                <!-- SECTION : CONFIGURATION DES PRIX & COMMISSIONS DAKPROELITE -->
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">💰 Tarification, Affiliation & Commissions</div>
+                        <div class="form-group">
+                            <label>Prix / Frais Plateforme DAKPROELITE (FCFA ou %)</label>
+                            <input type="number" id="cfg-price-platform" value="500">
+                        </div>
+                        <div class="form-group">
+                            <label>Prix / Taux Affiliation (FCFA ou %)</label>
+                            <input type="number" id="cfg-price-affiliation" value="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>Prix de Référence Produit (FCFA)</label>
+                            <input type="number" id="cfg-price-product" value="5000">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-pricing" class="btn-pub-section">📢 Publier Configuration des Prix</button>
+                </div>
+            </div>
+
+            <div class="section-separator"></div>
+
+            <!-- CONTROLE & MAINTENANCE SÉPARÉE PAR RÔLE -->
+            <div class="cfg-card" style="margin-bottom: 25px;">
+                <div>
+                    <div class="cfg-card-title">🚧 Maintenance Ciblée & Sécurité Système</div>
+                    
+                    <div class="switch-group">
+                        <span class="switch-label" style="color: #ff4d4d; font-weight: 800;">🚨 Maintenance Globale (Toute l'application)</span>
+                        <label class="switch"><input type="checkbox" id="sys-maint-global"><span class="slider"></span></label>
+                    </div>
+                    <div class="switch-group">
+                        <span class="switch-label">🛒 Maintenance Espace Acheteur / Client</span>
+                        <label class="switch"><input type="checkbox" id="sys-maint-acheteur"><span class="slider"></span></label>
+                    </div>
+                    <div class="switch-group">
+                        <span class="switch-label">🏪 Maintenance Espace Vendeur</span>
+                        <label class="switch"><input type="checkbox" id="sys-maint-vendeur"><span class="slider"></span></label>
+                    </div>
+                    <div class="switch-group">
+                        <span class="switch-label">🛵 Maintenance Espace Livreur</span>
+                        <label class="switch"><input type="checkbox" id="sys-maint-livreur"><span class="slider"></span></label>
+                    </div>
+                    
+                    <div class="section-separator" style="margin: 15px 0;"></div>
+
+                    <div class="switch-group">
+                        <span class="switch-label">Autoriser Nouvelles Inscriptions</span>
+                        <label class="switch"><input type="checkbox" id="sys-registrations" checked><span class="slider"></span></label>
+                    </div>
+                    <div class="switch-group">
+                        <span class="switch-label">Auto-validation Inscriptions Livreurs</span>
+                        <label class="switch"><input type="checkbox" id="sys-auto-drivers"><span class="slider"></span></label>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Version Minimale App Mobile</label>
+                        <input type="text" id="sys-min-version" value="1.0.0">
+                    </div>
+                </div>
+                <button type="button" id="btn-pub-system" class="btn-pub-section">📢 Publier Maintenance & Sécurité</button>
+            </div>
+
+            <div class="section-separator"></div>
+            <div class="cfg-title">💳 PASSERELLES DE PAIEMENT INDIVIDUELLES</div>
+
+            <!-- PASSERELLES PAIEMENT SEPAREES -->
+            <div class="cfg-grid">
+                
+                <!-- MOOV MONEY -->
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">📱 Moov Money</div>
+                        <div class="switch-group">
+                            <span class="switch-label">Activer Moov Money</span>
+                            <label class="switch"><input type="checkbox" id="moov-active" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom du Marchand</label>
+                            <input type="text" id="moov-nom" placeholder="Ex: DAKPROELITE MOOV">
+                        </div>
+                        <div class="form-group">
+                            <label>Numéro / Code Marchand</label>
+                            <input type="text" id="moov-numero" placeholder="Ex: 342612">
+                        </div>
+                        <div class="form-group">
+                            <label>Code USSD Template</label>
+                            <input type="text" id="moov-ussd" value="*855*4*1*{NUMERO}*{MONTANT}#">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-moov" class="btn-pub-section">📢 Publier Moov Money</button>
+                </div>
+
+                <!-- MTN MOBILE MONEY -->
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">📱 MTN Mobile Money</div>
+                        <div class="switch-group">
+                            <span class="switch-label">Activer MTN Money</span>
+                            <label class="switch"><input type="checkbox" id="mtn-active" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom du Marchand</label>
+                            <input type="text" id="mtn-nom" placeholder="Ex: DAKPROELITE STORE">
+                        </div>
+                        <div class="form-group">
+                            <label>Numéro / Code Marchand</label>
+                            <input type="text" id="mtn-numero" placeholder="Ex: 123456">
+                        </div>
+                        <div class="form-group">
+                            <label>Code USSD Template</label>
+                            <input type="text" id="mtn-ussd" value="*139*8*{NUMERO}*{MONTANT}#">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-mtn" class="btn-pub-section">📢 Publier MTN Money</button>
+                </div>
+
+                <!-- WAVE MOBILE MONEY -->
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">🌊 Wave Mobile Money</div>
+                        <div class="switch-group">
+                            <span class="switch-label">Activer Wave</span>
+                            <label class="switch"><input type="checkbox" id="wave-active" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom / Compte Marchand</label>
+                            <input type="text" id="wave-nom" placeholder="Ex: DAKPROELITE OFFICIAL">
+                        </div>
+                        <div class="form-group">
+                            <label>Numéro de Téléphone associé</label>
+                            <input type="text" id="wave-numero" placeholder="Ex: +22900000000">
+                        </div>
+                        <div class="form-group">
+                            <label>Lien Paiement / QR Code URL (Optionnel)</label>
+                            <input type="text" id="wave-link" placeholder="https://wave.com/pay/...">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-wave" class="btn-pub-section">📢 Publier Wave Money</button>
+                </div>
+
+                <!-- CELTIIS CASH -->
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">🔵 Celtiis Cash</div>
+                        <div class="switch-group">
+                            <span class="switch-label">Activer Celtiis Cash</span>
+                            <label class="switch"><input type="checkbox" id="celtiis-active" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom du Marchand</label>
+                            <input type="text" id="celtiis-nom" placeholder="Ex: DAKPROELITE BENIN">
+                        </div>
+                        <div class="form-group">
+                            <label>Code Marchand / Numéro</label>
+                            <input type="text" id="celtiis-numero" placeholder="Ex: 65000000">
+                        </div>
+                        <div class="form-group">
+                            <label>Code USSD Template</label>
+                            <input type="text" id="celtiis-ussd" value="*880*3*{NUMERO}*{MONTANT}#">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-celtiis" class="btn-pub-section">📢 Publier Celtiis Cash</button>
+                </div>
+
+                <!-- CARTES BANCAIRES INTERNATIONALES -->
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">💳 Carte Bancaire (Visa / Mastercard)</div>
+                        <div class="switch-group">
+                            <span class="switch-label">Activer Cartes Bancaires</span>
+                            <label class="switch"><input type="checkbox" id="card-active"><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom du Fournisseur (ex: Stripe, FedaPay, Kkiapay)</label>
+                            <input type="text" id="card-provider" placeholder="Ex: Stripe / FedaPay">
+                        </div>
+                        <div class="form-group">
+                            <label>Clé Publique / Public API Key</label>
+                            <input type="text" id="card-public-key" placeholder="pk_live_xxxxxxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label>URL de Redirection Callback</label>
+                            <input type="text" id="card-redirect-url" placeholder="https://dakproelite.com/checkout/success">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-card" class="btn-pub-section">📢 Publier Cartes Bancaires</button>
+                </div>
+
+                <!-- AUTRES / COMPTE INTERNATIONAL (PayPal / Wise) -->
+                <div class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">🌍 Paiement International (PayPal / Wise)</div>
+                        <div class="switch-group">
+                            <span class="switch-label">Activer Paiement International</span>
+                            <label class="switch"><input type="checkbox" id="intl-active"><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Email PayPal / Wise</label>
+                            <input type="email" id="intl-email" placeholder="paiement@dakproelite.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Lien de paiement direct (ex: paypal.me)</label>
+                            <input type="text" id="intl-link" placeholder="https://paypal.me/dakproelite">
+                        </div>
+                        <div class="form-group">
+                            <label>IBAN / RIB pour Virement</label>
+                            <input type="text" id="intl-iban" placeholder="FR76 0000 0000 0000 0000">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-pub-intl" class="btn-pub-section">📢 Publier International</button>
+                </div>
+
+            </div>
         </div>
     `;
 
-    // -------------------------------------------------------------
-    // LOGIQUE DE PRÉVISUALISATION BANNIÈRE EN TEMPS RÉEL
-    // -------------------------------------------------------------
-    const inputTitle = document.getElementById('ban-title');
-    const inputSubtitle = document.getElementById('ban-subtitle');
-    const inputImg = document.getElementById('ban-img');
-    const inputLink = document.getElementById('ban-link');
+    // Éléments DOM Registre
+    const userSelect = document.getElementById('role-user-select');
+    const roleTargetSelect = document.getElementById('role-target-select');
+    const roleStatusSelect = document.getElementById('role-status-select');
 
-    const prevTitle = document.getElementById('prev-title');
-    const prevSubtitle = document.getElementById('prev-subtitle');
-    const prevCard = document.getElementById('banner-preview-card');
-
-    function updateBannerPreview() {
-        prevTitle.textContent = inputTitle.value.trim() || 'Titre de démonstration';
-        prevSubtitle.textContent = inputSubtitle.value.trim() || 'Votre sous-titre s\'affichera ici...';
-        const imgUrl = inputImg.value.trim();
-        if (imgUrl) {
-            prevCard.style.backgroundImage = `url('${imgUrl}')`;
-        } else {
-            prevCard.style.backgroundImage = 'none';
+    // 2. Écoute dynamique Realtime DB pour la liste des utilisateurs
+    const usersRef = ref(db, 'utilisateurs');
+    onValue(usersRef, (snapshot) => {
+        userSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
+        if (snapshot.exists()) {
+            const users = snapshot.val();
+            Object.keys(users).forEach((uid) => {
+                const u = users[uid];
+                const nom = u.nomComplet || u.nom || u.email || uid;
+                const roleActuel = u.role ? u.role.toUpperCase() : 'CLIENT';
+                userSelect.innerHTML += `<option value="${uid}">${nom} (${u.email || 'Sans Email'}) - [${roleActuel}]</option>`;
+            });
         }
-    }
-
-    [inputTitle, inputSubtitle, inputImg, inputLink].forEach(input => {
-        input.addEventListener('input', updateBannerPreview);
     });
 
-    // Enregistrement Bannière
-    document.getElementById('form-banniere').addEventListener('submit', async (e) => {
+    // 3. Charger les configurations existantes depuis la Realtime Database
+    const configRef = ref(db, 'configuration');
+    onValue(configRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+
+            // Identité
+            if (data.generale) {
+                if (data.generale.appName) document.getElementById('cfg-app-name').value = data.generale.appName;
+                if (data.generale.currency) document.getElementById('cfg-currency').value = data.generale.currency;
+                if (data.generale.supportEmail) document.getElementById('cfg-support-email').value = data.generale.supportEmail;
+                if (data.generale.supportPhone) document.getElementById('cfg-support-phone').value = data.generale.supportPhone;
+
+                if (data.generale.delivery) {
+                    if (data.generale.delivery.basePrice) document.getElementById('cfg-delivery-base').value = data.generale.delivery.basePrice;
+                    if (data.generale.delivery.pricePerKm) document.getElementById('cfg-delivery-km').value = data.generale.delivery.pricePerKm;
+                    if (data.generale.delivery.driverShare) document.getElementById('cfg-delivery-driver-share').value = data.generale.delivery.driverShare;
+                    if (data.generale.delivery.maxRadius) document.getElementById('cfg-delivery-max-radius').value = data.generale.delivery.maxRadius;
+                }
+
+                if (data.generale.system) {
+                    document.getElementById('sys-registrations').checked = !!data.generale.system.allowRegistrations;
+                    document.getElementById('sys-auto-drivers').checked = !!data.generale.system.autoApproveDrivers;
+                    if (data.generale.system.minVersion) document.getElementById('sys-min-version').value = data.generale.system.minVersion;
+                    
+                    // Maintenance par rôle
+                    if (data.generale.system.maintenance) {
+                        document.getElementById('sys-maint-global').checked = !!data.generale.system.maintenance.global;
+                        document.getElementById('sys-maint-acheteur').checked = !!data.generale.system.maintenance.acheteur;
+                        document.getElementById('sys-maint-vendeur').checked = !!data.generale.system.maintenance.vendeur;
+                        document.getElementById('sys-maint-livreur').checked = !!data.generale.system.maintenance.livreur;
+                    }
+                }
+
+                if (data.generale.pricing) {
+                    if (data.generale.pricing.platformFee !== undefined) document.getElementById('cfg-price-platform').value = data.generale.pricing.platformFee;
+                    if (data.generale.pricing.affiliationPrice !== undefined) document.getElementById('cfg-price-affiliation').value = data.generale.pricing.affiliationPrice;
+                    if (data.generale.pricing.productPrice !== undefined) document.getElementById('cfg-price-product').value = data.generale.pricing.productPrice;
+                }
+            }
+
+            // Chargement des modes de paiement
+            if (data.paiement) {
+                if (data.paiement.moov) {
+                    document.getElementById('moov-active').checked = !!data.paiement.moov.actif;
+                    document.getElementById('moov-nom').value = data.paiement.moov.nom_marchand || '';
+                    document.getElementById('moov-numero').value = data.paiement.moov.numero_marchand || '';
+                    document.getElementById('moov-ussd').value = data.paiement.moov.code_ussd_template || '*855*4*1*{NUMERO}*{MONTANT}#';
+                }
+                if (data.paiement.mtn) {
+                    document.getElementById('mtn-active').checked = !!data.paiement.mtn.actif;
+                    document.getElementById('mtn-nom').value = data.paiement.mtn.nom_marchand || '';
+                    document.getElementById('mtn-numero').value = data.paiement.mtn.numero_marchand || '';
+                    document.getElementById('mtn-ussd').value = data.paiement.mtn.code_ussd_template || '*139*8*{NUMERO}*{MONTANT}#';
+                }
+                if (data.paiement.wave) {
+                    document.getElementById('wave-active').checked = !!data.paiement.wave.actif;
+                    document.getElementById('wave-nom').value = data.paiement.wave.nom_marchand || '';
+                    document.getElementById('wave-numero').value = data.paiement.wave.numero_marchand || '';
+                    document.getElementById('wave-link').value = data.paiement.wave.lien_paiement || '';
+                }
+                if (data.paiement.celtiis) {
+                    document.getElementById('celtiis-active').checked = !!data.paiement.celtiis.actif;
+                    document.getElementById('celtiis-nom').value = data.paiement.celtiis.nom_marchand || '';
+                    document.getElementById('celtiis-numero').value = data.paiement.celtiis.numero_marchand || '';
+                    document.getElementById('celtiis-ussd').value = data.paiement.celtiis.code_ussd_template || '*880*3*{NUMERO}*{MONTANT}#';
+                }
+                if (data.paiement.carte_bancaire) {
+                    document.getElementById('card-active').checked = !!data.paiement.carte_bancaire.actif;
+                    document.getElementById('card-provider').value = data.paiement.carte_bancaire.fournisseur || '';
+                    document.getElementById('card-public-key').value = data.paiement.carte_bancaire.cle_publique || '';
+                    document.getElementById('card-redirect-url').value = data.paiement.carte_bancaire.url_redirect || '';
+                }
+                if (data.paiement.international) {
+                    document.getElementById('intl-active').checked = !!data.paiement.international.actif;
+                    document.getElementById('intl-email').value = data.paiement.international.email || '';
+                    document.getElementById('intl-link').value = data.paiement.international.lien_direct || '';
+                    document.getElementById('intl-iban').value = data.paiement.international.iban || '';
+                }
+            }
+        }
+    });
+
+    // ============================================================
+    // CRÉATION DE COMPTE AUTHENTICATION & REALTIME DB
+    // ============================================================
+    document.getElementById('form-create-account').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const bannerData = {
-            titre: inputTitle.value.trim(),
-            sousTitre: inputSubtitle.value.trim(),
-            imageUrl: inputImg.value.trim(),
-            lien: inputLink.value.trim(),
-            dateCreation: new Date().toISOString(),
-            creePar: authorEmail
-        };
+
+        const nom = document.getElementById('new-user-name').value.trim();
+        const email = document.getElementById('new-user-email').value.trim();
+        const password = document.getElementById('new-user-pass').value;
+        const role = document.getElementById('new-user-role').value;
+        const phone = document.getElementById('new-user-phone').value.trim();
 
         try {
-            await push(ref(db, 'config/bannieres'), bannerData);
-            alert("✅ Bannière enregistrée et publiée en direct !");
-            e.target.reset();
-            updateBannerPreview();
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const uid = userCredential.user.uid;
+
+            const userPayload = {
+                uid: uid,
+                nomComplet: nom,
+                email: email,
+                telephone: phone,
+                role: role,
+                statut: 'actif',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            const updates = {};
+            updates[`utilisateurs/${uid}`] = userPayload;
+
+            if (role === 'livreur') {
+                updates[`livreurs/${uid}`] = {
+                    uid: uid,
+                    nom: nom,
+                    email: email,
+                    telephone: phone,
+                    disponible: true,
+                    statutCompte: 'valide',
+                    updatedAt: new Date().toISOString()
+                };
+            }
+
+            await update(ref(db), updates);
+
+            alert(`✅ Compte créé avec succès ! UID: ${uid} - Rôle: ${role.toUpperCase()}`);
+            document.getElementById('form-create-account').reset();
         } catch (err) {
-            alert("❌ Erreur : " + err.message);
+            alert("❌ Erreur lors de la création du compte : " + err.message);
         }
     });
 
-    // Chargement dynamique des bannières existantes
-    onValue(ref(db, 'config/bannieres'), (snapshot) => {
-        const bannersContainer = document.getElementById('banners-container');
-        if (!snapshot.exists()) {
-            bannersContainer.innerHTML = `<p style="color:#a1a1aa; font-size:12px;">Aucune bannière configurée.</p>`;
-            return;
-        }
-
-        const data = snapshot.val();
-        bannersContainer.innerHTML = '';
-
-        Object.keys(data).forEach(key => {
-            const b = data[key];
-            const card = document.createElement('div');
-            card.className = 'banner-card';
-            card.innerHTML = `
-                <img src="${escapeHTML(b.imageUrl)}" alt="Bannière" onerror="this.src='https://via.placeholder.com/300x120?text=Image+Invalide'">
-                <div class="banner-card-body">
-                    <div>
-                        <strong style="font-size:12px; color:#fff;">${escapeHTML(b.titre)}</strong>
-                        <p style="font-size:11px; color:#a1a1aa; margin-top:3px;">${escapeHTML(b.sousTitre)}</p>
-                    </div>
-                    <button class="btn-danger btn-delete-banner" data-id="${key}">🗑️ Supprimer</button>
-                </div>
-            `;
-            bannersContainer.appendChild(card);
-        });
-
-        document.querySelectorAll('.btn-delete-banner').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.getAttribute('data-id');
-                if (confirm("Supprimer cette bannière ?")) {
-                    await remove(ref(db, `config/bannieres/${id}`));
-                }
+    // ============================================================
+    // PUBLICATION CONFIGURATION DES PRIX (PLATEFORME / AFFILIATION / PRODUIT)
+    // ============================================================
+    document.getElementById('btn-pub-pricing').addEventListener('click', async () => {
+        try {
+            await update(ref(db, 'configuration/generale/pricing'), {
+                platformFee: parseFloat(document.getElementById('cfg-price-platform').value) || 0,
+                affiliationPrice: parseFloat(document.getElementById('cfg-price-affiliation').value) || 0,
+                productPrice: parseFloat(document.getElementById('cfg-price-product').value) || 0,
+                updatedAt: new Date().toISOString()
             });
-        });
+            await update(ref(db, 'configuration/generale'), { updatedAt: new Date().toISOString() });
+            alert("✅ Tarification et commissions publiées dans Firebase !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
     });
 
-    // -------------------------------------------------------------
-    // ENREGISTREMENT ET CHARGEMENT MODES PAIEMENT & CONTACTS
-    // -------------------------------------------------------------
-    document.getElementById('form-paiements').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const payload = {
-            momo: document.getElementById('pay-momo').value.trim(),
-            crypto: document.getElementById('pay-crypto').value.trim(),
-            iban: document.getElementById('pay-iban').value.trim()
-        };
-        await set(ref(db, 'config/paiements'), payload);
-        alert("✅ Modes de paiement sauvegardés !");
+    // ============================================================
+    // PUBLICATIONS INDIVIDUELLES DES METHODES DE PAIEMENT
+    // ============================================================
+
+    // 1. Publier Moov Money
+    document.getElementById('btn-pub-moov').addEventListener('click', async () => {
+        try {
+            await set(ref(db, 'configuration/paiement/moov'), {
+                actif: document.getElementById('moov-active').checked,
+                nom_marchand: document.getElementById('moov-nom').value.trim(),
+                numero_marchand: document.getElementById('moov-numero').value.trim(),
+                code_ussd_template: document.getElementById('moov-ussd').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+            alert("✅ Configuration MOOV MONEY publiée dans Firebase avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
     });
 
-    document.getElementById('form-socials').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const payload = {
-            whatsapp: document.getElementById('contact-wa').value.trim(),
-            email: document.getElementById('contact-email').value.trim(),
-            telegram: document.getElementById('social-tg').value.trim(),
-            facebook: document.getElementById('social-fb').value.trim()
-        };
-        await set(ref(db, 'config/contacts'), payload);
-        alert("✅ Contacts et réseaux sociaux enregistrés !");
+    // 2. Publier MTN Mobile Money
+    document.getElementById('btn-pub-mtn').addEventListener('click', async () => {
+        try {
+            await set(ref(db, 'configuration/paiement/mtn'), {
+                actif: document.getElementById('mtn-active').checked,
+                nom_marchand: document.getElementById('mtn-nom').value.trim(),
+                numero_marchand: document.getElementById('mtn-numero').value.trim(),
+                code_ussd_template: document.getElementById('mtn-ussd').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+            alert("✅ Configuration MTN MONEY publiée dans Firebase avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
     });
 
-    // -------------------------------------------------------------
-    // STOCKS PRODUITS (TEMPS RÉEL)
-    // -------------------------------------------------------------
-    onValue(ref(db, 'publications'), (snapshot) => {
-        const tbody = document.getElementById('stock-table-body');
-        if (!snapshot.exists()) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #a1a1aa;">Aucun produit trouvé.</td></tr>`;
-            return;
-        }
+    // 3. Publier Wave Mobile Money
+    document.getElementById('btn-pub-wave').addEventListener('click', async () => {
+        try {
+            await set(ref(db, 'configuration/paiement/wave'), {
+                actif: document.getElementById('wave-active').checked,
+                nom_marchand: document.getElementById('wave-nom').value.trim(),
+                numero_marchand: document.getElementById('wave-numero').value.trim(),
+                lien_paiement: document.getElementById('wave-link').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+            alert("✅ Configuration WAVE publiée dans Firebase avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
+    });
 
-        const items = snapshot.val();
-        tbody.innerHTML = '';
+    // 4. Publier Celtiis Cash
+    document.getElementById('btn-pub-celtiis').addEventListener('click', async () => {
+        try {
+            await set(ref(db, 'configuration/paiement/celtiis'), {
+                actif: document.getElementById('celtiis-active').checked,
+                nom_marchand: document.getElementById('celtiis-nom').value.trim(),
+                numero_marchand: document.getElementById('celtiis-numero').value.trim(),
+                code_ussd_template: document.getElementById('celtiis-ussd').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+            alert("✅ Configuration CELTIIS CASH publiée dans Firebase avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
+    });
 
-        Object.keys(items).forEach(key => {
-            const p = items[key];
-            const qty = typeof p.quantiteStock === 'number' ? p.quantiteStock : 10;
-            const statusBadge = qty <= 0 
-                ? `<span class="badge-stock badge-empty">Rupture</span>` 
-                : `<span class="badge-stock badge-ok">En Stock (${qty})</span>`;
+    // 5. Publier Carte Bancaire International
+    document.getElementById('btn-pub-card').addEventListener('click', async () => {
+        try {
+            await set(ref(db, 'configuration/paiement/carte_bancaire'), {
+                actif: document.getElementById('card-active').checked,
+                fournisseur: document.getElementById('card-provider').value.trim(),
+                cle_publique: document.getElementById('card-public-key').value.trim(),
+                url_redirect: document.getElementById('card-redirect-url').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+            alert("✅ Configuration CARTE BANCAIRE publiée dans Firebase avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
+    });
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${escapeHTML(p.titre || 'Sans titre')}</strong></td>
-                <td style="text-transform: uppercase; font-size: 11px; color:#ffcc00;">${escapeHTML(p.type || 'produit')}</td>
-                <td>${typeof p.prixNormalEUR === 'number' ? p.prixNormalEUR.toFixed(2) : '0.00'} €</td>
-                <td>
-                    <input type="number" min="0" class="cfg-group stock-input" id="stock-val-${key}" value="${qty}">
-                </td>
-                <td>${statusBadge}</td>
-                <td>
-                    <button class="btn-save btn-update-stock" data-id="${key}" style="padding: 5px 10px; font-size:11px;">Mettre à jour</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+    // 6. Publier International (PayPal / Wise)
+    document.getElementById('btn-pub-intl').addEventListener('click', async () => {
+        try {
+            await set(ref(db, 'configuration/paiement/intl'), {
+                actif: document.getElementById('intl-active').checked,
+                email: document.getElementById('intl-email').value.trim(),
+                lien_direct: document.getElementById('intl-link').value.trim(),
+                iban: document.getElementById('intl-iban').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+            alert("✅ Configuration PAIEMENT INTERNATIONAL publiée dans Firebase avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
+    });
 
-        document.querySelectorAll('.btn-update-stock').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.getAttribute('data-id');
-                const input = document.getElementById(`stock-val-${id}`);
-                const newQty = parseInt(input.value, 10);
-                if (isNaN(newQty) || newQty < 0) return alert("Quantité invalide.");
+    // ============================================================
+    // GESTION DES ROLES & AUTRES CONFIGURATIONS
+    // ============================================================
 
-                await update(ref(db, `publications/${id}`), {
-                    quantiteStock: newQty,
-                    statut: newQty <= 0 ? "rupture" : "actif",
-                    derniereMiseAJourStock: new Date().toISOString()
+    // Mise à jour de rôle
+    document.getElementById('btn-assign-role').addEventListener('click', async () => {
+        const selectedUid = userSelect.value;
+        const newRole = roleTargetSelect.value;
+        const newStatus = roleStatusSelect.value;
+
+        if (!selectedUid) return alert("⚠️ Veuillez choisir un utilisateur.");
+
+        try {
+            await update(ref(db, `utilisateurs/${selectedUid}`), {
+                role: newRole,
+                statut: newStatus,
+                updatedAt: new Date().toISOString()
+            });
+
+            if (newRole === 'livreur') {
+                const userSnap = await get(ref(db, `utilisateurs/${selectedUid}`));
+                const uData = userSnap.val() || {};
+                await update(ref(db, `livreurs/${selectedUid}`), {
+                    uid: selectedUid,
+                    nom: uData.nomComplet || uData.nom || 'Livreur DAKPROELITE',
+                    email: uData.email || '',
+                    statutCompte: newStatus === 'actif' ? 'valide' : 'suspendu',
+                    updatedAt: new Date().toISOString()
                 });
-                alert("✅ Stock mis à jour !");
+            }
+
+            alert(`✅ Rôle "${newRole.toUpperCase()}" mis à jour avec succès !`);
+        } catch (err) { alert("❌ Erreur : " + err.message); }
+    });
+
+    // Basculement de Session
+    document.getElementById('btn-login-as-role').addEventListener('click', async () => {
+        const selectedUid = userSelect.value;
+        if (!selectedUid) return alert("⚠️ Veuillez sélectionner un utilisateur.");
+        const userSnap = await get(ref(db, `utilisateurs/${selectedUid}`));
+        if (userSnap.exists()) {
+            const uData = userSnap.val();
+            sessionStorage.setItem('activeRoleSession', JSON.stringify({ uid: selectedUid, role: uData.role || 'livreur' }));
+            alert(`🔑 Session active configurée pour : ${uData.nomComplet || selectedUid}`);
+        }
+    });
+
+    // Identification Plateforme
+    document.getElementById('btn-pub-identity').addEventListener('click', async () => {
+        try {
+            await update(ref(db, 'configuration/generale'), {
+                appName: document.getElementById('cfg-app-name').value,
+                currency: document.getElementById('cfg-currency').value,
+                supportEmail: document.getElementById('cfg-support-email').value,
+                supportPhone: document.getElementById('cfg-support-phone').value,
+                updatedAt: new Date().toISOString()
             });
-        });
+            alert("✅ Identification publiée avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
     });
 
-    document.getElementById('btn-update-all-stocks').addEventListener('click', async () => {
-        const inputs = document.querySelectorAll('.stock-input');
-        const updates = {};
-        inputs.forEach(input => {
-            const id = input.id.replace('stock-val-', '');
-            const newQty = parseInt(input.value, 10) || 0;
-            updates[`publications/${id}/quantiteStock`] = newQty;
-            updates[`publications/${id}/statut`] = newQty <= 0 ? "rupture" : "actif";
-            updates[`publications/${id}/derniereMiseAJourStock`] = new Date().toISOString();
-        });
-        await update(ref(db), updates);
-        alert("✅ Répertoire des stocks synchronisé !");
+    // Tarifs & Livraisons
+    document.getElementById('btn-pub-delivery').addEventListener('click', async () => {
+        try {
+            await update(ref(db, 'configuration/generale/delivery'), {
+                basePrice: parseFloat(document.getElementById('cfg-delivery-base').value),
+                pricePerKm: parseFloat(document.getElementById('cfg-delivery-km').value),
+                driverShare: parseFloat(document.getElementById('cfg-delivery-driver-share').value),
+                maxRadius: parseFloat(document.getElementById('cfg-delivery-max-radius').value)
+            });
+            await update(ref(db, 'configuration/generale'), { updatedAt: new Date().toISOString() });
+            alert("✅ Tarifs & Livraisons publiés avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
     });
 
-    // -------------------------------------------------------------
-    // CHARGEMENT INITIAL DES DONNÉES DE CONFIGURATION
-    // -------------------------------------------------------------
-    const paySnap = await get(ref(db, 'config/paiements'));
-    if (paySnap.exists()) {
-        const d = paySnap.val();
-        document.getElementById('pay-momo').value = d.momo || '';
-        document.getElementById('pay-crypto').value = d.crypto || '';
-        document.getElementById('pay-iban').value = d.iban || '';
-    }
-
-    const contactSnap = await get(ref(db, 'config/contacts'));
-    if (contactSnap.exists()) {
-        const d = contactSnap.val();
-        document.getElementById('contact-wa').value = d.whatsapp || '';
-        document.getElementById('contact-email').value = d.email || '';
-        document.getElementById('social-tg').value = d.telegram || '';
-        document.getElementById('social-fb').value = d.facebook || '';
-    }
-
-    const annSnap = await get(ref(db, 'config/annonces'));
-    if (annSnap.exists()) {
-        const d = annSnap.val();
-        document.getElementById('ann-title').value = d.titre || '';
-        document.getElementById('ann-content').value = d.contenu || '';
-        document.getElementById('ann-type').value = d.type || 'info';
-        document.getElementById('ann-status').value = d.statut || 'active';
-    }
-
-    const regSnap = await get(ref(db, 'config/regles'));
-    if (regSnap.exists()) {
-        const d = regSnap.val();
-        document.getElementById('cfg-min-withdrawal-xof').value = d.minRetraitXOF || 5000;
-        document.getElementById('cfg-min-withdrawal-eur').value = d.minRetraitEUR || 10;
-        document.getElementById('cfg-payout-delay').value = d.delaiPaiementHeures || 24;
-        document.getElementById('cfg-terms-text').value = d.reglesGenerales || '';
-    }
+    // Sécurité & Maintenance Ciblée par Rôle
+    document.getElementById('btn-pub-system').addEventListener('click', async () => {
+        try {
+            await update(ref(db, 'configuration/generale/system'), {
+                maintenance: {
+                    global: document.getElementById('sys-maint-global').checked,
+                    acheteur: document.getElementById('sys-maint-acheteur').checked,
+                    vendeur: document.getElementById('sys-maint-vendeur').checked,
+                    livreur: document.getElementById('sys-maint-livreur').checked
+                },
+                allowRegistrations: document.getElementById('sys-registrations').checked,
+                autoApproveDrivers: document.getElementById('sys-auto-drivers').checked,
+                minVersion: document.getElementById('sys-min-version').value
+            });
+            await update(ref(db, 'configuration/generale'), { updatedAt: new Date().toISOString() });
+            alert("✅ Sécurité & Maintenance par rôle publiées avec succès !");
+        } catch (err) { alert("❌ Erreur : " + err.message); }
+    });
 }
