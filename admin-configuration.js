@@ -1,16 +1,13 @@
 /* ============================================================
    FICHIER : admin-configuration.js
    APPLICATION : DAKPROELITE
-   DESCRIPTION : Module de configuration générale, gestion des
-                 comptes/rôles et passerelles de paiement complets.
+   DESCRIPTION : Gestion globale de la configuration, création 
+                 de comptes et configuration des passerelles.
 ============================================================ */
 
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-/**
- * Initialisation du module Admin Configuration
- */
 export async function init() {
     const container = document.getElementById('module-container');
     if (!container) return;
@@ -18,154 +15,129 @@ export async function init() {
     const db = getDatabase();
     const auth = getAuth();
 
-    // 1. Structure HTML / UI optimisée du panneau de configuration
     container.innerHTML = `
         <style>
             .cfg-container { color: #f5f5f7; font-family: system-ui, -apple-system, sans-serif; background: #0d0d11; padding: 15px; border-radius: 12px; }
-            .cfg-title { color: #ffcc00; font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 0.5px; border-left: 4px solid #ffcc00; padding-left: 10px; }
-            .cfg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
-            .cfg-card { background: #13131a; border: 1px solid #282836; border-radius: 12px; padding: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: space-between; }
-            .cfg-card-highlight { border: 1px solid #ffcc00; box-shadow: 0 0 15px rgba(255, 204, 0, 0.15); margin-bottom: 20px; }
-            .cfg-card-title { font-size: 13px; font-weight: 800; color: #ffcc00; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #282836; padding-bottom: 8px; }
+            .cfg-title { color: #ffcc00; font-size: 16px; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; border-left: 4px solid #ffcc00; padding-left: 10px; }
+            .cfg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+            .cfg-card { background: #13131a; border: 1px solid #282836; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
+            .cfg-card-highlight { border: 1px solid #ffcc00; margin-bottom: 20px; }
+            .cfg-card-title { font-size: 13px; font-weight: 800; color: #ffcc00; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #282836; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
             
-            .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-            .form-group label { font-size: 10px; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
-            .form-group input, .form-group select, .form-group textarea { background: #0d0d11; border: 1px solid #282836; color: #ffcc00; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; outline: none; transition: all 0.2s; }
-            .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, 0.3); }
+            .form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+            .form-group label { font-size: 10px; color: #a1a1aa; font-weight: 700; text-transform: uppercase; }
+            .form-group input, .form-group select { background: #0d0d11; border: 1px solid #282836; color: #ffcc00; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 600; outline: none; }
+            .form-group input:focus, .form-group select:focus { border-color: #ffcc00; }
             
             .switch-group { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #1c1c26; margin-bottom: 8px; }
-            .switch-label { font-size: 11px; font-weight: 700; color: #f5f5f7; }
-            .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+            .switch { position: relative; display: inline-block; width: 36px; height: 18px; }
             .switch input { opacity: 0; width: 0; height: 0; }
-            .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #282836; transition: .3s; border-radius: 20px; }
-            .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
+            .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #282836; transition: .3s; border-radius: 18px; }
+            .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: #fff; transition: .3s; border-radius: 50%; }
             input:checked + .slider { background-color: #ffcc00; }
-            input:checked + .slider:before { transform: translateX(20px); background-color: #000; }
+            input:checked + .slider:before { transform: translateX(18px); background-color: #000; }
 
-            .btn-pub-section { background: linear-gradient(135deg, #ffcc00, #e6b800); color: #000; font-weight: 900; border: none; padding: 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; font-size: 11px; margin-top: 10px; width: 100%; letter-spacing: 0.5px; }
-            .btn-pub-section:hover { background: linear-gradient(135deg, #ffe57f, #ffcc00); transform: translateY(-1px); }
-            
-            .btn-role-action { background: #ffcc00; color: #000; font-weight: 800; border: none; padding: 9px; border-radius: 6px; cursor: pointer; font-size: 11px; text-transform: uppercase; width: 100%; }
+            .btn-pub-section { background: #ffcc00; color: #000; font-weight: 900; border: none; padding: 9px; border-radius: 6px; cursor: pointer; font-size: 11px; text-transform: uppercase; margin-top: 10px; width: 100%; }
+            .btn-pub-section:hover { background: #ffe57f; }
             .section-separator { width: 100%; height: 1px; background: #282836; margin: 20px 0; }
         </style>
 
         <div class="cfg-container">
-            <div class="cfg-title">⚙️ CONFIGURATION SYSTÈME & PASSERELLES DAKPROELITE</div>
+            <div class="cfg-title">⚙️ GESTION DES PASSERELLES & CONFIGURATION DAKPROELITE</div>
 
-            <!-- CRÉATION COMPTE -->
-            <div class="cfg-card cfg-card-highlight">
-                <div class="cfg-card-title">
-                    <span>➕ Créer un Nouveau Compte (Livreur / Vendeur / Admin)</span>
-                    <span style="font-size: 9px; background: rgba(255, 204, 0, 0.2); padding: 2px 6px; border-radius: 4px;">AUTH & REALTIME DB</span>
-                </div>
-                <form id="form-create-account" style="background: #0d0d11; border: 1px solid #282836; border-radius: 8px; padding: 12px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+            <!-- CRÉATION ET GESTION COMPTES -->
+            <div class="cfg-grid cfg-card-highlight" style="padding: 10px;">
+                <div class="cfg-card" style="border:none;">
+                    <div class="cfg-card-title">➕ Créer un Utilisateur / Admin / Livreur</div>
+                    <form id="form-create-account">
                         <div class="form-group">
-                            <label>Nom Complet</label>
-                            <input type="text" id="new-user-name" placeholder="Ex: Jean Kouassi" required>
+                            <label>Nom complet</label>
+                            <input type="text" id="new-user-name" placeholder="Ex: Jubilé Lalo" required>
                         </div>
                         <div class="form-group">
-                            <label>Adresse Email</label>
+                            <label>Email</label>
                             <input type="email" id="new-user-email" placeholder="contact@dakpro.com" required>
                         </div>
                         <div class="form-group">
                             <label>Mot de passe</label>
                             <input type="password" id="new-user-pass" placeholder="••••••••" required minlength="6">
                         </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 5px;">
                         <div class="form-group">
-                            <label>Rôle Attribué</label>
+                            <label>Rôle</label>
                             <select id="new-user-role">
+                                <option value="admin">👑 Administrateur</option>
                                 <option value="livreur">🛵 Livreur Officiel</option>
-                                <option value="vendeur">🏪 Vendeur / Partenaire</option>
-                                <option value="client">👤 Client Ordinaire</option>
-                                <option value="admin">👑 Administrateur DAKPROELITE</option>
+                                <option value="vendeur">🏪 Vendeur</option>
+                                <option value="client">👤 Client</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Téléphone</label>
-                            <input type="text" id="new-user-phone" placeholder="+22900000000">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-pub-section">✨ Créer & Enregistrer le Compte</button>
-                </form>
-            </div>
-
-            <!-- GESTION ROLES -->
-            <div class="cfg-card cfg-card-highlight">
-                <div class="cfg-card-title">
-                    <span>🔄 Gestion des Rôles Utilisateurs</span>
+                        <button type="submit" class="btn-pub-section">Créer Compte</button>
+                    </form>
                 </div>
-                <div style="background: #0d0d11; border: 1px solid #282836; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+
+                <div class="cfg-card" style="border:none;">
+                    <div class="cfg-card-title">🔄 Modifier un Rôle / Statut</div>
                     <div class="form-group">
-                        <label>Sélectionner un compte dans la base</label>
-                        <select id="role-user-select">
-                            <option value="">Chargement de la liste...</option>
+                        <label>Compte existant</label>
+                        <select id="role-user-select"><option value="">Chargement...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Rôle attribué</label>
+                        <select id="role-target-select">
+                            <option value="admin">👑 Administrateur</option>
+                            <option value="livreur">🛵 Livreur Officiel</option>
+                            <option value="vendeur">🏪 Vendeur</option>
+                            <option value="client">👤 Client</option>
                         </select>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                        <div class="form-group">
-                            <label>Rôle Système</label>
-                            <select id="role-target-select">
-                                <option value="livreur">🛵 Livreur Officiel</option>
-                                <option value="vendeur">🏪 Vendeur / Partenaire</option>
-                                <option value="client">👤 Client Ordinaire</option>
-                                <option value="admin">👑 Administrateur DAKPROELITE</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Statut Compte</label>
-                            <select id="role-status-select">
-                                <option value="actif">✅ Actif / Validé</option>
-                                <option value="suspendu">🚫 Suspendu</option>
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label>Statut</label>
+                        <select id="role-status-select">
+                            <option value="actif">✅ Actif</option>
+                            <option value="suspendu">🚫 Suspendu</option>
+                        </select>
                     </div>
+                    <button type="button" id="btn-assign-role" class="btn-pub-section">Mettre à Jour Rôle</button>
                 </div>
-                <button type="button" id="btn-assign-role" class="btn-role-action">⚡ Appliquer les Modifications</button>
             </div>
 
             <div class="section-separator"></div>
-            <div class="cfg-title">💳 FORMULAIRES DES PASSERELLES DE PAIEMENT</div>
+            <div class="cfg-title">💳 PASSERELLES DE PAIEMENT (SAISIE DES NUMÉROS MARCHANDS)</div>
 
-            <!-- PASSERELLES DE PAIEMENT -->
             <div class="cfg-grid">
                 
                 <!-- MOOV MONEY -->
                 <form id="form-moov" class="cfg-card">
                     <div>
-                        <div class="cfg-card-title">📱 Moov Money</div>
-                        <div class="switch-group">
-                            <span class="switch-label">Activer Moov</span>
+                        <div class="cfg-card-title">
+                            <span>📱 Moov Money</span>
                             <label class="switch"><input type="checkbox" id="moov-active" checked><span class="slider"></span></label>
                         </div>
                         <div class="form-group">
-                            <label>Nom du Marchand</label>
+                            <label>Nom Marchand</label>
                             <input type="text" id="moov-nom" value="JUBILE LALO" placeholder="Ex: JUBILE LALO" required>
                         </div>
                         <div class="form-group">
-                            <label>Numéro Marchand / Code ID</label>
+                            <label>Numéro / Code ID Marchand</label>
                             <input type="text" id="moov-numero" value="342612" placeholder="Ex: 342612" required>
                         </div>
                         <div class="form-group">
-                            <label>Syntaxe USSD / Instructions</label>
+                            <label>Syntaxe USSD</label>
                             <input type="text" id="moov-ussd" value="*855*4*1*342612*{MONTANT}#" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-pub-section">🚀 Publier Moov dans Firebase</button>
+                    <button type="submit" class="btn-pub-section">🚀 Publier Moov</button>
                 </form>
 
-                <!-- MTN MOBILE MONEY -->
+                <!-- MTN MONEY -->
                 <form id="form-mtn" class="cfg-card">
                     <div>
-                        <div class="cfg-card-title">📱 MTN Mobile Money</div>
-                        <div class="switch-group">
-                            <span class="switch-label">Activer MTN</span>
+                        <div class="cfg-card-title">
+                            <span>📱 MTN Mobile Money</span>
                             <label class="switch"><input type="checkbox" id="mtn-active" checked><span class="slider"></span></label>
                         </div>
                         <div class="form-group">
-                            <label>Nom du Marchand</label>
+                            <label>Nom Marchand</label>
                             <input type="text" id="mtn-nom" placeholder="Ex: DAKPROELITE MTN" required>
                         </div>
                         <div class="form-group">
@@ -173,47 +145,22 @@ export async function init() {
                             <input type="text" id="mtn-numero" placeholder="Ex: 00000000" required>
                         </div>
                         <div class="form-group">
-                            <label>Syntaxe USSD / Instructions</label>
+                            <label>Syntaxe USSD</label>
                             <input type="text" id="mtn-ussd" value="*139*8*{NUMERO}*{MONTANT}#" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-pub-section">🚀 Publier MTN dans Firebase</button>
-                </form>
-
-                <!-- WAVE MOBILE MONEY -->
-                <form id="form-wave" class="cfg-card">
-                    <div>
-                        <div class="cfg-card-title">🌊 Wave Mobile Money</div>
-                        <div class="switch-group">
-                            <span class="switch-label">Activer Wave</span>
-                            <label class="switch"><input type="checkbox" id="wave-active" checked><span class="slider"></span></label>
-                        </div>
-                        <div class="form-group">
-                            <label>Nom du Marchand</label>
-                            <input type="text" id="wave-nom" placeholder="Ex: DAKPROELITE WAVE" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Numéro Associé</label>
-                            <input type="text" id="wave-numero" placeholder="Ex: +22997000000" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Lien Paiement / QR URL</label>
-                            <input type="text" id="wave-link" placeholder="https://pay.wave.com/m/...">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-pub-section">🚀 Publier Wave dans Firebase</button>
+                    <button type="submit" class="btn-pub-section">🚀 Publier MTN</button>
                 </form>
 
                 <!-- CELTIIS CASH -->
                 <form id="form-celtiis" class="cfg-card">
                     <div>
-                        <div class="cfg-card-title">🔵 Celtiis Cash</div>
-                        <div class="switch-group">
-                            <span class="switch-label">Activer Celtiis</span>
+                        <div class="cfg-card-title">
+                            <span>🔵 Celtiis Cash</span>
                             <label class="switch"><input type="checkbox" id="celtiis-active" checked><span class="slider"></span></label>
                         </div>
                         <div class="form-group">
-                            <label>Nom du Marchand</label>
+                            <label>Nom Marchand</label>
                             <input type="text" id="celtiis-nom" placeholder="Ex: DAKPROELITE CELTIIS" required>
                         </div>
                         <div class="form-group">
@@ -221,23 +168,22 @@ export async function init() {
                             <input type="text" id="celtiis-numero" placeholder="Ex: 40000000" required>
                         </div>
                         <div class="form-group">
-                            <label>Syntaxe USSD / Instructions</label>
+                            <label>Syntaxe USSD</label>
                             <input type="text" id="celtiis-ussd" value="*880*3*{NUMERO}*{MONTANT}#" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-pub-section">🚀 Publier Celtiis dans Firebase</button>
+                    <button type="submit" class="btn-pub-section">🚀 Publier Celtiis</button>
                 </form>
 
                 <!-- ORANGE MONEY -->
                 <form id="form-orange" class="cfg-card">
                     <div>
-                        <div class="cfg-card-title">🍊 Orange Money</div>
-                        <div class="switch-group">
-                            <span class="switch-label">Activer Orange</span>
+                        <div class="cfg-card-title">
+                            <span>🍊 Orange Money</span>
                             <label class="switch"><input type="checkbox" id="orange-active" checked><span class="slider"></span></label>
                         </div>
                         <div class="form-group">
-                            <label>Nom du Marchand</label>
+                            <label>Nom Marchand</label>
                             <input type="text" id="orange-nom" placeholder="Ex: DAKPROELITE ORANGE" required>
                         </div>
                         <div class="form-group">
@@ -245,169 +191,145 @@ export async function init() {
                             <input type="text" id="orange-numero" placeholder="Ex: 00000000" required>
                         </div>
                         <div class="form-group">
-                            <label>Syntaxe USSD / Instructions</label>
+                            <label>Syntaxe USSD</label>
                             <input type="text" id="orange-ussd" value="#144*4*1*{NUMERO}*{MONTANT}#" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-pub-section">🚀 Publier Orange dans Firebase</button>
+                    <button type="submit" class="btn-pub-section">🚀 Publier Orange</button>
+                </form>
+
+                <!-- WAVE -->
+                <form id="form-wave" class="cfg-card">
+                    <div>
+                        <div class="cfg-card-title">
+                            <span>🌊 Wave Money</span>
+                            <label class="switch"><input type="checkbox" id="wave-active" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom Marchand</label>
+                            <input type="text" id="wave-nom" placeholder="Ex: DAKPROELITE WAVE" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Numéro Associé</label>
+                            <input type="text" id="wave-numero" placeholder="Ex: +22997000000" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Lien QR / Pay Wave</label>
+                            <input type="text" id="wave-link" placeholder="https://pay.wave.com/m/...">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-pub-section">🚀 Publier Wave</button>
                 </form>
 
                 <!-- CARTE BANCAIRE -->
                 <form id="form-card" class="cfg-card">
                     <div>
-                        <div class="cfg-card-title">💳 Carte Bancaire (API)</div>
-                        <div class="switch-group">
-                            <span class="switch-label">Activer Cartes</span>
+                        <div class="cfg-card-title">
+                            <span>💳 Carte Bancaire (API)</span>
                             <label class="switch"><input type="checkbox" id="card-active"><span class="slider"></span></label>
                         </div>
                         <div class="form-group">
-                            <label>Fournisseur (Stripe / FedaPay / Kkiapay)</label>
+                            <label>Fournisseur (FedaPay, Kkiapay...)</label>
                             <input type="text" id="card-provider" placeholder="Ex: FedaPay">
                         </div>
                         <div class="form-group">
                             <label>Clé Publique API</label>
                             <input type="text" id="card-public-key" placeholder="pk_live_xxxxxxxxx">
                         </div>
-                        <div class="form-group">
-                            <label>URL de Callback</label>
-                            <input type="text" id="card-redirect-url" placeholder="https://dakproelite.com/callback">
-                        </div>
                     </div>
-                    <button type="submit" class="btn-pub-section">🚀 Publier Carte dans Firebase</button>
+                    <button type="submit" class="btn-pub-section">🚀 Publier Carte</button>
                 </form>
 
-                <!-- COMPTE BANCAIRE / VIREMENT -->
+                <!-- VIREMENT BANCAIRE -->
                 <form id="form-bank" class="cfg-card">
                     <div>
-                        <div class="cfg-card-title">🏛️ Virement / RIB Bancaire</div>
-                        <div class="switch-group">
-                            <span class="switch-label">Activer Virement</span>
+                        <div class="cfg-card-title">
+                            <span>🏛️ Virement / RIB</span>
                             <label class="switch"><input type="checkbox" id="bank-active"><span class="slider"></span></label>
                         </div>
                         <div class="form-group">
                             <label>Nom de la Banque</label>
-                            <input type="text" id="bank-name" placeholder="Ex: BOA / Ecobank / UBA" required>
+                            <input type="text" id="bank-name" placeholder="Ex: Ecobank / BOA" required>
                         </div>
                         <div class="form-group">
                             <label>Titulaire du Compte</label>
                             <input type="text" id="bank-holder" placeholder="Ex: DAKPROELITE SARL" required>
                         </div>
                         <div class="form-group">
-                            <label>Numéro de Compte / IBAN / RIB</label>
+                            <label>Numéro RIB / IBAN</label>
                             <input type="text" id="bank-iban" placeholder="BJ660 01001 0000000000 00" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-pub-section">🚀 Publier RIB dans Firebase</button>
+                    <button type="submit" class="btn-pub-section">🚀 Publier RIB</button>
                 </form>
 
-            </div>
-
-            <div class="section-separator"></div>
-
-            <!-- PARAMÈTRES GÉNÉRAUX -->
-            <div class="cfg-grid">
-                <div class="cfg-card">
+                <!-- CASH À LA LIVRAISON -->
+                <form id="form-cash" class="cfg-card">
                     <div>
-                        <div class="cfg-card-title">🌐 Identité Plateforme</div>
-                        <div class="form-group">
-                            <label>Nom de l'application</label>
-                            <input type="text" id="cfg-app-name" value="DAKPROELITE">
+                        <div class="cfg-card-title">
+                            <span>💵 Cash à la livraison</span>
+                            <label class="switch"><input type="checkbox" id="cash-active" checked><span class="slider"></span></label>
                         </div>
                         <div class="form-group">
-                            <label>Devise Principale</label>
-                            <select id="cfg-currency">
-                                <option value="FCFA">FCFA (XOF / XAF)</option>
-                                <option value="EUR">Euro (€)</option>
-                                <option value="USD">Dollar ($)</option>
-                            </select>
+                            <label>Instructions au Client</label>
+                            <input type="text" id="cash-instructions" value="Paiement en espèces directement au livreur à la réception." required>
                         </div>
                     </div>
-                    <button type="button" id="btn-pub-identity" class="btn-pub-section">📢 Publier Identité</button>
-                </div>
+                    <button type="submit" class="btn-pub-section">🚀 Publier Cash</button>
+                </form>
 
-                <div class="cfg-card">
-                    <div>
-                        <div class="cfg-card-title">🚧 Contrôle Maintenance</div>
-                        <div class="switch-group">
-                            <span class="switch-label" style="color:#ff4d4d;">🚨 Maintenance Globale</span>
-                            <label class="switch"><input type="checkbox" id="sys-maint-global"><span class="slider"></span></label>
-                        </div>
-                        <div class="switch-group">
-                            <span class="switch-label">🛒 Maintenance Acheteurs</span>
-                            <label class="switch"><input type="checkbox" id="sys-maint-acheteur"><span class="slider"></span></label>
-                        </div>
-                    </div>
-                    <button type="button" id="btn-pub-system" class="btn-pub-section">📢 Publier Maintenance</button>
-                </div>
             </div>
         </div>
     `;
 
-    // 2. Chargement dynamique des utilisateurs
+    // 1. Charger dynamiquement les comptes dans la sélection
     const userSelect = document.getElementById('role-user-select');
     onValue(ref(db, 'utilisateurs'), (snapshot) => {
         if (!snapshot.exists()) {
-            get(ref(db, 'users')).then(snapUsers => populateUserSelect(snapUsers));
+            get(ref(db, 'users')).then(snap => fillUsers(snap));
         } else {
-            populateUserSelect(snapshot);
+            fillUsers(snapshot);
         }
     });
 
-    function populateUserSelect(snapshot) {
+    function fillUsers(snapshot) {
         if (!userSelect) return;
-        userSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
+        userSelect.innerHTML = '<option value="">-- Sélectionner un compte --</option>';
         if (snapshot.exists()) {
-            const users = snapshot.val();
-            Object.keys(users).forEach((uid) => {
-                const u = users[uid];
-                const nom = u.nomComplet || u.nom || u.email || uid;
-                const roleActuel = u.role ? u.role.toUpperCase() : 'CLIENT';
-                userSelect.innerHTML += `<option value="${uid}">${nom} (${u.email || 'Sans email'}) - [${roleActuel}]</option>`;
+            const data = snapshot.val();
+            Object.keys(data).forEach(uid => {
+                const u = data[uid];
+                userSelect.innerHTML += `<option value="${uid}">${u.nomComplet || u.email || uid} [${(u.role || 'client').toUpperCase()}]</option>`;
             });
         }
     }
 
-    // 3. Charger et pré-remplir la configuration existante
+    // 2. Charger les données existantes dans les formulaires
     onValue(ref(db, 'configuration'), (snapshot) => {
         if (!snapshot.exists()) return;
-        const data = snapshot.val();
-        const p = data.paiements || data.paiement || {};
+        const config = snapshot.val();
+        const p = config.paiements || config.paiement || {};
 
-        if (p.moov) {
-            document.getElementById('moov-active').checked = !!p.moov.actif;
-            if (p.moov.nom_marchand) document.getElementById('moov-nom').value = p.moov.nom_marchand;
-            if (p.moov.numero_marchand) document.getElementById('moov-numero').value = p.moov.numero_marchand;
-            if (p.moov.code_ussd) document.getElementById('moov-ussd').value = p.moov.code_ussd;
-        }
-        if (p.mtn) {
-            document.getElementById('mtn-active').checked = !!p.mtn.actif;
-            if (p.mtn.nom_marchand) document.getElementById('mtn-nom').value = p.mtn.nom_marchand;
-            if (p.mtn.numero_marchand) document.getElementById('mtn-numero').value = p.mtn.numero_marchand;
-            if (p.mtn.code_ussd) document.getElementById('mtn-ussd').value = p.mtn.code_ussd;
-        }
-        if (p.wave) {
-            document.getElementById('wave-active').checked = !!p.wave.actif;
-            if (p.wave.nom_marchand) document.getElementById('wave-nom').value = p.wave.nom_marchand;
-            if (p.wave.numero_marchand) document.getElementById('wave-numero').value = p.wave.numero_marchand;
-            if (p.wave.lien_paiement) document.getElementById('wave-link').value = p.wave.lien_paiement;
-        }
-        if (p.celtiis) {
-            document.getElementById('celtiis-active').checked = !!p.celtiis.actif;
-            if (p.celtiis.nom_marchand) document.getElementById('celtiis-nom').value = p.celtiis.nom_marchand;
-            if (p.celtiis.numero_marchand) document.getElementById('celtiis-numero').value = p.celtiis.numero_marchand;
-            if (p.celtiis.code_ussd) document.getElementById('celtiis-ussd').value = p.celtiis.code_ussd;
-        }
-        if (p.orange) {
-            document.getElementById('orange-active').checked = !!p.orange.actif;
-            if (p.orange.nom_marchand) document.getElementById('orange-nom').value = p.orange.nom_marchand;
-            if (p.orange.numero_marchand) document.getElementById('orange-numero').value = p.orange.numero_marchand;
-            if (p.orange.code_ussd) document.getElementById('orange-ussd').value = p.orange.code_ussd;
-        }
+        const mapFields = (key, prefix) => {
+            if (!p[key]) return;
+            const activeEl = document.getElementById(`${prefix}-active`);
+            if (activeEl) activeEl.checked = !!p[key].actif;
+
+            if (p[key].nom_marchand && document.getElementById(`${prefix}-nom`)) document.getElementById(`${prefix}-nom`).value = p[key].nom_marchand;
+            if (p[key].numero_marchand && document.getElementById(`${prefix}-numero`)) document.getElementById(`${prefix}-numero`).value = p[key].numero_marchand;
+            if (p[key].code_ussd && document.getElementById(`${prefix}-ussd`)) document.getElementById(`${prefix}-ussd`).value = p[key].code_ussd;
+        };
+
+        mapFields('moov', 'moov');
+        mapFields('mtn', 'mtn');
+        mapFields('celtiis', 'celtiis');
+        mapFields('orange', 'orange');
+        mapFields('wave', 'wave');
+        if (p.wave && p.wave.lien_paiement && document.getElementById('wave-link')) document.getElementById('wave-link').value = p.wave.lien_paiement;
         if (p.carte_bancaire) {
             document.getElementById('card-active').checked = !!p.carte_bancaire.actif;
             if (p.carte_bancaire.fournisseur) document.getElementById('card-provider').value = p.carte_bancaire.fournisseur;
             if (p.carte_bancaire.cle_publique) document.getElementById('card-public-key').value = p.carte_bancaire.cle_publique;
-            if (p.carte_bancaire.url_redirect) document.getElementById('card-redirect-url').value = p.carte_bancaire.url_redirect;
         }
         if (p.virement_bancaire) {
             document.getElementById('bank-active').checked = !!p.virement_bancaire.actif;
@@ -415,27 +337,30 @@ export async function init() {
             if (p.virement_bancaire.titulaire) document.getElementById('bank-holder').value = p.virement_bancaire.titulaire;
             if (p.virement_bancaire.iban) document.getElementById('bank-iban').value = p.virement_bancaire.iban;
         }
+        if (p.cash) {
+            document.getElementById('cash-active').checked = !!p.cash.actif;
+            if (p.cash.instructions) document.getElementById('cash-instructions').value = p.cash.instructions;
+        }
     });
 
-    // 4. Écriture directe et simultanée dans Firebase sur tous les chemins possibles
+    // 3. Fonction globale d'écriture synchrone vers Firebase Realtime Database
     async function publishPaymentToFirebase(key, dataObject) {
         try {
             const updates = {};
-            // Synchronisation instantanée sur tous les nœuds lus par les acheteurs
+            // Écriture sur tous les chemins possibles
             updates[`configuration/paiements/${key}`] = dataObject;
             updates[`configuration/paiement/${key}`] = dataObject;
             updates[`paiements/${key}`] = dataObject;
             updates[`paiement/${key}`] = dataObject;
 
             await update(ref(db), updates);
-            alert(`✅ Passerelle ${key.toUpperCase()} enregistrée avec succès dans la base de données !`);
+            alert(`✅ ${key.toUpperCase()} publié et synchronisé dans la base !`);
         } catch (err) {
-            console.error("Erreur Firebase:", err);
-            alert(`❌ Erreur d'enregistrement : ${err.message}`);
+            alert(`❌ Erreur Firebase : ${err.message}`);
         }
     }
 
-    // ÉCOUTEURS DES FORMULAIRES DE PAIEMENT
+    // 4. Écouteurs de formulaires
     document.getElementById('form-moov').addEventListener('submit', (e) => {
         e.preventDefault();
         publishPaymentToFirebase('moov', {
@@ -454,17 +379,6 @@ export async function init() {
             nom_marchand: document.getElementById('mtn-nom').value.trim(),
             numero_marchand: document.getElementById('mtn-numero').value.trim(),
             code_ussd: document.getElementById('mtn-ussd').value.trim(),
-            updatedAt: new Date().toISOString()
-        });
-    });
-
-    document.getElementById('form-wave').addEventListener('submit', (e) => {
-        e.preventDefault();
-        publishPaymentToFirebase('wave', {
-            actif: document.getElementById('wave-active').checked,
-            nom_marchand: document.getElementById('wave-nom').value.trim(),
-            numero_marchand: document.getElementById('wave-numero').value.trim(),
-            lien_paiement: document.getElementById('wave-link').value.trim(),
             updatedAt: new Date().toISOString()
         });
     });
@@ -491,13 +405,23 @@ export async function init() {
         });
     });
 
+    document.getElementById('form-wave').addEventListener('submit', (e) => {
+        e.preventDefault();
+        publishPaymentToFirebase('wave', {
+            actif: document.getElementById('wave-active').checked,
+            nom_marchand: document.getElementById('wave-nom').value.trim(),
+            numero_marchand: document.getElementById('wave-numero').value.trim(),
+            lien_paiement: document.getElementById('wave-link').value.trim(),
+            updatedAt: new Date().toISOString()
+        });
+    });
+
     document.getElementById('form-card').addEventListener('submit', (e) => {
         e.preventDefault();
         publishPaymentToFirebase('carte_bancaire', {
             actif: document.getElementById('card-active').checked,
             fournisseur: document.getElementById('card-provider').value.trim(),
             cle_publique: document.getElementById('card-public-key').value.trim(),
-            url_redirect: document.getElementById('card-redirect-url').value.trim(),
             updatedAt: new Date().toISOString()
         });
     });
@@ -513,60 +437,36 @@ export async function init() {
         });
     });
 
-    // 5. Enregistrement des données globales (Identité et System)
-    document.getElementById('btn-pub-identity').addEventListener('click', async () => {
-        const updates = {};
-        const appName = document.getElementById('cfg-app-name').value.trim();
-        const currency = document.getElementById('cfg-currency').value;
-
-        updates['configuration/identite/nom'] = appName;
-        updates['configuration/identite/devise'] = currency;
-        
-        try {
-            await update(ref(db), updates);
-            alert("✅ Identité mise à jour !");
-        } catch (err) {
-            alert("❌ Erreur : " + err.message);
-        }
+    document.getElementById('form-cash').addEventListener('submit', (e) => {
+        e.preventDefault();
+        publishPaymentToFirebase('cash', {
+            actif: document.getElementById('cash-active').checked,
+            instructions: document.getElementById('cash-instructions').value.trim(),
+            updatedAt: new Date().toISOString()
+        });
     });
 
-    document.getElementById('btn-pub-system').addEventListener('click', async () => {
-        const updates = {};
-        updates['configuration/maintenance/globale'] = document.getElementById('sys-maint-global').checked;
-        updates['configuration/maintenance/acheteurs'] = document.getElementById('sys-maint-acheteur').checked;
-
-        try {
-            await update(ref(db), updates);
-            alert("✅ Statut de maintenance mis à jour !");
-        } catch (err) {
-            alert("❌ Erreur : " + err.message);
-        }
-    });
-
-    // 6. Création de comptes utilisateurs
+    // 5. Enregistrement Utilisateurs & Rôles
     document.getElementById('form-create-account').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nom = document.getElementById('new-user-name').value.trim();
         const email = document.getElementById('new-user-email').value.trim();
-        const password = document.getElementById('new-user-pass').value;
+        const pass = document.getElementById('new-user-pass').value;
         const role = document.getElementById('new-user-role').value;
-        const phone = document.getElementById('new-user-phone').value.trim();
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const uid = userCredential.user.uid;
-            const userPayload = { uid, nomComplet: nom, email, telephone: phone, role, statut: 'actif', createdAt: new Date().toISOString() };
-            
-            await set(ref(db, `utilisateurs/${uid}`), userPayload);
-            await set(ref(db, `users/${uid}`), userPayload);
-            alert(`✅ Compte créé avec succès ! UID: ${uid}`);
+            const cred = await createUserWithEmailAndPassword(auth, email, pass);
+            const uid = cred.user.uid;
+            const payload = { uid, nomComplet: nom, email, role, statut: 'actif', createdAt: new Date().toISOString() };
+            await set(ref(db, `utilisateurs/${uid}`), payload);
+            await set(ref(db, `users/${uid}`), payload);
+            alert(`✅ Compte [${role}] créé avec succès !`);
             document.getElementById('form-create-account').reset();
         } catch (err) {
-            alert("❌ Erreur de création : " + err.message);
+            alert(`❌ Erreur création : ${err.message}`);
         }
     });
 
-    // 7. Modification des rôles
     document.getElementById('btn-assign-role').addEventListener('click', async () => {
         const uid = userSelect.value;
         if (!uid) return alert("❌ Veuillez sélectionner un utilisateur.");
@@ -582,9 +482,9 @@ export async function init() {
             updates[`users/${uid}/statut`] = targetStatus;
 
             await update(ref(db), updates);
-            alert(`✅ Rôle mis à jour avec succès : ${targetRole.toUpperCase()}`);
+            alert(`✅ Compte mis à jour vers le rôle : ${targetRole.toUpperCase()}`);
         } catch (err) {
-            alert("❌ Erreur : " + err.message);
+            alert(`❌ Erreur mise à jour : ${err.message}`);
         }
     });
 }
