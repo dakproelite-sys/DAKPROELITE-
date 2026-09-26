@@ -34,7 +34,7 @@ export async function init() {
             .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
             .form-group label { font-size: 11px; color: #a1a1aa; font-weight: 700; text-transform: uppercase; }
             .form-group input, .form-group select, .form-group textarea { width: 100%; background: #0d0d11; border: 1px solid #282836; color: #ffcc00; padding: 10px 12px; border-radius: 6px; font-size: 13px; outline: none; }
-            .form-group textarea { resize: vertical; min-height: 80px; }
+            .form-group textarea { resize: vertical; min-height: 100px; }
             .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, .25); }
 
             .price-grid, .pub-date-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
@@ -50,15 +50,13 @@ export async function init() {
             .btn-pub-action { background: linear-gradient(135deg, #ffcc00, #e6b800); color: #000; font-weight: 900; border: none; padding: 14px 25px; border-radius: 8px; cursor: pointer; transition: .2s; text-transform: uppercase; font-size: 13px; width: 100%; margin-top: 15px; }
             .btn-pub-action:hover { background: linear-gradient(135deg, #ffe57f, #ffcc00); box-shadow: 0 4px 15px rgba(255, 204, 0, .3); }
             
-            .preview-box { min-height: 250px; display: flex; align-items: flex-start; justify-content: center; background: #0d0d11; border: 1px dashed #282836; border-radius: 8px; padding: 15px; }
-            .preview-card { width: 100%; max-width: 450px; background: #151515; border: 1px solid #ffcc00; border-radius: 10px; padding: 15px; color: #fff; }
-            .preview-image-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; scrollbar-color: #ffcc00 #0d0d11; }
-            .preview-image { min-width: 140px; width: 100%; height: 180px; object-fit: contain; border-radius: 7px; background: #080b10; border: 1px solid #282836; }
+            .preview-box { min-height: 250px; display: flex; align-items: center; justify-content: center; background: #0d0d11; border: 1px dashed #282836; border-radius: 8px; padding: 15px; }
+            .preview-card { width: 100%; max-width: 450px; background: #151515; border: 1px solid #ffcc00; border-radius: 10px; padding: 12px; color: #fff; }
+            .preview-image { width: 100%; height: 180px; object-fit: contain; border-radius: 7px; margin-bottom: 10px; background: #080b10; }
             
             .status-box { margin-bottom: 15px; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #050505; border: 1px solid #282836; }
             .status-ok { color: #22c55e; border-color: #22c55e; }
             .status-error { color: #ef4444; border-color: #ef4444; }
-            .badge-count { background: #ffcc00; color: #000; font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
         </style>
 
         <div class="pub-container">
@@ -86,6 +84,7 @@ export async function init() {
                         <input type="text" id="adminProductName" placeholder="Ex : DAKJUBILE TONIC VITAL">
                     </div>
 
+                    <!-- ESPACE CATÉGORIE DU PRODUIT (Saisie libre / Sélection) -->
                     <div class="form-group">
                         <label>Catégorie du Produit</label>
                         <input type="text" id="adminProductCategory" list="categoriesList" placeholder="Saisissez ou choisissez une catégorie (Ex: Santé, Formation...)">
@@ -119,18 +118,18 @@ export async function init() {
                     </div>
 
                     <div class="form-group">
-                        <label>Lien(s) de(s) Image(s)</label>
-                        <textarea id="adminProductImage" placeholder="https://exemple.com/image1.png, https://exemple.com/image2.png"></textarea>
+                        <label>Lien de l'Image</label>
+                        <input type="url" id="adminProductImage" placeholder="https://exemple.com/image.png">
                     </div>
 
                     <div class="form-group">
                         <label>Lien Vidéo Démo (Optionnel)</label>
-                        <textarea id="adminProductVideo" style="min-height:50px;" placeholder="https://exemple.com/video1.mp4"></textarea>
+                        <input type="url" id="adminProductVideo" placeholder="https://exemple.com/video.mp4">
                     </div>
 
                     <div class="form-group">
                         <label>Lien Document / Support (Optionnel)</label>
-                        <textarea id="adminProductDocument" style="min-height:50px;" placeholder="https://exemple.com/document.pdf"></textarea>
+                        <input type="url" id="adminProductDocument" placeholder="https://exemple.com/document.pdf">
                     </div>
 
                     <div class="form-group">
@@ -138,20 +137,21 @@ export async function init() {
                         <textarea id="adminProductDescription" placeholder="Détails, avantages, informations..."></textarea>
                     </div>
 
+                    <!-- COMMISSIONS -->
                     <div class="commission-box">
-                        <div class="commission-title">💰 Répartition des Commissions (Modifiables)</div>
+                        <div class="commission-title">💰 Répartition des Commissions</div>
                         <div class="commission-grid">
                             <div class="commission-input">
                                 <label>Vendeur (%)</label>
-                                <input type="number" id="adminCommissionProduit" value="80" min="0" max="100">
+                                <input type="number" id="adminCommissionProduit" value="60" min="0" max="100">
                             </div>
                             <div class="commission-input">
                                 <label>Affiliation (%)</label>
-                                <input type="number" id="adminCommissionAffiliation" value="5" min="0" max="100">
+                                <input type="number" id="adminCommissionAffiliation" value="20" min="0" max="100">
                             </div>
                             <div class="commission-input">
                                 <label>Plateforme (%)</label>
-                                <input type="number" id="adminCommissionPlateforme" value="15" min="0" max="100">
+                                <input type="number" id="adminCommissionPlateforme" value="20" min="0" max="100">
                             </div>
                         </div>
                         <div id="adminCommissionTotal" style="text-align:center; font-size:12px; font-weight:900; margin-top:10px;">Total : 100.00 %</div>
@@ -171,17 +171,14 @@ export async function init() {
         </div>
     `;
 
+    // Helpers
     const getValue = (id) => document.getElementById(id)?.value?.trim() || "";
     const getNumber = (id, def = 0) => {
         const val = Number(getValue(id));
         return Number.isFinite(val) ? val : def;
     };
-    const getUrlArray = (id) => {
-        const raw = getValue(id);
-        if (!raw) return [];
-        return raw.split(/[\n,]+/).map(url => url.trim()).filter(url => url.length > 0);
-    };
 
+    // Horloge
     function updateClock() {
         const now = new Date();
         const dateEl = document.getElementById("adminPublicationDate");
@@ -192,6 +189,7 @@ export async function init() {
     setInterval(updateClock, 1000);
     updateClock();
 
+    // Validation Admin Status
     const statusBox = document.getElementById("adminPublicationStatus");
     if (statusBox) {
         if (currentUserIsAdmin && currentUser?.uid) {
@@ -203,112 +201,25 @@ export async function init() {
         }
     }
 
-    const updateCommissionTotal = () => {
-        const v = getNumber("adminCommissionProduit");
-        const a = getNumber("adminCommissionAffiliation");
-        const p = getNumber("adminCommissionPlateforme");
-        const total = v + a + p;
-        const commEl = document.getElementById("adminCommissionTotal");
-        if (commEl) {
-            commEl.textContent = `Total : ${total.toFixed(2)} %`;
-            commEl.style.color = Math.abs(total - 100) < 0.01 ? "#22c55e" : "#ef4444";
-        }
-    };
-    ["adminCommissionProduit", "adminCommissionAffiliation", "adminCommissionPlateforme"].forEach(id => {
-        document.getElementById(id)?.addEventListener("input", updateCommissionTotal);
-    });
-    updateCommissionTotal();
-
-    function updatePreview() {
-        const previewBox = document.getElementById("adminPreviewBox");
-        if (!previewBox) return;
-
-        const nom = getValue("adminProductName");
-        const categorie = getValue("adminProductCategory");
-        const prix = getValue("adminProductPrice");
-        const prixPromo = getValue("adminProductPromoPrice");
-        const devise = getValue("adminProductCurrency") || "FCFA";
-        const description = getValue("adminProductDescription");
-        const images = getUrlArray("adminProductImage");
-        const videos = getUrlArray("adminProductVideo");
-        const docs = getUrlArray("adminProductDocument");
-
-        if (!nom && !prix && images.length === 0) {
-            previewBox.innerHTML = `<span style="color:#666; font-size:12px; text-align:center;">Saisissez les informations pour générer l'aperçu...</span>`;
-            return;
-        }
-
-        let imagesHTML = images.length > 0
-            ? `<div class="preview-image-container">
-                ${images.map(img => `<img src="${img}" class="preview-image" onerror="this.src='https://via.placeholder.com/300x180?text=Image+Invalide'">`).join("")}
-               </div>`
-            : `<div style="width:100%; height:120px; background:#080b10; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#555; font-size:12px; margin-bottom:10px;">Aucune image</div>`;
-
-        previewBox.innerHTML = `
-            <div class="preview-card">
-                ${imagesHTML}
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                    <span style="font-size:11px; font-weight:800; background:#282836; color:#ffcc00; padding:3px 8px; border-radius:4px;">${categorie || "GÉNÉRAL"}</span>
-                    ${images.length > 1 ? `<span class="badge-count">🖼️ ${images.length} images</span>` : ""}
-                </div>
-                <h3 style="font-size:15px; font-weight:900; color:#fff; margin:5px 0;">${nom || "Nom du produit"}</h3>
-                <div style="font-size:16px; font-weight:900; color:#ffcc00; margin-bottom:8px;">
-                    ${prixPromo ? `<span style="text-decoration:line-through; color:#777; font-size:13px; margin-right:8px;">${prix}${devise}</span>${prixPromo}${devise}` : `${prix \vert{}\vert{} '0'}${devise}`}
-                </div>
-                <p style="font-size:12px; color:#aaa; line-height:1.4; white-space:pre-line; max-height:80px; overflow-y:auto;">${description || "Aucune description fournie."}</p>
-                
-                <div style="margin-top:10px; font-size:11px; color:#888; display:flex; gap:10px; border-top:1px solid #282836; padding-top:8px;">
-                    ${videos.length > 0 ? `<span>🎬 ${videos.length} vidéo(s)</span>` : ""}
-                    ${docs.length > 0 ? `<span>📄 ${docs.length} doc(s)</span>` : ""}
-                </div>
-            </div>
-        `;
-    }
-
-    const fieldsToWatch = [
-        "adminProductName", "adminProductCategory", "adminProductPrice", 
-        "adminProductPromoPrice", "adminProductCurrency", "adminProductImage", 
-        "adminProductVideo", "adminProductDocument", "adminProductDescription",
-        "adminCommissionProduit", "adminCommissionAffiliation", "adminCommissionPlateforme"
-    ];
-    fieldsToWatch.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener("input", updatePreview);
-            el.addEventListener("change", updatePreview);
-        }
-    });
-
+    // Soumission de publication
     const publishBtn = document.getElementById("adminAddProduct");
     if (publishBtn) {
         publishBtn.addEventListener("click", async () => {
             const nom = getValue("adminProductName");
             const categorie = getValue("adminProductCategory");
             const prix = getNumber("adminProductPrice", -1);
-            
-            const commVendeur = getNumber("adminCommissionProduit", 80);
-            const commAffiliation = getNumber("adminCommissionAffiliation", 5);
-            const commPlateforme = getNumber("adminCommissionPlateforme", 15);
 
             if (!nom) return alert("⚠️ Veuillez entrer le nom du produit.");
             if (!categorie) return alert("⚠️ Veuillez préciser la catégorie.");
             if (prix < 0) return alert("⚠️ Veuillez indiquer un prix valide.");
 
-            if (Math.abs((commVendeur + commAffiliation + commPlateforme) - 100) > 0.01) {
-                return alert("⚠️ Le total des commissions doit obligatoirement être égal à 100 %.");
-            }
-
             publishBtn.disabled = true;
-            publishBtn.textContent = "⏳ Publication en cours...";
+            publishBtn.textContent = "⏳ Enregistrement dans Realtime Database...";
 
             try {
-                // Génération de la clé unique dans Realtime Database
+                // Création de la clé unique dans Realtime Database
                 const newRef = push(ref(db, "publications"));
                 const prodId = newRef.key;
-
-                const images = getUrlArray("adminProductImage");
-                const videos = getUrlArray("adminProductVideo");
-                const docs = getUrlArray("adminProductDocument");
 
                 const payload = {
                     id: prodId,
@@ -318,21 +229,10 @@ export async function init() {
                     prix: prix,
                     prixPromo: getValue("adminProductPromoPrice") ? getNumber("adminProductPromoPrice") : null,
                     devise: getValue("adminProductCurrency") || "FCFA",
-                    image: images[0] || "",
-                    video: videos[0] || "",
-                    document: docs[0] || "",
-                    images: images,
-                    videos: videos,
-                    documents: docs,
+                    image: getValue("adminProductImage"),
+                    video: getValue("adminProductVideo"),
+                    document: getValue("adminProductDocument"),
                     description: getValue("adminProductDescription"),
-                    commissionVendeur: commVendeur,
-                    commissionAffiliation: commAffiliation,
-                    commissionPlateforme: commPlateforme,
-                    commissions: {
-                        vendeurPct: commVendeur,
-                        affiliationPct: commAffiliation,
-                        plateformePct: commPlateforme
-                    },
                     statut: "actif",
                     actif: true,
                     stock: 999,
@@ -342,25 +242,20 @@ export async function init() {
                     datePublication: new Date().toLocaleDateString("fr-FR")
                 };
 
-                // ÉCRITURE DIRECTE DANS LES DEUX NŒUDS : /publications ET /produits
+                // ÉCRITURE SIMULTANÉE SOUS `/publications` ET `/produits`
                 await set(ref(db, `publications/${prodId}`), payload);
                 await set(ref(db, `produits/${prodId}`), payload);
 
-                alert("✅ PRODUIT PUBLIÉ AVEC SUCCÈS DANS LA BASE DE DONNÉES !");
+                alert("✅ PRODUIT PUBLIÉ ET ENREGISTRÉ AVEC SUCCÈS DANS LA BASE DE DONNÉES !");
 
-                fieldsToWatch.forEach(id => {
+                // Réinitialisation des champs
+                ["adminProductName", "adminProductCategory", "adminProductPrice", "adminProductPromoPrice", "adminProductImage", "adminProductVideo", "adminProductDocument", "adminProductDescription"].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.value = "";
                 });
-                
-                document.getElementById("adminCommissionProduit").value = "80";
-                document.getElementById("adminCommissionAffiliation").value = "5";
-                document.getElementById("adminCommissionPlateforme").value = "15";
-                updateCommissionTotal();
-                updatePreview();
 
             } catch (err) {
-                console.error("Erreur lors de la publication :", err);
+                console.error("Erreur de publication :", err);
                 alert("❌ Erreur lors de l'enregistrement : " + err.message);
             } finally {
                 publishBtn.disabled = false;
