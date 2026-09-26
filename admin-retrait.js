@@ -20,9 +20,9 @@ export async function init() {
     }
 
     const db = getDatabase();
-    let currentRoleTab = "all";       // "all", "vendeurs", "livreurs"
+    let currentRoleTab = "all";          // "all", "vendeurs", "livreurs"
     let currentStatusFilter = "pending"; // "pending", "approved", "rejected", "all"
-    let currentTimeFilter = "all";    // "all", "day", "week", "month", "year", "archive"
+    let currentTimeFilter = "all";       // "all", "day", "week", "month", "year", "archive"
     let rawWithdrawals = {};
 
     // 1. Définition de l'Interface Utilisateur (UI)
@@ -80,6 +80,9 @@ export async function init() {
             .btn-reject:hover { background: #dc2626; }
             .btn-delete { background: #282836; color: #ef4444; border: 1px solid #ef4444; }
             .btn-delete:hover { background: #ef4444; color: #fff; }
+
+            .btn-whatsapp { display: inline-flex; align-items: center; gap: 4px; color: #25D366; font-size: 11px; font-weight: 700; text-decoration: none; margin-top: 4px; }
+            .btn-whatsapp:hover { text-decoration: underline; }
         </style>
 
         <div class="retrait-container">
@@ -136,13 +139,16 @@ export async function init() {
         const now = new Date();
 
         const isSameDay = docDate.toDateString() === now.toDateString();
-        const firstDayWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        
+        const currentDay = now.getDay();
+        const firstDayWeek = new Date(now);
+        firstDayWeek.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
         firstDayWeek.setHours(0,0,0,0);
         const isSameWeek = docDate >= firstDayWeek;
 
-        const isSameMonth = docDate.getMonth() === new Date().getMonth() && docDate.getFullYear() === new Date().getFullYear();
-        const isSameYear = docDate.getFullYear() === new Date().getFullYear();
-        const isArchive = docDate.getFullYear() < new Date().getFullYear();
+        const isSameMonth = docDate.getMonth() === now.getMonth() && docDate.getFullYear() === now.getFullYear();
+        const isSameYear = docDate.getFullYear() === now.getFullYear();
+        const isArchive = docDate.getFullYear() < now.getFullYear();
 
         if (filter === "day") return isSameDay;
         if (filter === "week") return isSameWeek;
@@ -216,16 +222,22 @@ export async function init() {
             if (currentStatusFilter === "approved" && !isValide) return;
             if (currentStatusFilter === "rejected" && !isRefuse) return;
 
-            // Affichage de l'identité complète
+            // Affichage de l'identité
             const userName = item.userName || item.nom || "Nom Non Renseigné";
-            const userPhone = item.phone || item.telephone || item.paymentPhone || "Téléphone non fourni";
+            const rawPhone = item.phone || item.telephone || item.paymentPhone || "";
+            const cleanPhone = rawPhone.replace(/\D/g, '');
+            const userPhone = rawPhone || "Téléphone non fourni";
             const userEmail = item.email || "Email non fourni";
             const userId = item.userId || item.uid || id;
             const method = item.paymentMethod || item.moyenPaiement || "Mobile Money / MoMo";
 
             const statusText = isValide ? "Confirmé" : (isRefuse ? "Refusé" : "En Attente");
             const badgeClass = isValide ? "st-valid" : (isRefuse ? "st-rejected" : "st-pending");
-            const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Date inconnue";
+            const dateStr = item.createdAt || item.timestamp 
+                ? new Date(item.createdAt || item.timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+                : "Date inconnue";
+
+            const whatsappLink = cleanPhone ? `https://wa.me/${cleanPhone}` : "#";
 
             const card = document.createElement('div');
             card.className = "retrait-card";
@@ -235,6 +247,7 @@ export async function init() {
                         <div>
                             <div class="user-identity">👤 ${userName}</div>
                             <div class="user-phone">📞 ${userPhone}</div>
+                            ${cleanPhone ? `<a href="${whatsappLink}" target="_blank" class="btn-whatsapp">💬 Contact WhatsApp</a>` : ''}
                             <div style="font-size:10px; color:#a1a1aa; margin-top:2px;">✉️ ${userEmail}</div>
                             <div style="font-size:9px; color:#666; margin-top:2px;">UID: ${userId}</div>
                         </div>
