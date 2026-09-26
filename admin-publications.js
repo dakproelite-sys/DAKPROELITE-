@@ -2,7 +2,7 @@ import {
     getDatabase,
     ref,
     push,
-    update,
+    set,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -86,7 +86,6 @@ export async function init() {
                         <input type="text" id="adminProductName" placeholder="Ex : DAKJUBILE TONIC VITAL">
                     </div>
 
-                    <!-- ESPACE CATÉGORIE DU PRODUIT -->
                     <div class="form-group">
                         <label>Catégorie du Produit</label>
                         <input type="text" id="adminProductCategory" list="categoriesList" placeholder="Saisissez ou choisissez une catégorie (Ex: Santé, Formation...)">
@@ -120,17 +119,17 @@ export async function init() {
                     </div>
 
                     <div class="form-group">
-                        <label>Lien(s) de(s) Image(s) <span style="color:#888; text-transform:none;">(Collez une ou plusieurs URLs séparées par une virgule ou retour à la ligne)</span></label>
+                        <label>Lien(s) de(s) Image(s)</label>
                         <textarea id="adminProductImage" placeholder="https://exemple.com/image1.png, https://exemple.com/image2.png"></textarea>
                     </div>
 
                     <div class="form-group">
-                        <label>Lien Vidéo Démo (Optionnel) <span style="color:#888; text-transform:none;">(Multi-liens acceptés)</span></label>
+                        <label>Lien Vidéo Démo (Optionnel)</label>
                         <textarea id="adminProductVideo" style="min-height:50px;" placeholder="https://exemple.com/video1.mp4"></textarea>
                     </div>
 
                     <div class="form-group">
-                        <label>Lien Document / Support (Optionnel) <span style="color:#888; text-transform:none;">(Multi-liens acceptés)</span></label>
+                        <label>Lien Document / Support (Optionnel)</label>
                         <textarea id="adminProductDocument" style="min-height:50px;" placeholder="https://exemple.com/document.pdf"></textarea>
                     </div>
 
@@ -139,7 +138,6 @@ export async function init() {
                         <textarea id="adminProductDescription" placeholder="Détails, avantages, informations..."></textarea>
                     </div>
 
-                    <!-- COMMISSIONS -->
                     <div class="commission-box">
                         <div class="commission-title">💰 Répartition des Commissions (Modifiables)</div>
                         <div class="commission-grid">
@@ -301,9 +299,10 @@ export async function init() {
             }
 
             publishBtn.disabled = true;
-            publishBtn.textContent = "⏳ Enregistrement dans Realtime Database...";
+            publishBtn.textContent = "⏳ Publication en cours...";
 
             try {
+                // Génération de la clé unique dans Realtime Database
                 const newRef = push(ref(db, "publications"));
                 const prodId = newRef.key;
 
@@ -326,8 +325,6 @@ export async function init() {
                     videos: videos,
                     documents: docs,
                     description: getValue("adminProductDescription"),
-                    
-                    // Structure double (Ife + objet) pour garantir la rétrocompatibilité
                     commissionVendeur: commVendeur,
                     commissionAffiliation: commAffiliation,
                     commissionPlateforme: commPlateforme,
@@ -336,7 +333,6 @@ export async function init() {
                         affiliationPct: commAffiliation,
                         plateformePct: commPlateforme
                     },
-                    
                     statut: "actif",
                     actif: true,
                     stock: 999,
@@ -346,14 +342,11 @@ export async function init() {
                     datePublication: new Date().toLocaleDateString("fr-FR")
                 };
 
-                // ÉCRITURE ATOMIQUE ET SIMULTANÉE SOUS /publications ET /produits
-                const updates = {};
-                updates[`publications/${prodId}`] = payload;
-                updates[`produits/${prodId}`] = payload;
+                // ÉCRITURE DIRECTE DANS LES DEUX NŒUDS : /publications ET /produits
+                await set(ref(db, `publications/${prodId}`), payload);
+                await set(ref(db, `produits/${prodId}`), payload);
 
-                await update(ref(db), updates);
-
-                alert("✅ PRODUIT PUBLIÉ ET ENREGISTRÉ AVEC SUCCÈS DANS LA BASE DE DONNÉES !");
+                alert("✅ PRODUIT PUBLIÉ AVEC SUCCÈS DANS LA BASE DE DONNÉES !");
 
                 fieldsToWatch.forEach(id => {
                     const el = document.getElementById(id);
@@ -367,7 +360,7 @@ export async function init() {
                 updatePreview();
 
             } catch (err) {
-                console.error("Erreur de publication :", err);
+                console.error("Erreur lors de la publication :", err);
                 alert("❌ Erreur lors de l'enregistrement : " + err.message);
             } finally {
                 publishBtn.disabled = false;
