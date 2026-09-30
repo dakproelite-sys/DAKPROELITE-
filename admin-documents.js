@@ -4,6 +4,7 @@ import {
     get, 
     update, 
     remove, 
+    push,
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -41,7 +42,7 @@ export async function init() {
             /* Métriques */
             .doc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
             .stat-box { background: #13131a; border: 1px solid #282836; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: 0.2s; }
-            .stat-box:hover { border-color: #ffcc00; }
+            .stat-box:hover, .stat-box.active { border-color: #ffcc00; background: #1a1a24; }
             .stat-box .num { font-size: 22px; font-weight: 900; margin-top: 4px; }
             .stat-box .lbl { font-size: 10px; color: #a1a1aa; text-transform: uppercase; font-weight: 700; }
             .c-valid { color: #22c55e; }
@@ -57,12 +58,16 @@ export async function init() {
             .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
             .doc-card { background: #13131a; border: 1px solid #282836; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
             .doc-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-            .doc-user-name { font-size: 14px; font-weight: 800; color: #fff; }
-            .doc-type { font-size: 11px; color: #ffcc00; text-transform: uppercase; font-weight: 700; margin-top: 4px; }
+            .doc-user-name { font-size: 15px; font-weight: 800; color: #fff; }
+            .doc-user-info { font-size: 11px; color: #a1a1aa; margin-top: 2px; line-height: 1.4; }
+            .doc-type { font-size: 11px; color: #ffcc00; text-transform: uppercase; font-weight: 700; margin-top: 6px; }
             
-            .doc-preview { width: 100%; height: 160px; background: #0d0d11; border-radius: 8px; border: 1px solid #282836; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 10px 0; }
-            .doc-preview img { width: 100%; height: 100%; object-fit: contain; }
-            .doc-preview a { color: #ffcc00; text-decoration: underline; font-size: 12px; font-weight: bold; }
+            /* Section aperçu des photos (Identité + Pièce) */
+            .doc-preview-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+            .doc-preview-box { background: #0d0d11; border-radius: 8px; border: 1px solid #282836; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+            .doc-preview-box img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.2s; }
+            .doc-preview-box img:hover { transform: scale(1.05); }
+            .doc-preview-title { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); font-size: 9px; color: #fff; text-align: center; padding: 3px; font-weight: 700; }
 
             .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
             .st-pending { background: rgba(255,204,0,0.2); color: #ffcc00; border: 1px solid #ffcc00; }
@@ -81,7 +86,7 @@ export async function init() {
 
         <div class="doc-container">
             <div class="doc-header">
-                <div class="doc-title">📁 Documents Administratifs</div>
+                <div class="doc-title">📁 Audit des Documents Administratifs</div>
                 <div class="tabs-role">
                     <button class="tab-btn active" id="tabVendeurs">🏬 Vendeurs</button>
                     <button class="tab-btn" id="tabLivreurs">🛵 Livreurs</button>
@@ -89,7 +94,7 @@ export async function init() {
             </div>
 
             <div class="doc-stats">
-                <div class="stat-box" id="statAll">
+                <div class="stat-box active" id="statAll">
                     <div class="lbl">Total Soumis</div>
                     <div class="num" id="cntTotalDocs">0</div>
                 </div>
@@ -129,7 +134,9 @@ export async function init() {
         const now = new Date();
 
         const isSameDay = docDate.toDateString() === now.toDateString();
-        const firstDayWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        
+        const tempNow = new Date();
+        const firstDayWeek = new Date(tempNow.setDate(tempNow.getDate() - tempNow.getDay()));
         firstDayWeek.setHours(0,0,0,0);
         const isSameWeek = docDate >= firstDayWeek;
 
@@ -146,10 +153,10 @@ export async function init() {
         return true;
     }
 
-    // 3. Chargement depuis Realtime Database (`/documents`)
+    // 3. Chargement depuis Realtime Database (`/documents_administratifs`)
     async function loadDocuments() {
         try {
-            const docRef = ref(db, 'documents');
+            const docRef = ref(db, 'documents_administratifs');
             const snapshot = await get(docRef);
 
             if (snapshot.exists()) {
@@ -181,18 +188,19 @@ export async function init() {
             const doc = rawDocuments[id];
             
             // Validation du rôle (Vendeur vs Livreur)
-            const userRole = (doc.userRole || doc.role || "vendeur").toLowerCase();
+            const userRole = (doc.userRole || doc.role || doc.typeCompte || "vendeur").toLowerCase();
             const isLivreur = userRole.includes("livreur") || userRole.includes("driver");
-            const isVendeur = userRole.includes("vendeur") || userRole.includes("seller");
+            const isVendeur = userRole.includes("vendeur") || userRole.includes("seller") || !isLivreur;
             
             const targetRoleMatch = currentTab === "vendeurs" ? isVendeur : isLivreur;
             if (!targetRoleMatch) return;
 
             // Filtre temporel
-            if (!checkDatePeriod(doc.createdAt || doc.timestamp, currentTimeFilter)) return;
+            const timeStampValue = doc.dateSoumission || doc.createdAt || doc.timestamp;
+            if (!checkDatePeriod(timeStampValue, currentTimeFilter)) return;
 
-            // Compteurs globaux pour le filtre sélectionné
-            const status = (doc.status || "en_attente").toLowerCase();
+            // Compteurs globaux pour le rôle et la période sélectionnés
+            const status = (doc.statut || doc.status || "en_attente").toLowerCase();
             const isValide = status === "valide" || status === "validé";
             const isRefuse = status === "refuse" || status === "rejeté" || status === "refusé";
 
@@ -201,15 +209,31 @@ export async function init() {
             else if (isRefuse) rejected++;
             else pending++;
 
-            // Filtre de statut (Tous / En attente / Validés / Refusés)
+            // Filtre par statut (Tous / En attente / Validés / Refusés)
             if (currentStatusFilter === "pending" && (isValide || isRefuse)) return;
             if (currentStatusFilter === "valid" && !isValide) return;
             if (currentStatusFilter === "rejected" && !isRefuse) return;
 
-            // Rendu de la carte
+            // Préparation des données d'affichage
             const statusText = isValide ? "Validé" : (isRefuse ? "Refusé" : "En Attente");
             const badgeClass = isValide ? "st-valid" : (isRefuse ? "st-rejected" : "st-pending");
-            const dateStr = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Date inconnue";
+            
+            let dateStr = "Date inconnue";
+            if (timeStampValue) {
+                dateStr = new Date(timeStampValue).toLocaleDateString('fr-FR', { 
+                    day: '2-digit', month: '2-digit', year: 'numeric', 
+                    hour: '2-digit', minute: '2-digit' 
+                });
+            }
+
+            const userName = doc.nomComplet || doc.userName || doc.nom || "Utilisateur Inconnu";
+            const userEmail = doc.email || "Non renseigné";
+            const userPhone = doc.telephone || doc.phone || "Non renseigné";
+            const docType = (doc.typeDocument || doc.documentType || "Pièce officielle").toUpperCase();
+
+            // Gestion des images
+            const photoIdentiteSrc = doc.photoIdentite || doc.fileUrlIdentite;
+            const photoPieceSrc = doc.photoPiece || doc.fileUrlPiece || doc.fileUrl;
 
             const card = document.createElement('div');
             card.className = "doc-card";
@@ -217,85 +241,121 @@ export async function init() {
                 <div>
                     <div class="doc-card-header">
                         <div>
-                            <div class="doc-user-name">${doc.userName || doc.nom || "Utilisateur Inconnu"}</div>
-                            <div style="font-size:10px; color:#a1a1aa;">UID: ${doc.userId || id}</div>
+                            <div class="doc-user-name">${userName}</div>
+                            <div class="doc-user-info">
+                                ✉️ ${userEmail}<br>
+                                📞 ${userPhone}<br>
+                                <span style="font-size:9px; color:#666;">UID: ${doc.userId || id}</span>
+                            </div>
                         </div>
                         <span class="status-badge ${badgeClass}">${statusText}</span>
                     </div>
 
-                    <div class="doc-type">📄 ${doc.documentType || "Pièce d'identité / Document officiel"}</div>
+                    <div class="doc-type">📄 ${docType}</div>
                     
-                    <div class="doc-preview">
-                        ${doc.fileUrl && doc.fileUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i) 
-                            ? `<img src="${doc.fileUrl}" alt="Document" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                               <a href="${doc.fileUrl}" target="_blank" style="display:none;">📄 Voir le Document</a>` 
-                            : `<a href="${doc.fileUrl || '#'}" target="_blank">🔗 Ouvrir le Document Soumis</a>`
-                        }
+                    <div class="doc-preview-group">
+                        <div class="doc-preview-box">
+                            ${photoIdentiteSrc 
+                                ? `<img src="${photoIdentiteSrc}" alt="Photo d'identité" onclick="window.open('${photoIdentiteSrc}', '_blank')">` 
+                                : `<span style="font-size:10px; color:#666;">Aucune photo</span>`
+                            }
+                            <div class="doc-preview-title">Photo d'identité</div>
+                        </div>
+                        <div class="doc-preview-box">
+                            ${photoPieceSrc 
+                                ? `<img src="${photoPieceSrc}" alt="Pièce d'identité" onclick="window.open('${photoPieceSrc}', '_blank')">` 
+                                : `<span style="font-size:10px; color:#666;">Aucun document</span>`
+                            }
+                            <div class="doc-preview-title">Pièce / Justificatif</div>
+                        </div>
                     </div>
 
                     <div style="font-size:10px; color:#a1a1aa; margin-top:5px;">
                         <span>Soumis le : <b>${dateStr}</b></span>
                     </div>
-                    ${doc.rejectionReason ? `<div style="font-size:10px; color:#ef4444; margin-top:6px; background:rgba(239,68,68,0.1); padding:6px; border-radius:4px;"><b>Motif du refus :</b> ${doc.rejectionReason}</div>` : ''}
+                    ${doc.motifRefus || doc.rejectionReason 
+                        ? `<div style="font-size:10px; color:#ef4444; margin-top:6px; background:rgba(239,68,68,0.1); padding:6px; border-radius:4px;"><b>Motif du refus :</b> ${doc.motifRefus || doc.rejectionReason}</div>` 
+                        : ''
+                    }
                 </div>
 
                 <div class="actions-group">
                     <button class="btn-act btn-validate" data-id="${id}">✅ Valider</button>
                     <button class="btn-act btn-reject" data-id="${id}">❌ Refuser</button>
-                    <button class="btn-act btn-delete" data-id="${id}">🗑️ Suppr.</button>
+                    <button class="btn-act btn-delete" data-id="${id}">🗑️️ Suppr.</button>
                 </div>
             `;
 
-            // Actions
-            card.querySelector('.btn-validate').addEventListener('click', () => updateDocStatus(id, "valide"));
-            card.querySelector('.btn-reject').addEventListener('click', () => updateDocStatus(id, "refuse"));
+            // Écouteurs d'actions
+            card.querySelector('.btn-validate').addEventListener('click', () => updateDocStatus(id, doc, "valide"));
+            card.querySelector('.btn-reject').addEventListener('click', () => updateDocStatus(id, doc, "refuse"));
             card.querySelector('.btn-delete').addEventListener('click', () => deleteDoc(id));
 
             grid.appendChild(card);
         });
 
-        // Mise à jour des compteurs UI
+        // Mise à jour des chiffres des métriques
         document.getElementById('cntTotalDocs').textContent = total;
         document.getElementById('cntPendingDocs').textContent = pending;
         document.getElementById('cntValidDocs').textContent = valid;
         document.getElementById('cntRejectedDocs').textContent = rejected;
 
         if (grid.children.length === 0) {
-            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:#666;">Aucun document ne correspond aux filtres sélectionnés.</div>`;
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:#666;">Aucun document trouvé pour ces critères.</div>`;
         }
     }
 
-    // 5. Mise à jour de statut (Realtime Database `/documents`)
-    async function updateDocStatus(id, newStatus) {
+    // 5. Validation / Refus avec envoi de message/notification au vendeur/livreur
+    async function updateDocStatus(id, docData, newStatus) {
         let rejectionReason = "";
         
         if (newStatus === "refuse") {
             rejectionReason = prompt("Veuillez indiquer la raison du refus du document :");
-            if (rejectionReason === null) return;
+            if (rejectionReason === null) return; // Annulation
         }
 
         try {
             const updates = {};
-            updates[`documents/${id}/status`] = newStatus;
-            updates[`documents/${id}/updatedAt`] = serverTimestamp();
+            updates[`documents_administratifs/${id}/statut`] = newStatus;
+            updates[`documents_administratifs/${id}/updatedAt`] = serverTimestamp();
             if (rejectionReason) {
-                updates[`documents/${id}/rejectionReason`] = rejectionReason;
+                updates[`documents_administratifs/${id}/motifRefus`] = rejectionReason;
+            }
+
+            // Mise à jour du nœud vendeur ou utilisateur correspondant le cas échéant
+            const userId = docData.userId || id;
+            if (userId) {
+                updates[`vendeurs/${userId}/statutCompte`] = newStatus === "valide" ? "actif" : "inactif";
+                updates[`vendeurs/${userId}/documentsValides`] = newStatus === "valide";
             }
 
             await update(ref(db), updates);
-            alert(`✅ Statut du document mis à jour (${newStatus === "valide" ? "Validé" : "Refusé"}).`);
+
+            // Envoi d'une notification à l'utilisateur dans la base de données
+            const notifRef = ref(db, `notifications_utilisateurs/${userId}`);
+            const newNotif = {
+                titre: newStatus === "valide" ? "🎉 Documents Validés !" : "⚠️️ Documents Refusés",
+                message: newStatus === "valide" 
+                    ? "Félicitations, vos documents administratifs ont été vérifiés et validés avec succès. Votre compte est désormais actif."
+                    : `Vos documents ont été refusés pour la raison suivante : ${rejectionReason}. Veuillez les recharger.`,
+                date: serverTimestamp(),
+                lu: false
+            };
+            await push(notifRef, newNotif);
+
+            alert(`✅ Statut mis à jour (${newStatus === "valide" ? "Validé" : "Refusé"}). Un message de notification a été généré pour le vendeur.`);
             await loadDocuments();
         } catch (e) {
-            alert("❌ Erreur de mise à jour : " + e.message);
+            alert("❌ Erreur lors de la mise à jour : " + e.message);
         }
     }
 
-    // 6. Suppression
+    // 6. Suppression définitive
     async function deleteDoc(id) {
         if (!confirm("⚠️ Confirmez-vous la suppression définitive de ce document de Realtime Database ?")) return;
 
         try {
-            await remove(ref(db, `documents/${id}`));
+            await remove(ref(db, `documents_administratifs/${id}`));
             alert("🗑️ Document supprimé avec succès.");
             await loadDocuments();
         } catch (e) {
@@ -303,7 +363,7 @@ export async function init() {
         }
     }
 
-    // 7. Écouteurs d'événements
+    // 7. Écouteurs d'événements pour onglets et filtres
     document.getElementById('tabVendeurs').addEventListener('click', (e) => {
         document.getElementById('tabLivreurs').classList.remove('active');
         e.target.classList.add('active');
@@ -318,10 +378,22 @@ export async function init() {
         renderInterface();
     });
 
-    document.getElementById('statAll').addEventListener('click', () => { currentStatusFilter = "all"; renderInterface(); });
-    document.getElementById('statPending').addEventListener('click', () => { currentStatusFilter = "pending"; renderInterface(); });
-    document.getElementById('statValid').addEventListener('click', () => { currentStatusFilter = "valid"; renderInterface(); });
-    document.getElementById('statRejected').addEventListener('click', () => { currentStatusFilter = "rejected"; renderInterface(); });
+    const statBoxes = {
+        'statAll': 'all',
+        'statPending': 'pending',
+        'statValid': 'valid',
+        'statRejected': 'rejected'
+    };
+
+    Object.keys(statBoxes).forEach(boxId => {
+        document.getElementById(boxId).addEventListener('click', (e) => {
+            Object.keys(statBoxes).forEach(id => document.getElementById(id).classList.remove('active'));
+            const target = e.currentTarget;
+            target.classList.add('active');
+            currentStatusFilter = statBoxes[boxId];
+            renderInterface();
+        });
+    });
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
