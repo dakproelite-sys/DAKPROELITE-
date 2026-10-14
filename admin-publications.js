@@ -14,6 +14,23 @@ import {
 
 const CLOUDFLARE_R2_BASE_URL = "https://pub-540cb77467cc4ec1b4a6326433f9bc00.r2.dev";
 
+// Fonction pour récupérer l'URL pré-signée depuis le Worker Cloudflare
+async function getSignedUploadUrl(filename) {
+  try {
+    const response = await fetch(`https://dakpro-upload-signer.dakproelite-f21.workers.dev/?filename=${encodeURIComponent(filename)}`);
+    
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP : ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.uploadUrl; // L'URL pré-signée retournée par votre Worker
+  } catch (error) {
+    console.error("Erreur lors de la récupération de l'URL :", error);
+    return null;
+  }
+}
+
 const categoriesCatalogue = [
     { name: "Téléphones et tablettes", icon: "fa-mobile-screen-button", sub: ["Smartphones", "iPhone", "Samsung", "Tecno", "Infinix", "Xiaomi", "Huawei", "Téléphones classiques", "Téléphones reconditionnés", "Tablettes Android", "iPad", "Tablettes Windows", "Liseuses électroniques", "Coques et étuis", "Films de protection", "Chargeurs", "Câbles USB", "Batteries externes", "Batteries de téléphone", "Écouteurs", "Supports de téléphone", "Cartes mémoire", "Stylets", "Pièces détachées"] },
     { name: "Informatique et ordinateurs", icon: "fa-laptop", sub: ["Ordinateurs portables", "Ordinateurs de bureau", "PC tout-en-un", "Mini-PC", "PC gaming", "Serveurs", "Stations de travail", "Chromebooks", "Écrans", "Claviers", "Souris", "Imprimantes", "Scanners", "Photocopieurs", "Onduleurs", "Disques durs", "SSD", "Clés USB", "Cartes mémoire", "Cartes graphiques", "Cartes mères", "Processeurs", "Mémoire RAM", "Boîtiers PC", "Alimentations", "Refroidissement", "Routeurs Wi-Fi", "Modems", "Switches réseau", "Câbles informatiques", "Accessoires informatiques", "Pièces détachées"] },
@@ -61,7 +78,6 @@ const categoriesCatalogue = [
     { name: "Cours et formations", icon: "fa-graduation-cap", sub: ["Informatique", "Programmation", "Développement web", "Marketing digital", "Commerce électronique", "Entrepreneuriat", "Comptabilité", "Gestion d'entreprise", "Langues", "Français", "Anglais", "Mathématiques", "Sciences", "Agriculture", "Couture", "Coiffure", "Esthétique", "Cuisine", "Musique", "Design graphique", "Préparation aux examens", "Formation professionnelle"] },
     { name: "Immobilier et terrains", icon: "fa-building", sub: ["Maisons à vendre", "Maisons à louer", "Appartements à vendre", "Appartements à louer", "Terrains à vendre", "Terrains agricoles", "Bureaux à louer", "Boutiques à louer", "Entrepôts", "Locaux commerciaux", "Villas", "Studios", "Chambres à louer", "Résidences meublées", "Propriétés industrielles"] },
     { name: "Services professionnels", icon: "fa-screwdriver-wrench", sub: ["Réparation de téléphones", "Réparation d'ordinateurs", "Réparation électronique", "Installation solaire", "Installation électrique", "Plomberie", "Menuiserie", "Soudure", "Couture", "Coiffure", "Esthétique", "Photographie", "Vidéographie", "Graphisme", "Développement web", "Création d'applications", "Marketing digital", "Comptabilité", "Traduction", "Livraison", "Déménagement", "Nettoyage professionnel", "Maintenance industrielle"] },
-    { name: "Livres et papeterie", icon: "fa-book", sub: ["Romans", "Livres scolaires", "Cahiers", "Stylos", "Agendas", "Papier d'impression"] },
     { name: "Livres et papeterie", icon: "fa-book", sub: ["Romans", "Livres scolaires", "Cahiers", "Stylos", "Agendas", "Papier d'impression"] },
     { name: "Livraison et mobilité", icon: "fa-motorcycle", sub: ["Vélos", "Vélos électriques", "Scooters", "Motos", "Trottinettes électriques", "Casques et accessoires", "Pièces détachées", "Sacs de livraison", "Équipements de coursier", "Accessoires de transport", "Aides à la mobilité"] },
     { name: "Collections et objets rares", icon: "fa-trophy", sub: ["Pièces de collection", "Timbres", "Monnaies anciennes", "Figurines de collection", "Jouets anciens", "Objets historiques", "Cartes à collectionner", "Objets décoratifs rares", "Collections sportives", "Souvenirs", "Objets artisanaux traditionnels"] }
@@ -431,29 +447,38 @@ export async function init() {
             }
 
             publishBtn.disabled = true;
-            publishBtn.textContent = "⏳ Upload réel du média sur Cloudflare R2...";
+            publishBtn.textContent = "⏳ Génération de l'URL sécurisée & Upload R2...";
 
             try {
                 if (selectedFileObject) {
                     const safeFileName = "file_" + Date.now() + "_" + selectedFileObject.name.replace(/\s+/g, '_');
-                    const uploadDestUrl = `${CLOUDFLARE_R2_BASE_URL}/${safeFileName}`;
+                    
+                    // Étape 1 : Récupération de l'URL pré-signée sécurisée depuis le Worker
+                    const signedUrl = await getSignedUploadUrl(safeFileName);
+                    if (!signedUrl) {
+                        throw new Error("Impossible de générer l'URL pré-signée via le Worker Cloudflare.");
+                    }
 
-                    const uploadResponse = await fetch(uploadDestUrl, {
+                    // Étape 2 : Envoi du fichier vers R2 avec l'URL pré-signée
+                    const uploadResponse = await fetch(signedUrl, {
                         method: "PUT",
                         body: selectedFileObject
                     });
 
                     if (!uploadResponse.ok) {
-                        throw new Error("L'envoi vers Cloudflare R2 a échoué. Vérifiez vos autorisations CORS.");
+                        throw new Error("L'envoi vers Cloudflare R2 a échoué.");
                     }
+
+                    // URL publique finale accessible pour afficher ou télécharger le fichier
+                    const finalFileUrl = `${CLOUDFLARE_R2_BASE_URL}/${safeFileName}`;
 
                     const fileType = selectedFileObject.type;
                     if (fileType.startsWith("image/")) {
-                        uploadedImageUrl = uploadDestUrl;
+                        uploadedImageUrl = finalFileUrl;
                     } else if (fileType.startsWith("video/")) {
-                        uploadedVideoUrl = uploadDestUrl;
+                        uploadedVideoUrl = finalFileUrl;
                     } else {
-                        uploadedDocumentUrl = uploadDestUrl;
+                        uploadedDocumentUrl = finalFileUrl;
                     }
                 }
 
