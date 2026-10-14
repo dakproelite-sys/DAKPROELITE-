@@ -8,8 +8,8 @@ import {
 
 /* ============================================================
    DAKPRO ÉLITE — admin-publications.js
-   MODULE DE PUBLICATION UNIFIÉ AVEC CATALOGUE, LIEN DE CATALOGUE,
-   COMMISSIONS (80% / 5% / 15%), CLOUDFLARE R2 & AUTH USER
+   MODULE DE PUBLICATION UNIFIÉ AVEC COMMISSIONS MODIFIABLES,
+   RECHERCHE INSTANTANÉE, LECTEUR MULTIMÉDIA & CLOUDFLARE R2
 ============================================================ */
 
 const CLOUDFLARE_R2_BASE_URL = "https://pub-540cb77467cc4ec1b4a6326433f9bc00.r2.dev";
@@ -62,6 +62,7 @@ const categoriesCatalogue = [
     { name: "Immobilier et terrains", icon: "fa-building", sub: ["Maisons à vendre", "Maisons à louer", "Appartements à vendre", "Appartements à louer", "Terrains à vendre", "Terrains agricoles", "Bureaux à louer", "Boutiques à louer", "Entrepôts", "Locaux commerciaux", "Villas", "Studios", "Chambres à louer", "Résidences meublées", "Propriétés industrielles"] },
     { name: "Services professionnels", icon: "fa-screwdriver-wrench", sub: ["Réparation de téléphones", "Réparation d'ordinateurs", "Réparation électronique", "Installation solaire", "Installation électrique", "Plomberie", "Menuiserie", "Soudure", "Couture", "Coiffure", "Esthétique", "Photographie", "Vidéographie", "Graphisme", "Développement web", "Création d'applications", "Marketing digital", "Comptabilité", "Traduction", "Livraison", "Déménagement", "Nettoyage professionnel", "Maintenance industrielle"] },
     { name: "Livres et papeterie", icon: "fa-book", sub: ["Romans", "Livres scolaires", "Cahiers", "Stylos", "Agendas", "Papier d'impression"] },
+    { name: "Livres et papeterie", icon: "fa-book", sub: ["Romans", "Livres scolaires", "Cahiers", "Stylos", "Agendas", "Papier d'impression"] },
     { name: "Livraison et mobilité", icon: "fa-motorcycle", sub: ["Vélos", "Vélos électriques", "Scooters", "Motos", "Trottinettes électriques", "Casques et accessoires", "Pièces détachées", "Sacs de livraison", "Équipements de coursier", "Accessoires de transport", "Aides à la mobilité"] },
     { name: "Collections et objets rares", icon: "fa-trophy", sub: ["Pièces de collection", "Timbres", "Monnaies anciennes", "Figurines de collection", "Jouets anciens", "Objets historiques", "Cartes à collectionner", "Objets décoratifs rares", "Collections sportives", "Souvenirs", "Objets artisanaux traditionnels"] }
 ];
@@ -109,6 +110,7 @@ export async function init() {
             
             .preview-box { min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0d0d11; border: 1px dashed #282836; border-radius: 8px; padding: 15px; gap: 10px; }
             .preview-canvas { width: 100%; max-width: 300px; height: 180px; object-fit: cover; border-radius: 7px; background: #080b10; border: 1px solid #ffcc00; display: none; }
+            .preview-video { width: 100%; max-width: 300px; height: 180px; object-fit: cover; border-radius: 7px; background: #000; border: 1px solid #ffcc00; display: none; }
             
             .status-box { margin-bottom: 15px; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #050505; border: 1px solid #282836; }
             .status-ok { color: #22c55e; border-color: #22c55e; }
@@ -116,7 +118,7 @@ export async function init() {
         </style>
 
         <div class="pub-container">
-            <div class="pub-title">📦 Publication Unifiée (Catalogue, Lien & Commissions 80/5/15)</div>
+            <div class="pub-title">📦 Publication Unifiée (Commissions Modifiables & Média)</div>
             <div id="adminPublicationStatus" class="status-box">Vérification de la session...</div>
 
             <div class="pub-grid">
@@ -145,13 +147,11 @@ export async function init() {
                         <input type="text" id="adminProductName" placeholder="Ex : DAKJUBILE TONIC VITAL">
                     </div>
 
-                    <!-- CATALOGUE 48 CATÉGORIES -->
+                    <!-- RECHERCHE & CATÉGORIE PRINCIPALE -->
                     <div class="form-group">
-                        <label><i class="fa-solid fa-layer-group"></i> Catégorie Principale</label>
-                        <select id="adminProductCategory">
-                            <option value="">-- Choisissez une catégorie --</option>
-                            ${categoriesCatalogue.map(cat => `<option value="${cat.name}">📂 ${cat.name}</option>`).join('')}
-                        </select>
+                        <label><i class="fa-solid fa-magnifying-glass"></i> Rechercher / Choisir la Catégorie</label>
+                        <input type="text" id="categorySearchInput" placeholder="Tapez pour filtrer les catégories..." style="margin-bottom:6px;">
+                        <select id="adminProductCategory" size="5" style="height: 120px;"></select>
                     </div>
 
                     <!-- SOUS-CATÉGORIE DYNAMIQUE -->
@@ -182,7 +182,7 @@ export async function init() {
                         </select>
                     </div>
 
-                    <!-- SÉLECTEUR UNIVERSEL DE MÉDIAS ET DOCUMENTS -->
+                    <!-- SÉLECTEUR UNIVERSEL DE MÉDIAS -->
                     <div class="form-group">
                         <label><i class="fa-solid fa-folder-open"></i> Choisir un Fichier (Image, Vidéo ou Document)</label>
                         <input type="file" id="adminUniversalFile" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
@@ -192,7 +192,7 @@ export async function init() {
                     <!-- CHAMP LIEN DU CATALOGUE EXTERNE -->
                     <div class="form-group">
                         <label><i class="fa-solid fa-link"></i> Lien du Catalogue Externe (Optionnel)</label>
-                        <input type="url" id="adminCatalogLink" placeholder="Collez ici le lien du catalogue (ex: Google Drive, PDF distant...)">
+                        <input type="url" id="adminCatalogLink" placeholder="Collez ici le lien du catalogue (ex: Google Drive...)">
                     </div>
 
                     <div class="form-group">
@@ -200,34 +200,39 @@ export async function init() {
                         <textarea id="adminProductDescription" placeholder="Détails, avantages, informations..."></textarea>
                     </div>
 
-                    <!-- COMMISSIONS FIXES (80% Vendeur, 5% Affiliation, 15% Plateforme) -->
+                    <!-- COMMISSIONS MODIFIABLES -->
                     <div class="commission-box">
                         <div class="commission-title">💰 Répartition des Commissions (Total : 100%)</div>
                         <div class="commission-grid">
                             <div class="commission-input">
                                 <label>Vendeur (%)</label>
-                                <input type="number" id="adminCommissionProduit" value="80" readonly style="background:#111; color:#22c55e;">
+                                <input type="number" id="adminCommissionProduit" value="80" min="0" max="100" style="color:#22c55e;">
                             </div>
                             <div class="commission-input">
                                 <label>Affiliation (%)</label>
-                                <input type="number" id="adminCommissionAffiliation" value="5" readonly style="background:#111; color:#ffcc00;">
+                                <input type="number" id="adminCommissionAffiliation" value="5" min="0" max="100" style="color:#ffcc00;">
                             </div>
                             <div class="commission-input">
                                 <label>Plateforme (%)</label>
-                                <input type="number" id="adminCommissionPlateforme" value="15" readonly style="background:#111; color:#3b82f6;">
+                                <input type="number" id="adminCommissionPlateforme" value="15" min="0" max="100" style="color:#3b82f6;">
                             </div>
                         </div>
-                        <div id="adminCommissionTotal" style="text-align:center; font-size:12px; font-weight:900; margin-top:10px; color:#22c55e;">Validation : 100 % (80% / 5% / 15%)</div>
+                        <div id="adminCommissionTotal" style="text-align:center; font-size:12px; font-weight:900; margin-top:10px; color:#22c55e;">Validation : 100 %</div>
                     </div>
 
                     <button type="button" id="adminAddProduct" class="btn-pub-action">🚀 Publier sur la Plateforme</button>
                 </div>
 
-                <!-- APERÇU AVEC CANVAS -->
+                <!-- APERÇU DYNAMIQUE -->
                 <div class="pub-card">
-                    <div class="pub-card-title">👁️ Aperçu Dynamique</div>
+                    <div class="pub-card-title">👁️ Aperçu Dynamique Interactif</div>
                     <div id="adminPreviewBox" class="preview-box">
                         <canvas id="imageCanvas" class="preview-canvas"></canvas>
+                        <video id="videoPreview" class="preview-video" controls playsinline></video>
+                        <div id="documentPreview" style="display:none; text-align:center;">
+                            <i class="fa-solid fa-file-lines" style="font-size:40px; color:#ffcc00; margin-bottom:8px;"></i><br>
+                            <a id="documentLinkBtn" href="#" target="_blank" style="color:#ffcc00; font-weight:bold; text-decoration:underline;">📄 Ouvrir / Télécharger le document</a>
+                        </div>
                         <span id="previewText" style="color:#666; font-size:12px; text-align:center;">Sélectionnez un média pour afficher l'aperçu...</span>
                     </div>
                 </div>
@@ -235,15 +240,59 @@ export async function init() {
         </div>
     `;
 
-    // Pré-remplir le nom du vendeur s'il est connecté
+    // Gestion du calcul et de la validation des commissions en temps réel
+    const inputCommProd = document.getElementById("adminCommissionProduit");
+    const inputCommAff = document.getElementById("adminCommissionAffiliation");
+    const inputCommPlat = document.getElementById("adminCommissionPlateforme");
+    const commTotalLabel = document.getElementById("adminCommissionTotal");
+
+    function validateCommissions() {
+        const v = Number(inputCommProd.value) || 0;
+        const a = Number(inputCommAff.value) || 0;
+        const p = Number(inputCommPlat.value) || 0;
+        const total = v + a + p;
+
+        if (total === 100) {
+            commTotalLabel.style.color = "#22c55e";
+            commTotalLabel.textContent = `Validation : 100 % (Parfait)`;
+        } else {
+            commTotalLabel.style.color = "#ef4444";
+            commTotalLabel.textContent = `Attention : Le total est de ${total}% (Doit être égal à 100%)`;
+        }
+    }
+
+    inputCommProd.addEventListener("input", validateCommissions);
+    inputCommAff.addEventListener("input", validateCommissions);
+    inputCommPlat.addEventListener("input", validateCommissions);
+
     const vendeurInput = document.getElementById("adminVendeurNom");
     if (vendeurInput && currentUser) {
         vendeurInput.value = currentUser.displayName || currentUser.email || "Admin DAKPRO";
     }
 
-    // Gestion dynamique des sous-catégories
     const catSelect = document.getElementById("adminProductCategory");
     const subCatSelect = document.getElementById("adminProductSubCategory");
+    const categorySearchInput = document.getElementById("categorySearchInput");
+
+    function renderCategories(filter = "") {
+        catSelect.innerHTML = '<option value="">-- Choisissez une catégorie --</option>';
+        const query = filter.toLowerCase();
+
+        categoriesCatalogue.forEach(cat => {
+            if (cat.name.toLowerCase().includes(query)) {
+                const opt = document.createElement("option");
+                opt.value = cat.name;
+                opt.textContent = `📁 ${cat.name}`;
+                catSelect.appendChild(opt);
+            }
+        });
+    }
+
+    renderCategories();
+
+    categorySearchInput.addEventListener("input", (e) => {
+        renderCategories(e.target.value);
+    });
 
     catSelect.addEventListener("change", () => {
         const selectedCatName = catSelect.value;
@@ -254,18 +303,22 @@ export async function init() {
             found.sub.forEach(sub => {
                 const opt = document.createElement("option");
                 opt.value = sub;
-                opt.textContent = sub;
+                opt.textContent = `🏷️ ${sub}`;
                 subCatSelect.appendChild(opt);
             });
         }
     });
 
-    // Gestionnaire du sélecteur universel (Image, Vidéo ou Document)
+    // Sélecteur universel et aperçu interactif
     const universalFileInput = document.getElementById("adminUniversalFile");
     const fileInfoLabel = document.getElementById("fileInfoLabel");
     const canvas = document.getElementById("imageCanvas");
+    const videoPreview = document.getElementById("videoPreview");
+    const documentPreview = document.getElementById("documentPreview");
+    const documentLinkBtn = document.getElementById("documentLinkBtn");
     const previewText = document.getElementById("previewText");
 
+    let selectedFileObject = null;
     let uploadedImageUrl = "";
     let uploadedVideoUrl = "";
     let uploadedDocumentUrl = "";
@@ -274,18 +327,22 @@ export async function init() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const safeName = "file_" + Date.now() + "_" + file.name.replace(/\s+/g, '_');
-        const fileUrl = `${CLOUDFLARE_R2_BASE_URL}/${safeName}`;
+        selectedFileObject = file;
         const fileType = file.type;
 
         uploadedImageUrl = "";
         uploadedVideoUrl = "";
         uploadedDocumentUrl = "";
 
+        canvas.style.display = "none";
+        videoPreview.style.display = "none";
+        documentPreview.style.display = "none";
+        previewText.style.display = "block";
+
+        const tempLocalUrl = URL.createObjectURL(file);
+
         if (fileType.startsWith("image/")) {
-            uploadedImageUrl = fileUrl;
             fileInfoLabel.textContent = `🖼️ Image sélectionnée : ${file.name}`;
-            
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
@@ -293,7 +350,6 @@ export async function init() {
                     const ctx = canvas.getContext("2d");
                     canvas.width = 600;
                     canvas.height = 400;
-                    
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.fillStyle = "#080b10";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -305,7 +361,6 @@ export async function init() {
                     let centerShiftY = (canvas.height - img.height * ratio) / 2;
                     
                     ctx.drawImage(img, 0, 0, img.width, img.height, centerShiftX, centerShiftY, img.width * ratio, img.height * ratio);
-                    
                     canvas.style.display = "block";
                     previewText.style.display = "none";
                 };
@@ -314,29 +369,25 @@ export async function init() {
             reader.readAsDataURL(file);
 
         } else if (fileType.startsWith("video/")) {
-            uploadedVideoUrl = fileUrl;
             fileInfoLabel.textContent = `🎥 Vidéo sélectionnée : ${file.name}`;
-            canvas.style.display = "none";
-            previewText.style.display = "block";
-            previewText.innerHTML = `<i class="fa-solid fa-video" style="font-size:32px; color:#ffcc00; margin-bottom:5px;"></i><br>Vidéo prête pour Cloudflare R2 :<br><b>${file.name}</b>`;
+            videoPreview.src = tempLocalUrl;
+            videoPreview.style.display = "block";
+            previewText.style.display = "none";
 
         } else {
-            uploadedDocumentUrl = fileUrl;
             fileInfoLabel.textContent = `📄 Document sélectionné : ${file.name}`;
-            canvas.style.display = "none";
-            previewText.style.display = "block";
-            previewText.innerHTML = `<i class="fa-solid fa-file-pdf" style="font-size:32px; color:#ffcc00; margin-bottom:5px;"></i><br>Document prêt pour Cloudflare R2 :<br><b>${file.name}</b>`;
+            documentLinkBtn.href = tempLocalUrl;
+            documentPreview.style.display = "block";
+            previewText.style.display = "none";
         }
     });
 
-    // Helpers
     const getValue = (id) => document.getElementById(id)?.value?.trim() || "";
     const getNumber = (id, def = 0) => {
         const val = Number(getValue(id));
         return Number.isFinite(val) ? val : def;
     };
 
-    // Horloge
     function updateClock() {
         const now = new Date();
         const dateEl = document.getElementById("adminPublicationDate");
@@ -347,7 +398,6 @@ export async function init() {
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Validation Admin Status
     const statusBox = document.getElementById("adminPublicationStatus");
     if (statusBox) {
         if (currentUserIsAdmin && currentUser?.uid) {
@@ -355,11 +405,10 @@ export async function init() {
             statusBox.textContent = `✅ Administrateur connecté & Cloudflare R2 lié : ${CLOUDFLARE_R2_BASE_URL}`;
         } else {
             statusBox.className = "status-box status-error";
-            statusBox.textContent = "⛔ Session administrateur non détectée. Assurez-vous d'être connecté en Admin.";
+            statusBox.textContent = "⛔ Session administrateur non détectée.";
         }
     }
 
-    // Soumission de publication
     const publishBtn = document.getElementById("adminAddProduct");
     if (publishBtn) {
         publishBtn.addEventListener("click", async () => {
@@ -368,21 +417,51 @@ export async function init() {
             const categorie = getValue("adminProductCategory");
             const sousCategorie = getValue("adminProductSubCategory");
             const prix = getNumber("adminProductPrice", -1);
+            
+            const commVendeur = getNumber("adminCommissionProduit", 80);
+            const commAffiliation = getNumber("adminCommissionAffiliation", 5);
+            const commPlateforme = getNumber("adminCommissionPlateforme", 15);
 
             if (!nom) return alert("⚠️ Veuillez entrer le nom du produit.");
             if (!categorie) return alert("⚠️ Veuillez sélectionner une catégorie principale.");
             if (!sousCategorie) return alert("⚠️ Veuillez sélectionner une sous-catégorie.");
             if (prix < 0) return alert("⚠️ Veuillez indiquer un prix valide.");
+            if ((commVendeur + commAffiliation + commPlateforme) !== 100) {
+                return alert("⚠️ Le total des commissions doit être exactement de 100%.");
+            }
 
             publishBtn.disabled = true;
-            publishBtn.textContent = "⏳ Enregistrement dans Realtime Database...";
+            publishBtn.textContent = "⏳ Upload réel du média sur Cloudflare R2...";
 
             try {
+                if (selectedFileObject) {
+                    const safeFileName = "file_" + Date.now() + "_" + selectedFileObject.name.replace(/\s+/g, '_');
+                    const uploadDestUrl = `${CLOUDFLARE_R2_BASE_URL}/${safeFileName}`;
+
+                    const uploadResponse = await fetch(uploadDestUrl, {
+                        method: "PUT",
+                        body: selectedFileObject
+                    });
+
+                    if (!uploadResponse.ok) {
+                        throw new Error("L'envoi vers Cloudflare R2 a échoué. Vérifiez vos autorisations CORS.");
+                    }
+
+                    const fileType = selectedFileObject.type;
+                    if (fileType.startsWith("image/")) {
+                        uploadedImageUrl = uploadDestUrl;
+                    } else if (fileType.startsWith("video/")) {
+                        uploadedVideoUrl = uploadDestUrl;
+                    } else {
+                        uploadedDocumentUrl = uploadDestUrl;
+                    }
+                }
+
+                publishBtn.textContent = "⏳ Enregistrement dans Realtime Database...";
+
                 const newRef = push(ref(db, "publications"));
                 const prodId = newRef.key;
                 const vendeurUid = currentUser?.uid || "admin_dakpro_id";
-
-                // Lien d'affiliation direct traçable pointant sur la page d'accueil (index)
                 const lienAffiliationDirect = `${window.location.origin}/index.html?produit=${prodId}&ref=${vendeurUid}`;
 
                 const payload = {
@@ -399,12 +478,12 @@ export async function init() {
                     image: uploadedImageUrl || "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=700&q=75",
                     video: uploadedVideoUrl || "",
                     document: uploadedDocumentUrl || "",
-                    catalogLink: getValue("adminCatalogLink"), // <-- Lien du catalogue intégré ici dynamiquement
+                    catalogLink: getValue("adminCatalogLink"),
                     r2_base_url: CLOUDFLARE_R2_BASE_URL,
                     commissions: {
-                        vendeur: 80,
-                        affiliation: 5,
-                        plateforme: 15
+                        vendeur: commVendeur,
+                        affiliation: commAffiliation,
+                        plateforme: commPlateforme
                     },
                     lienAffiliation: lienAffiliationDirect,
                     description: getValue("adminProductDescription"),
@@ -417,26 +496,27 @@ export async function init() {
                     heurePublication: new Date().toLocaleTimeString("fr-FR")
                 };
 
-                // ÉCRITURE SIMULTANÉE SOUS LES NŒUDS DE VOTRE ARCHITECTURE
                 await set(ref(db, `publications/${prodId}`), payload);
                 await set(ref(db, `produits/${prodId}`), payload);
                 await set(ref(db, `vendeur_publications/${prodId}`), payload);
                 await set(ref(db, `boosts/${prodId}`), { ...payload, statut_boost: "actif" });
 
-                alert("✅ PUBLICATION, CATALOGUE ET MÉDIAS ENREGISTRÉS AVEC SUCCÈS DANS LA BASE DE DONNÉES !");
+                alert("✅ PUBLICATION ET COMMISSIONS MODIFIÉES ENREGISTRÉES AVEC SUCCÈS !");
 
-                // Réinitialisation des champs
-                ["adminProductName", "adminProductPrice", "adminProductPromoPrice", "adminProductDescription", "adminCatalogLink"].forEach(id => {
+                ["adminProductName", "adminProductPrice", "adminProductPromoPrice", "adminProductDescription", "adminCatalogLink", "categorySearchInput"].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.value = "";
                 });
-                catSelect.value = "";
+                renderCategories();
                 subCatSelect.innerHTML = '<option value="">-- Choisissez d\'abord une catégorie --</option>';
                 universalFileInput.value = "";
                 fileInfoLabel.textContent = "";
                 canvas.style.display = "none";
+                videoPreview.style.display = "none";
+                documentPreview.style.display = "none";
                 previewText.style.display = "block";
                 previewText.textContent = "Sélectionnez un média pour afficher l'aperçu...";
+                selectedFileObject = null;
                 uploadedImageUrl = "";
                 uploadedVideoUrl = "";
                 uploadedDocumentUrl = "";
