@@ -10,22 +10,30 @@ import {
    DAKPRO ÉLITE — admin-publications.js
    MODULE DE PUBLICATION UNIFIÉ AVEC COMMISSIONS MODIFIABLES,
    RECHERCHE INSTANTANÉE (CATÉGORIES & SOUS-CATÉGORIES),
-   LECTEUR MULTIMÉDIA & CLOUDINARY
+   LECTEUR MULTIMÉDIA & CLOUDINARY (CORRECTION DYNAMIQUE DES FICHIERS)
 ============================================================ */
 
 // Configuration Cloudinary
 const CLOUDINARY_CLOUD_NAME = "iufene3y";
 const CLOUDINARY_UPLOAD_PRESET = "dakproelite_preset";
 
-// Fonction pour envoyer directement le fichier vers Cloudinary (mode Unsigned)
+// Fonction corrigée pour envoyer dynamiquement le fichier selon son type (image, video, raw)
 async function uploadToCloudinary(file) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
   formData.append("folder", "dakproelite");
 
+  // Détermination automatique du type de ressource Cloudinary
+  let resourceType = "image";
+  if (file.type.startsWith("video/")) {
+    resourceType = "video";
+  } else if (!file.type.startsWith("image/")) {
+    resourceType = "raw"; // Pour les documents PDF, Word, Excel, etc.
+  }
+
   try {
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`, {
       method: "POST",
       body: formData
     });
