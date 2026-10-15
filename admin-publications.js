@@ -9,25 +9,37 @@ import {
 /* ============================================================
    DAKPRO ÉLITE — admin-publications.js
    MODULE DE PUBLICATION UNIFIÉ AVEC COMMISSIONS MODIFIABLES,
-   RECHERCHE INSTANTANÉE, LECTEUR MULTIMÉDIA & CLOUDFLARE R2
+   RECHERCHE INSTANTANÉE (CATÉGORIES & SOUS-CATÉGORIES),
+   LECTEUR MULTIMÉDIA & CLOUDINARY
 ============================================================ */
 
-const CLOUDFLARE_R2_BASE_URL = "https://pub-540cb77467cc4ec1b4a6326433f9bc00.r2.dev";
+// Configuration Cloudinary
+const CLOUDINARY_CLOUD_NAME = "iufene3y";
+const CLOUDINARY_UPLOAD_PRESET = "dakproelite_preset";
 
-// Fonction pour récupérer l'URL pré-signée depuis le Worker Cloudflare
-async function getSignedUploadUrl(filename) {
+// Fonction pour envoyer directement le fichier vers Cloudinary (mode Unsigned)
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  formData.append("folder", "dakproelite");
+
   try {
-    const response = await fetch(`https://dakpro-upload-signer.dakproelite-f21.workers.dev/?filename=${encodeURIComponent(filename)}`);
-    
-    if (!response.ok) {
-      throw new Error(`Erreur HTTP : ${response.status}`);
-    }
-    
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+      method: "POST",
+      body: formData
+    });
+
     const data = await response.json();
-    return data.uploadUrl; // L'URL pré-signée retournée par votre Worker
+    
+    if (data.secure_url) {
+      return data.secure_url;
+    } else {
+      throw new Error(data.error?.message || "Erreur lors de l'upload sur Cloudinary");
+    }
   } catch (error) {
-    console.error("Erreur lors de la récupération de l'URL :", error);
-    return null;
+    console.error("Erreur Cloudinary :", error);
+    throw error;
   }
 }
 
@@ -78,6 +90,7 @@ const categoriesCatalogue = [
     { name: "Cours et formations", icon: "fa-graduation-cap", sub: ["Informatique", "Programmation", "Développement web", "Marketing digital", "Commerce électronique", "Entrepreneuriat", "Comptabilité", "Gestion d'entreprise", "Langues", "Français", "Anglais", "Mathématiques", "Sciences", "Agriculture", "Couture", "Coiffure", "Esthétique", "Cuisine", "Musique", "Design graphique", "Préparation aux examens", "Formation professionnelle"] },
     { name: "Immobilier et terrains", icon: "fa-building", sub: ["Maisons à vendre", "Maisons à louer", "Appartements à vendre", "Appartements à louer", "Terrains à vendre", "Terrains agricoles", "Bureaux à louer", "Boutiques à louer", "Entrepôts", "Locaux commerciaux", "Villas", "Studios", "Chambres à louer", "Résidences meublées", "Propriétés industrielles"] },
     { name: "Services professionnels", icon: "fa-screwdriver-wrench", sub: ["Réparation de téléphones", "Réparation d'ordinateurs", "Réparation électronique", "Installation solaire", "Installation électrique", "Plomberie", "Menuiserie", "Soudure", "Couture", "Coiffure", "Esthétique", "Photographie", "Vidéographie", "Graphisme", "Développement web", "Création d'applications", "Marketing digital", "Comptabilité", "Traduction", "Livraison", "Déménagement", "Nettoyage professionnel", "Maintenance industrielle"] },
+    { name: "Livres et papeterie", icon: "fa-book", sub: ["Romans", "Livres scolaires", "Cahiers", "Stylos", "Agendas", "Papier d'impression"] },
     { name: "Livres et papeterie", icon: "fa-book", sub: ["Romans", "Livres scolaires", "Cahiers", "Stylos", "Agendas", "Papier d'impression"] },
     { name: "Livraison et mobilité", icon: "fa-motorcycle", sub: ["Vélos", "Vélos électriques", "Scooters", "Motos", "Trottinettes électriques", "Casques et accessoires", "Pièces détachées", "Sacs de livraison", "Équipements de coursier", "Accessoires de transport", "Aides à la mobilité"] },
     { name: "Collections et objets rares", icon: "fa-trophy", sub: ["Pièces de collection", "Timbres", "Monnaies anciennes", "Figurines de collection", "Jouets anciens", "Objets historiques", "Cartes à collectionner", "Objets décoratifs rares", "Collections sportives", "Souvenirs", "Objets artisanaux traditionnels"] }
@@ -134,7 +147,7 @@ export async function init() {
         </style>
 
         <div class="pub-container">
-            <div class="pub-title">📦 Publication Unifiée (Commissions Modifiables & Média)</div>
+            <div class="pub-title">📦 Publication Unifiée (Commissions, Recherche & Cloudinary)</div>
             <div id="adminPublicationStatus" class="status-box">Vérification de la session...</div>
 
             <div class="pub-grid">
@@ -170,10 +183,11 @@ export async function init() {
                         <select id="adminProductCategory" size="5" style="height: 120px;"></select>
                     </div>
 
-                    <!-- SOUS-CATÉGORIE DYNAMIQUE -->
+                    <!-- RECHERCHE & SOUS-CATÉGORIE DYNAMIQUE -->
                     <div class="form-group">
-                        <label><i class="fa-solid fa-tags"></i> Sous-catégorie</label>
-                        <select id="adminProductSubCategory">
+                        <label><i class="fa-solid fa-tags"></i> Rechercher / Choisir la Sous-catégorie</label>
+                        <input type="text" id="subCategorySearchInput" placeholder="Tapez pour filtrer les sous-catégories..." style="margin-bottom:6px;" disabled>
+                        <select id="adminProductSubCategory" size="4" style="height: 100px;">
                             <option value="">-- Choisissez d'abord une catégorie --</option>
                         </select>
                     </div>
@@ -200,7 +214,7 @@ export async function init() {
 
                     <!-- SÉLECTEUR UNIVERSEL DE MÉDIAS -->
                     <div class="form-group">
-                        <label><i class="fa-solid fa-folder-open"></i> Choisir un Fichier (Image, Vidéo ou Document)</label>
+                        <label><i class="fa-solid fa-folder-open"></i> Choisir un Fichier depuis votre Galerie / Appareil (Image, Vidéo ou Document)</label>
                         <input type="file" id="adminUniversalFile" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
                         <small id="fileInfoLabel" style="color: #ffcc00; font-size: 10px; margin-top: 4px;"></small>
                     </div>
@@ -289,6 +303,9 @@ export async function init() {
     const catSelect = document.getElementById("adminProductCategory");
     const subCatSelect = document.getElementById("adminProductSubCategory");
     const categorySearchInput = document.getElementById("categorySearchInput");
+    const subCategorySearchInput = document.getElementById("subCategorySearchInput");
+
+    let currentSubCategoriesList = [];
 
     function renderCategories(filter = "") {
         catSelect.innerHTML = '<option value="">-- Choisissez une catégorie --</option>';
@@ -308,21 +325,44 @@ export async function init() {
 
     categorySearchInput.addEventListener("input", (e) => {
         renderCategories(e.target.value);
+        subCatSelect.innerHTML = '<option value="">-- Choisissez d\'abord une catégorie --</option>';
+        subCategorySearchInput.value = "";
+        subCategorySearchInput.disabled = true;
+        currentSubCategoriesList = [];
     });
 
-    catSelect.addEventListener("change", () => {
-        const selectedCatName = catSelect.value;
+    function renderSubCategories(filter = "") {
         subCatSelect.innerHTML = '<option value="">-- Sélectionnez une sous-catégorie --</option>';
-        
-        const found = categoriesCatalogue.find(c => c.name === selectedCatName);
-        if (found && found.sub) {
-            found.sub.forEach(sub => {
+        const query = filter.toLowerCase();
+
+        currentSubCategoriesList.forEach(sub => {
+            if (sub.toLowerCase().includes(query)) {
                 const opt = document.createElement("option");
                 opt.value = sub;
                 opt.textContent = `🏷️ ${sub}`;
                 subCatSelect.appendChild(opt);
-            });
+            }
+        });
+    }
+
+    catSelect.addEventListener("change", () => {
+        const selectedCatName = catSelect.value;
+        subCategorySearchInput.value = "";
+        
+        const found = categoriesCatalogue.find(c => c.name === selectedCatName);
+        if (found && found.sub) {
+            currentSubCategoriesList = found.sub;
+            subCategorySearchInput.disabled = false;
+            renderSubCategories();
+        } else {
+            currentSubCategoriesList = [];
+            subCatSelect.innerHTML = '<option value="">-- Choisissez d\'abord une catégorie --</option>';
+            subCategorySearchInput.disabled = true;
         }
+    });
+
+    subCategorySearchInput.addEventListener("input", (e) => {
+        renderSubCategories(e.target.value);
     });
 
     // Sélecteur universel et aperçu interactif
@@ -418,7 +458,7 @@ export async function init() {
     if (statusBox) {
         if (currentUserIsAdmin && currentUser?.uid) {
             statusBox.className = "status-box status-ok";
-            statusBox.textContent = `✅ Administrateur connecté & Cloudflare R2 lié : ${CLOUDFLARE_R2_BASE_URL}`;
+            statusBox.textContent = `✅ Administrateur connecté & Cloudinary lié (${CLOUDINARY_CLOUD_NAME})`;
         } else {
             statusBox.className = "status-box status-error";
             statusBox.textContent = "⛔ Session administrateur non détectée.";
@@ -447,30 +487,11 @@ export async function init() {
             }
 
             publishBtn.disabled = true;
-            publishBtn.textContent = "⏳ Génération de l'URL sécurisée & Upload R2...";
+            publishBtn.textContent = "⏳ Upload du média vers Cloudinary...";
 
             try {
                 if (selectedFileObject) {
-                    const safeFileName = "file_" + Date.now() + "_" + selectedFileObject.name.replace(/\s+/g, '_');
-                    
-                    // Étape 1 : Récupération de l'URL pré-signée sécurisée depuis le Worker
-                    const signedUrl = await getSignedUploadUrl(safeFileName);
-                    if (!signedUrl) {
-                        throw new Error("Impossible de générer l'URL pré-signée via le Worker Cloudflare.");
-                    }
-
-                    // Étape 2 : Envoi du fichier vers R2 avec l'URL pré-signée
-                    const uploadResponse = await fetch(signedUrl, {
-                        method: "PUT",
-                        body: selectedFileObject
-                    });
-
-                    if (!uploadResponse.ok) {
-                        throw new Error("L'envoi vers Cloudflare R2 a échoué.");
-                    }
-
-                    // URL publique finale accessible pour afficher ou télécharger le fichier
-                    const finalFileUrl = `${CLOUDFLARE_R2_BASE_URL}/${safeFileName}`;
+                    const finalFileUrl = await uploadToCloudinary(selectedFileObject);
 
                     const fileType = selectedFileObject.type;
                     if (fileType.startsWith("image/")) {
@@ -504,7 +525,7 @@ export async function init() {
                     video: uploadedVideoUrl || "",
                     document: uploadedDocumentUrl || "",
                     catalogLink: getValue("adminCatalogLink"),
-                    r2_base_url: CLOUDFLARE_R2_BASE_URL,
+                    cloudinary_cloud_name: CLOUDINARY_CLOUD_NAME,
                     commissions: {
                         vendeur: commVendeur,
                         affiliation: commAffiliation,
@@ -526,14 +547,16 @@ export async function init() {
                 await set(ref(db, `vendeur_publications/${prodId}`), payload);
                 await set(ref(db, `boosts/${prodId}`), { ...payload, statut_boost: "actif" });
 
-                alert("✅ PUBLICATION ET COMMISSIONS MODIFIÉES ENREGISTRÉES AVEC SUCCÈS !");
+                alert("✅ PUBLICATION, MÉDIA CLOUDINARY ET COMMISSIONS ENREGISTRÉS AVEC SUCCÈS !");
 
-                ["adminProductName", "adminProductPrice", "adminProductPromoPrice", "adminProductDescription", "adminCatalogLink", "categorySearchInput"].forEach(id => {
+                ["adminProductName", "adminProductPrice", "adminProductPromoPrice", "adminProductDescription", "adminCatalogLink", "categorySearchInput", "subCategorySearchInput"].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.value = "";
                 });
                 renderCategories();
+                currentSubCategoriesList = [];
                 subCatSelect.innerHTML = '<option value="">-- Choisissez d\'abord une catégorie --</option>';
+                subCategorySearchInput.disabled = true;
                 universalFileInput.value = "";
                 fileInfoLabel.textContent = "";
                 canvas.style.display = "none";
