@@ -9,46 +9,51 @@ import {
 /* ============================================================
    DAKPRO ÉLITE — admin-publications.js
    MODULE DE PUBLICATION UNIFIÉ AVEC COMMISSIONS MODIFIABLES,
-   RECHERCHE INSTANTANÉE (CATÉGORIES & SOUS-CATÉGORIES),
-   LECTEUR MULTIMÉDIA & CLOUDINARY (CORRECTION DYNAMIQUE DES FICHIERS)
+   RECHERCHE INSTANTANÉE, UPLOAD RAPIDE & BARRE DE PROGRESSION (0% - 100%)
 ============================================================ */
 
 // Configuration Cloudinary
 const CLOUDINARY_CLOUD_NAME = "iufene3y";
 const CLOUDINARY_UPLOAD_PRESET = "dakproelite_preset";
 
-// Fonction corrigée pour envoyer dynamiquement le fichier selon son type (image, video, raw)
-async function uploadToCloudinary(file) {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-  formData.append("folder", "dakproelite");
+// Fonction d'upload optimisée avec suivi de progression (XMLHttpRequest pour compter de 0 à 100%)
+function uploadToCloudinaryWithProgress(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "dakproelite");
 
-  // Détermination automatique du type de ressource Cloudinary
-  let resourceType = "image";
-  if (file.type.startsWith("video/")) {
-    resourceType = "video";
-  } else if (!file.type.startsWith("image/")) {
-    resourceType = "raw"; // Pour les documents PDF, Word, Excel, etc.
-  }
+    const xhr = new XMLHttpRequest();
+    // Utilisation de l'endpoint universel 'auto' pour accepter images, vidéos et documents rapidement
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, true);
 
-  try {
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`, {
-      method: "POST",
-      body: formData
-    });
+    xhr.upload.onprogress = function(event) {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        if (onProgress) onProgress(percentComplete);
+      }
+    };
 
-    const data = await response.json();
-    
-    if (data.secure_url) {
-      return data.secure_url;
-    } else {
-      throw new Error(data.error?.message || "Erreur lors de l'upload sur Cloudinary");
-    }
-  } catch (error) {
-    console.error("Erreur Cloudinary :", error);
-    throw error;
-  }
+    xhr.onload = function() {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && data.secure_url) {
+          resolve(data.secure_url);
+        } else {
+          reject(new Error(data.error?.message || "Erreur lors de l'upload sur Cloudinary"));
+        }
+      } catch (e) {
+        reject(new Error("Erreur de traitement de la réponse Cloudinary."));
+      }
+    };
+
+    xhr.onerror = function() {
+      reject(new Error("Erreur réseau lors du téléchargement vers Cloudinary. Vérifiez votre connexion."));
+    };
+
+    xhr.send(formData);
+  });
 }
 
 const categoriesCatalogue = [
@@ -495,11 +500,14 @@ export async function init() {
             }
 
             publishBtn.disabled = true;
-            publishBtn.textContent = "⏳ Upload du média vers Cloudinary...";
 
             try {
                 if (selectedFileObject) {
-                    const finalFileUrl = await uploadToCloudinary(selectedFileObject);
+                    publishBtn.textContent = "⏳ Téléchargement : 0%";
+                    
+                    const finalFileUrl = await uploadToCloudinaryWithProgress(selectedFileObject, (percent) => {
+                        publishBtn.textContent = `⏳ Téléchargement en cours : ${percent}%`;
+                    });
 
                     const fileType = selectedFileObject.type;
                     if (fileType.startsWith("image/")) {
