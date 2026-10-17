@@ -85,7 +85,7 @@ input:focus, select:focus, textarea:focus{
   border-color:var(--gold);
 }
 
-/* STLES DU SÉLECTEUR DE MÉTIERS AVEC RECHERCHE INTÉGRÉE */
+/* SÉLECTEUR DE MÉTIERS AVEC RECHERCHE INSTANTANÉE */
 .search-select { position: relative; width: 100%; }
 .display {
   background: #000;
@@ -209,7 +209,7 @@ input:focus, select:focus, textarea:focus{
         <input type="text" id="nom" required placeholder="Ex: Garage Automobile Excellence">
       </div>
 
-      <!-- SÉLECTEUR DE MÉTIERS / PRODUCTIONS AVEC RECHERCHE INSTANTANÉE (1000+ MÉTIERS) -->
+      <!-- SÉLECTEUR DE MÉTIERS AVEC RECHERCHE INSTANTANÉE -->
       <div class="form-group full-width">
         <label>Corps de Métier / Production *</label>
         <div class="search-select" id="metierSelect">
@@ -258,7 +258,7 @@ input:focus, select:focus, textarea:focus{
         <textarea id="description" rows="4" required placeholder="Détaillez les compétences, l'expérience, la garantie des services..."></textarea>
       </div>
 
-      <!-- SÉLECTEUR UNIVERSEL DE MÉDIAS AVEC SUIVI DE PROGRESSION -->
+      <!-- SÉLECTEUR UNIVERSEL DE MÉDIAS AVEC APERÇU ET PROGRESSION -->
       <div class="form-group full-width">
         <label><i class="fa-solid fa-folder-open"></i> Fichier Multimédia (Image, Vidéo ou Document) *</label>
         <input type="file" id="adminUniversalFile" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" required>
@@ -287,7 +287,6 @@ input:focus, select:focus, textarea:focus{
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// Configuration Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDR7INHKaazaqZt-xIcjk10JFiy58uXKO8",
   authDomain: "dakproelite.firebaseapp.com",
@@ -301,11 +300,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Configuration Cloudinary
 const CLOUDINARY_CLOUD_NAME = "iufene3y";
 const CLOUDINARY_UPLOAD_PRESET = "dakproelite_preset";
 
-// --- LISTE COMPLÈTE DES 1000+ MÉTIERS & PRODUCTIONS ---
 const metiers = [
   "Producteur de coton","Producteur d'anacarde","Producteur de noix de cajou","Producteur de maïs","Producteur de sorgho","Producteur de manioc","Producteur d'igname","Producteur de riz","Producteur d'ananas","Producteur d'arachide","Producteur de soja","Producteur de cacao","Producteur de palmier à huile","Producteur d'huile de palme","Producteur de tomate","Producteur de piment","Producteur d'oignon","Producteur de gombo","Producteur de pastèque","Producteur de melon","Producteur de banane plantain","Producteur de banane douce","Producteur de karité","Producteur de noix de karité","Producteur de café","Producteur de canne à sucre","Producteur de mil","Producteur de petit mil","Producteur de fonio","Producteur de haricot","Producteur de niébé","Producteur de voandzou","Producteur de sésame","Producteur de gingembre","Producteur de curcuma","Producteur de papaye","Producteur de mangue","Producteur d'orange","Producteur de citron","Producteur d'avocat","Producteur de noix de coco","Producteur de tabac","Producteur de légumes feuilles","Producteur de chou","Producteur de carotte","Producteur de laitue","Producteur de concombre","Producteur d'aubergine","Producteur de patate douce","Producteur de taro","Producteur de plantain","Producteur de noix de kola","Producteur de baobab","Producteur de moringa","Producteur de neem","Producteur de jatropha","Producteur de sésame blanc","Producteur de sésame noir","Producteur de pois d'angole","Producteur de lentille","Producteur de pois chiche","Producteur de quinoa","Producteur de blé","Producteur d'orge","Producteur de seigle","Producteur de tournesol","Producteur de colza","Producteur de lin","Producteur de chanvre","Producteur de kenaf","Producteur de jute","Producteur de sisal","Producteur de raphia","Producteur de bambou","Producteur de rotin","Producteur de caoutchouc","Producteur de thé","Producteur de cacao fin","Producteur de cacao robusta","Producteur de vanille","Producteur de poivre","Producteur de cannelle","Producteur de clou de girofle","Producteur de muscade","Producteur de cardamome","Producteur de coriandre","Producteur de cumin","Producteur de fenouil","Producteur de menthe","Producteur de basilic","Producteur de persil","Producteur de coriandre fraîche","Producteur d'ail","Producteur d'échalote","Producteur de poireau","Producteur de céleri","Producteur de betterave","Producteur de radis","Producteur de navet","Producteur de potiron","Producteur de courge","Producteur de courgette","Producteur de concombre africain","Producteur de gombo rouge","Producteur de piment fort","Producteur de piment doux","Producteur de poivron","Producteur de tomate cerise","Producteur de tomate industrielle","Producteur de fraise","Producteur de pastèque naine","Producteur de melon d'eau","Producteur de goyave","Producteur de corossol","Producteur de pomme cannelle","Producteur de safou","Producteur de rônier","Producteur de néré","Producteur de karité sauvage","Producteur de tamarin","Producteur de jujube","Producteur de dattes","Producteur de figue de barbarie","Producteur de cactus","Producteur de spiruline","Producteur de champignons","Producteur de pleurotes","Producteur de shiitake","Producteur de truffes","Producteur de miel de forêt","Producteur de miel d'acacia","Producteur de pollen","Producteur de propolis","Producteur de gelée royale",
   "Transformateur d'anacarde","Transformateur de noix de cajou","Transformateur de coton","Transformateur de manioc","Transformateur d'igname","Transformateur de maïs","Transformateur de sorgho","Transformateur de riz","Transformateur d'ananas","Transformateur de soja","Transformateur de cacao","Transformateur d'huile de palme","Transformateur de karité","Sécheur de manioc","Sécheur de fruits","Sécheur de légumes","Fabricant de gari","Fabricant de farine de manioc","Fabricant de farine de maïs","Fabricant d'attiéké","Fabricant de tapioca","Fabricant de cossettes de manioc","Égreneur de coton","Égreneur d'anacarde","Décortiqueur d'anacarde","Huilier (huile de palme)","Huilier (huile d'arachide)","Huilier (huile de soja)","Savonner (savon de karité)","Fabricant de beurre de karité","Fabricant de savon artisanal","Fabricant de savon liquide","Fabricant de lessive","Fabricant de cosmétique au karité","Fabricant de crème au beurre de karité","Fabricant de baume à lèvres","Fabricant de savon noir","Fabricant de savon de Marseille artisanal","Fabricant de confiture d'ananas","Fabricant de confiture de mangue","Fabricant de confiture de papaye","Fabricant de jus d'ananas","Fabricant de jus de mangue","Fabricant de jus de bissap","Fabricant de jus de gingembre","Fabricant de sirop de bissap","Fabricant de sirop de gingembre","Fabricant de sirop de tamarin","Fabricant de farine de banane","Fabricant de chips de banane","Fabricant de chips de manioc","Fabricant de chips d'igname","Fabricant de farine d'igname","Fabricant de foufou","Fabricant de pâte d'arachide","Fabricant de beurre d'arachide","Fabricant de sauce arachide","Fabricant de moutarde artisanale","Fabricant de vinaigre artisanal","Fabricant de vin de palme","Fabricant de sodabi","Fabricant de tchapalo","Fabricant de dolo","Fabricant de bière artisanale","Fabricant de vin de raisin local","Fabricant de liqueur de cacao","Fabricant de chocolat artisanal","Fabricant de tablette de cacao","Fabricant de poudre de cacao","Fabricant de beurre de cacao","Fabricant de pain de singe","Fabricant de farine de baobab","Fabricant de jus de baobab","Fabricant de sirop de baobab","Fabricant de poudre de moringa","Fabricant de thé de moringa","Fabricant de capsules de moringa","Fabricant de savon au neem","Fabricant d'huile de neem","Fabricant de pesticide bio","Fabricant d'engrais organique","Fabricant de compost","Fabricant de biochar","Fabricant de biocarburant","Fabricant de biodiesel","Fabricant de bioéthanol",
@@ -328,7 +325,7 @@ const metiers = [
   "Pilote de drone","Technicien drones","Garde forestier","Agent de l'ONF","Garde-chasse","Pêcheur professionnel","Marin-pêcheur","Ostréiculteur","Mytiliculteur","Géologue","Hydrologue","Météorologue","Agent funéraire","Thanatopracteur","Croque-mort","Huissier audiencier","Clerc de notaire","Secrétaire juridique","Clerc d'huissier","Greffier de tribunal","Assistant de justice","Médiateur familial","Conseiller conjugal","Travailleur social","Assistant social","Éducateur de rue","Animateur jeunesse","Responsable de structure d'accueil","Guide touristique","Accompagnateur de voyage","Animateur de séjour","Moniteur de ski","Moniteur d'équitation","Maître-nageur","Sauveteur","Guide naturaliste","Animateur nature","Éducateur à l'environnement","Technicien forestier","Agent patrimonial ONF","Bûcheron","Débardeur","Conducteur d'engins forestiers","Scieur","Opérateur de scierie","Menuisier de production","Ébéniste de production","Charpentier de production","Expert en assurance","Expert automobile","Expert bâtiment","Diagnostiqueur immobilier","Diagnostiqueur amiante","Contrôleur technique automobile","Contrôleur technique bâtiment","Géomètre-expert","Topographe","Cartographe","Dessinateur cartographe","Archéologue","Conservateur du patrimoine","Restaurateur d'œuvres d'art","Restaurateur de tableaux","Ébéniste restaurateur","Horloger restaurateur","Bijoutier créateur","Joailier créateur","Bibliothécaire","Documentaliste","Archiviste","Conservateur de musée","Guide de musée","Médiateur culturel","Économiste","Statisticien","Actuaire","Compliance officer","Responsable conformité","Data protection officer","DPO","Auditeur interne","Contrôleur de gestion","Directeur financier","DAF","CFO","Directeur des ressources humaines","DRH","Directeur commercial","Directeur marketing","Directeur général","PDG","CEO","Entrepreneur","Créateur d'entreprise","Auto-entrepreneur","Freelance","Consultant indépendant","Coach entrepreneurial","Mentor business","Investisseur","Business angel","Capital-risqueur","Trader","Analyste financier","Gestionnaire de portefeuille","Conseiller en gestion de patrimoine","CGP","Courtier en assurance-vie","Courtier en crédits","Agent général d'assurance","Courtier d'assurance","Expert en sinistres","Régleur de sinistres","Responsable qualité","Auditeur qualité","Responsable environnement","Écologue","Technicien environnement","Agent de protection de la nature","Garde nature","Éco-garde"
 ];
 
-// --- LOGIQUE DU SÉLECTEUR DE MÉTIERS ---
+// --- LOGIQUE DE RECHERCHE ET SÉLECTION INSTANTANÉE ---
 const optionsList = document.getElementById('optionsList');
 const display = document.getElementById('display');
 const displayText = document.getElementById('displayText');
@@ -341,6 +338,7 @@ let selectedMetierValue = "";
 
 countText.textContent = `${metiers.length} métiers & productions disponibles`;
 
+// Génération de la liste initiale
 metiers.forEach(metier => {
   const div = document.createElement('div');
   div.className = 'option';
@@ -349,7 +347,9 @@ metiers.forEach(metier => {
   optionsList.appendChild(div);
 });
 
-display.addEventListener('click', () => {
+// Ouvrir/Fermer le menu déroulant au clic
+display.addEventListener('click', (e) => {
+  e.stopPropagation();
   dropdown.classList.toggle('open');
   if (dropdown.classList.contains('open')) {
     searchInput.focus();
@@ -358,31 +358,34 @@ display.addEventListener('click', () => {
   }
 });
 
+// Fermer le menu si on clique en dehors
 document.addEventListener('click', (e) => {
   if (!document.getElementById('metierSelect').contains(e.target)) {
     dropdown.classList.remove('open');
   }
 });
 
+// Filtrage en temps réel dès la saisie (ex: "mécanicien")
 searchInput.addEventListener('input', (e) => {
   filterOptions(e.target.value.trim().toLowerCase());
 });
 
 function filterOptions(query) {
   const options = optionsList.querySelectorAll('.option');
-  let visible = 0;
+  let visibleCount = 0;
   options.forEach(opt => {
     const text = opt.textContent.toLowerCase();
     if (text.includes(query)) {
       opt.classList.remove('hidden');
-      visible++;
+      visibleCount++;
     } else {
       opt.classList.add('hidden');
     }
   });
-  noResult.style.display = visible === 0 ? 'block' : 'none';
+  noResult.style.display = visibleCount === 0 ? 'block' : 'none';
 }
 
+// Sélection d'un métier dans la liste
 optionsList.addEventListener('click', (e) => {
   if (e.target.classList.contains('option')) {
     selectedMetierValue = e.target.dataset.value;
@@ -396,9 +399,6 @@ optionsList.addEventListener('click', (e) => {
 
 
 // --- CONFIGURATION CLOUDINARY & PROGRESSION ---
-const CLOUDINARY_CLOUD_NAME = "iufene3y";
-const CLOUDINARY_UPLOAD_PRESET = "dakproelite_preset";
-
 function uploadToCloudinaryWithProgress(file, onProgress) {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
@@ -430,14 +430,14 @@ function uploadToCloudinaryWithProgress(file, onProgress) {
     };
 
     xhr.onerror = function() {
-      reject(new Error("Erreur réseau lors du téléchargement vers Cloudinary. Vérifiez votre connexion."));
+      reject(new Error("Erreur réseau lors du téléchargement vers Cloudinary."));
     };
 
     xhr.send(formData);
   });
 }
 
-// Gestion des éléments du DOM pour l'aperçu
+// Gestion de l'aperçu du fichier sélectionné
 const universalFileInput = document.getElementById("adminUniversalFile");
 const fileInfoLabel = document.getElementById("fileInfoLabel");
 const canvas = document.getElementById("imageCanvas");
@@ -503,7 +503,7 @@ universalFileInput.addEventListener("change", (e) => {
     }
 });
 
-// Soumission du formulaire
+// Soumission du formulaire (Envoi Cloudinary d'abord, puis enregistrement Firebase)
 document.getElementById("publicationForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = document.getElementById("btnSubmit");
@@ -570,7 +570,7 @@ document.getElementById("publicationForm").addEventListener("submit", async (e) 
 
     status.style.color = "var(--green)";
     status.textContent = "✅ Fichier envoyé sur Cloudinary et données enregistrées avec succès !";
-    alert("🎉 Profil métier publié avec succès ! Le fichier est stocké sur Cloudinary.");
+    alert("🎉 Profil métier publié avec succès !");
 
     document.getElementById("publicationForm").reset();
     displayText.textContent = "Sélectionner un métier ou une production...";
