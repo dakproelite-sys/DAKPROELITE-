@@ -8,13 +8,14 @@ import {
 
 /* ============================================================
    DAKPRO ÉLITE — admin-publications.js
-   MODULE DE PUBLICATION UNIFIÉ (TOUT PRODUIT / TOUT ARTICLE)
-   AVEC CATALOGUE INTÉGRAL, MULTI-OPTIONS, MULTI-DEVISES & CLOUDINARY
+   MODULE DE PUBLICATION UNIFIÉ AVEC MULTI-COULEURS, MULTI-VARIANTES
+   ET GESTION DES FLUX ANTI-DOUBLONS (PROMOS / FLASH / CATALOGUE)
 ============================================================ */
 
 const CLOUDINARY_CLOUD_NAME = "iufene3y";
 const CLOUDINARY_UPLOAD_PRESET = "dakproelite_preset";
 
+/* Upload vers Cloudinary avec progression précise de 0% à 100% */
 function uploadToCloudinaryWithProgress(file, onProgress) {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
@@ -36,24 +37,45 @@ function uploadToCloudinaryWithProgress(file, onProgress) {
       try {
         const data = JSON.parse(xhr.responseText);
         if (xhr.status >= 200 && xhr.status < 300 && data.secure_url) {
+          if (onProgress) onProgress(100);
           resolve(data.secure_url);
         } else {
-          reject(new Error(data.error?.message || "Erreur Cloudinary"));
+          console.warn("⚠️ Cloudinary a refusé l'upload, passage au mode secours local.");
+          fallbackToBase64(file, resolve, reject, onProgress);
         }
       } catch (e) {
-        reject(new Error("Erreur de traitement Cloudinary."));
+        fallbackToBase64(file, resolve, reject, onProgress);
       }
     };
 
     xhr.onerror = function() {
-      reject(new Error("Erreur réseau vers Cloudinary."));
+      console.warn("⚠️ Erreur réseau vers Cloudinary, passage au mode secours local.");
+      fallbackToBase64(file, resolve, reject, onProgress);
     };
 
     xhr.send(formData);
   });
 }
 
-/* CATALOGUE GLOBAL UNIVERSEL (MOTOS, VÉHICULES, ÉLECTRONIQUE, MAISON, ACCESSOIRES, ETC.) */
+function fallbackToBase64(file, resolve, reject, onProgress) {
+  const reader = new FileReader();
+  reader.onprogress = function(event) {
+    if (event.lengthComputable && onProgress) {
+      const percent = Math.round((event.loaded / event.total) * 100);
+      onProgress(percent);
+    }
+  };
+  reader.onload = function(e) {
+    if (onProgress) onProgress(100);
+    resolve(e.target.result);
+  };
+  reader.onerror = function(err) {
+    reject(new Error("Impossible de traiter le fichier localement."));
+  };
+  reader.readAsDataURL(file);
+}
+
+/* CATALOGUE GLOBAL UNIVERSEL */
 const categoriesCatalogue = [
     { name: "Téléphones et tablettes", icon: "fa-mobile-screen-button", sub: ["Smartphones", "iPhone", "Samsung", "Tecno", "Infinix", "Xiaomi", "Huawei", "Téléphones classiques", "Téléphones reconditionnés", "Tablettes Android", "iPad", "Tablettes Windows", "Liseuses électroniques", "Coques et étuis", "Films de protection", "Chargeurs", "Câbles USB", "Batteries externes", "Batteries de téléphone", "Écouteurs", "Supports de téléphone", "Cartes mémoire", "Stylets", "Pièces détachées"] },
     { name: "Informatique et ordinateurs", icon: "fa-laptop", sub: ["Ordinateurs portables", "Ordinateurs de bureau", "PC tout-en-un", "Mini-PC", "PC gaming", "Serveurs", "Stations de travail", "Chromebooks", "Écrans", "Claviers", "Souris", "Imprimantes", "Scanners", "Photocopieurs", "Onduleurs", "Disques durs", "SSD", "Clés USB", "Cartes mémoire", "Cartes graphiques", "Cartes mères", "Processeurs", "Mémoire RAM", "Boîtiers PC", "Alimentations", "Refroidissement", "Routeurs Wi-Fi", "Modems", "Switches réseau", "Câbles informatiques", "Accessoires informatiques", "Pièces détachées"] },
@@ -107,14 +129,16 @@ export async function init() {
 
             .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
             
-            /* GESTION TAILLES & POINTURES */
+            .checkbox-group { display: flex; gap: 15px; margin-bottom: 15px; background: #0a0c10; padding: 10px; border-radius: 8px; border: 1px solid #282836; }
+            .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ffcc00; font-weight: 700; cursor: pointer; }
+            .checkbox-item input { width: auto; cursor: pointer; }
+
             .size-box { background: #0a0c10; border: 1px dashed #282836; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
             .size-title { font-size: 11px; font-weight: 800; color: #ffcc00; margin-bottom: 8px; text-transform: uppercase; }
             .size-chips-wrapper { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; max-height: 120px; overflow-y: auto; }
             .size-chip { padding: 5px 10px; background: #181824; border: 1px solid #333; border-radius: 6px; font-size: 11px; color: #ddd; cursor: pointer; user-select: none; transition: .15s; }
             .size-chip.active { background: #ffcc00; color: #000; font-weight: 800; border-color: #ffcc00; }
 
-            /* GESTION MULTI-COULEURS ET VARIANTES */
             .variant-box { background: #0a0c10; border: 1px dashed #ffcc00; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
             .variant-title { font-size: 11px; font-weight: 800; color: #ffcc00; margin-bottom: 10px; text-transform: uppercase; }
             .variant-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
@@ -134,46 +158,43 @@ export async function init() {
             .preview-canvas { width: 100%; max-width: 300px; height: 180px; object-fit: cover; border-radius: 7px; background: #080b10; border: 1px solid #ffcc00; display: none; }
             .preview-video { width: 100%; max-width: 300px; height: 180px; object-fit: cover; border-radius: 7px; background: #000; border: 1px solid #ffcc00; display: none; }
             
-            .status-box { margin-bottom: 15px; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #050505; border: 1px solid #282836; }
+            .status-box { margin-bottom: 15px; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #050505; border: 1px solid #282836; color: #ffcc00; text-align: center; }
         </style>
 
         <div class="pub-container">
-            <div class="pub-title">📦 Publication Universelle (Motos, Véhicules, Caméras, Maison, Accessoires...)</div>
-            <div id="adminPublicationStatus" class="status-box">Prêt pour la publication de tout article</div>
+            <div class="pub-title">📦 Publication Universelle DAKPROÉLITE</div>
+            <div id="adminPublicationStatus" class="status-box">Prêt pour la publication</div>
 
             <div class="pub-grid">
-                <!-- FORMULAIRE PRINCIPAL -->
                 <div class="pub-card">
                     <div class="pub-card-title">📝 Informations de l'Article / Produit</div>
 
                     <div class="form-group">
                         <label><i class="fa-solid fa-user"></i> Nom du Vendeur / Boutique</label>
-                        <input type="text" id="adminVendeurNom" placeholder="Ex: Moto Shop Pro / DAKPRO Motors">
+                        <input type="text" id="adminVendeurNom" placeholder="Ex: Boutique Officielle">
                     </div>
 
                     <div class="form-group">
                         <label><i class="fa-solid fa-heading"></i> Nom de l'Article (Français)</label>
-                        <input type="text" id="adminProductName" placeholder="Ex : Moto Électrique 2000W / Caméra Solaire 4K / Boxer...">
+                        <input type="text" id="adminProductName" placeholder="Ex : Moto Électrique / Caméra Solaire...">
                     </div>
 
                     <div class="form-group">
                         <label><i class="fa-solid fa-language"></i> Nom de l'Article (Anglais - Optionnel)</label>
-                        <input type="text" id="adminProductNameEn" placeholder="Ex : Electric Motorcycle 2000W">
+                        <input type="text" id="adminProductNameEn" placeholder="Ex : Electric Motorcycle">
                     </div>
 
-                    <!-- RECHERCHE & SÉLECTION DE LA CATÉGORIE -->
                     <div class="form-group">
                         <label><i class="fa-solid fa-magnifying-glass"></i> Catégorie Principale (${categoriesCatalogue.length} Univers)</label>
-                        <input type="text" id="categorySearchInput" placeholder="Rechercher une catégorie (ex: Moto, Caméra, Maison, Téléphone)..." style="margin-bottom:6px;">
+                        <input type="text" id="categorySearchInput" placeholder="Rechercher une catégorie..." style="margin-bottom:6px;">
                         <select id="adminProductCategory" size="5" style="height: 120px;"></select>
                     </div>
 
-                    <!-- SOUS-CATÉGORIE DYNAMIQUE -->
                     <div class="form-group">
                         <label><i class="fa-solid fa-tags"></i> Sous-catégorie Spécifique</label>
                         <input type="text" id="subCategorySearchInput" placeholder="Rechercher une sous-catégorie..." style="margin-bottom:6px;" disabled>
                         <select id="adminProductSubCategory" size="4" style="height: 100px;">
-                            <option value="">-- Choisissez d'abord une catégorie principale --</option>
+                            <option value="">-- Choisissez d'abord une catégorie --</option>
                         </select>
                     </div>
 
@@ -188,6 +209,16 @@ export async function init() {
                         </div>
                     </div>
 
+                    <!-- OPTIONS D'AFFICHAGE EXCLUSIF POUR ÉVITER LES DOUBLONS SUR ACCUEIL -->
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="isFlashCheck"> 🔥 Offre Flash
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="isRecommandeCheck"> ⭐ Recommandé / Sponsorisé
+                        </label>
+                    </div>
+
                     <div class="form-group">
                         <label><i class="fa-solid fa-coins"></i> Devise</label>
                         <select id="adminProductCurrency">
@@ -199,52 +230,49 @@ export async function init() {
                         </select>
                     </div>
 
-                    <!-- TAILLES / POINTURES / OPTIONS -->
                     <div class="size-box">
                         <div class="size-title">📏 Tailles, Pointures ou Options disponibles</div>
                         <div class="size-chips-wrapper" id="sizePresetContainer"></div>
-                        <input type="text" id="customSizeInput" placeholder="Option sur-mesure (ex: 2000W, Rouge, 16Go)...">
+                        <input type="text" id="customSizeInput" placeholder="Option sur-mesure (ex: 2000W)...">
                     </div>
 
-                    <!-- COULEURS ET VARIANTES (Multi-Photos Cloudinary) -->
+                    <!-- GESTION VARIANTES MULTI-COULEURS -->
                     <div class="variant-box">
-                        <div class="variant-title">🎨 Variantes / Couleurs / Modèles (Avec Photo dédiée)</div>
+                        <div class="variant-title">🎨 Variantes / Couleurs / Modèles (Photo par couleur)</div>
                         <div class="variant-input-grid">
-                            <input type="text" id="variantColorName" placeholder="Modèle/Couleur (ex: Noir Mat, 64Go)">
-                            <input type="number" id="variantColorPrice" placeholder="Prix spécifique (Optionnel)">
+                            <input type="text" id="variantColorName" placeholder="Couleur/Modèle (ex: Rouge, Noir)">
+                            <input type="number" id="variantColorPrice" placeholder="Prix spécifique">
                         </div>
                         <div class="variant-input-grid">
-                            <input type="text" id="variantColorSize" placeholder="Option liée (ex: XL / 2000W)">
-                            <input type="number" id="variantColorStock" placeholder="Stock disponible">
+                            <input type="text" id="variantColorSize" placeholder="Option liée (ex: XL)">
+                            <input type="number" id="variantColorStock" placeholder="Stock">
                         </div>
                         <div class="form-group" style="margin-bottom: 6px;">
-                            <label>Photo spécifique de cette variante</label>
+                            <label>Photo de cette couleur/variante</label>
                             <input type="file" id="variantColorFile" accept="image/*">
                         </div>
-                        <button type="button" id="btnAddVariant" class="btn-add-variant">+ Ajouter cette variante</button>
+                        <button type="button" id="btnAddVariant" class="btn-add-variant">+ Ajouter cette variante couleur</button>
                         <div id="variantList" class="variant-list"></div>
                     </div>
 
-                    <!-- FICHIER PRINCIPAL (Image / Vidéo Cloudinary) -->
                     <div class="form-group">
-                        <label><i class="fa-solid fa-folder-open"></i> Photo Principale / Vidéo (Cloudinary)</label>
-                        <input type="file" id="adminUniversalFile" accept="image/*,video/*,.pdf,.doc,.docx">
-                        <small id="fileInfoLabel" style="color: #ffcc00; font-size: 10px; margin-top: 4px;"></small>
+                        <label><i class="fa-solid fa-folder-open"></i> Photo Principale / Vidéo</label>
+                        <input type="file" id="adminUniversalFile" accept="image/*,video/*">
+                        <small style="color: #ffcc00; font-size: 10px; margin-top: 4px;">Upload instantané avec suivi de progression 0% - 100%</small>
                     </div>
 
                     <div class="form-group">
                         <label><i class="fa-solid fa-align-left"></i> Description (Français)</label>
-                        <textarea id="adminProductDescription" placeholder="Description complète, caractéristiques techniques..."></textarea>
+                        <textarea id="adminProductDescription" placeholder="Description complète..."></textarea>
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fa-solid fa-globe"></i> Description (Anglais - Optionnel)</label>
+                        <label><i class="fa-solid fa-globe"></i> Description (Anglais)</label>
                         <textarea id="adminProductDescriptionEn" placeholder="Full description in English..."></textarea>
                     </div>
 
-                    <!-- COMMISSIONS -->
                     <div class="commission-box">
-                        <div class="commission-title">💰 Répartition des Commissions (Total = 100%)</div>
+                        <div class="commission-title">💰 Commissions Réparties</div>
                         <div class="commission-grid">
                             <div class="commission-input">
                                 <label>Vendeur (%)</label>
@@ -261,10 +289,9 @@ export async function init() {
                         </div>
                     </div>
 
-                    <button type="button" id="adminAddProduct" class="btn-pub-action">🚀 Publier l'Article sur DAKPROÉLITE</button>
+                    <button type="button" id="adminAddProduct" class="btn-pub-action">🚀 Publier l'Article</button>
                 </div>
 
-                <!-- APERÇU MEDIA -->
                 <div class="pub-card">
                     <div class="pub-card-title">👁️ Aperçu du Média</div>
                     <div id="adminPreviewBox" class="preview-box">
@@ -277,7 +304,6 @@ export async function init() {
         </div>
     `;
 
-    // 1. Initialisation des Puces de Tailles/Options
     const sizePresetContainer = document.getElementById("sizePresetContainer");
     const allPresets = [...presetTaillesVetements, ...presetPointuresChaussures, "Standard", "1000W", "2000W", "3000W", "4K Ultra HD", "16Go", "32Go", "64Go", "128Go"];
     sizePresetContainer.innerHTML = allPresets.map(size => `<span class="size-chip" data-size="${size}">${size}</span>`).join("");
@@ -294,9 +320,9 @@ export async function init() {
         });
     });
 
-    // 2. Gestion des Variantes / Couleurs / Modèles
     const btnAddVariant = document.getElementById("btnAddVariant");
     const variantList = document.getElementById("variantList");
+    const statusBox = document.getElementById("adminPublicationStatus");
 
     btnAddVariant.addEventListener("click", async () => {
         const colorName = document.getElementById("variantColorName").value.trim();
@@ -305,19 +331,20 @@ export async function init() {
         const colorStock = document.getElementById("variantColorStock").value.trim();
         const colorFile = document.getElementById("variantColorFile").files[0];
 
-        if (!colorName) return alert("⚠️ Indiquez au moins le nom de la variante ou de la couleur.");
+        if (!colorName) return alert("⚠️ Indiquez au moins le nom de la variante couleur.");
 
         let uploadedVarUrl = "";
         if (colorFile) {
             btnAddVariant.disabled = true;
-            btnAddVariant.textContent = "⏳ Upload Cloudinary en cours...";
             try {
-                uploadedVarUrl = await uploadToCloudinaryWithProgress(colorFile);
+                uploadedVarUrl = await uploadToCloudinaryWithProgress(colorFile, (percent) => {
+                    btnAddVariant.textContent = `⏳ Envoi variante couleur : ${percent}%`;
+                });
             } catch (err) {
-                alert("Erreur Cloudinary variante: " + err.message);
+                console.warn(err);
             } finally {
                 btnAddVariant.disabled = false;
-                btnAddVariant.textContent = "+ Ajouter cette variante";
+                btnAddVariant.textContent = "+ Ajouter cette variante couleur";
             }
         }
 
@@ -358,7 +385,6 @@ export async function init() {
         renderVariantList();
     };
 
-    // 3. Rendu dynamique des Catégories & Sous-Catégories avec filtres
     const catSelect = document.getElementById("adminProductCategory");
     const subCatSelect = document.getElementById("adminProductSubCategory");
     const categorySearchInput = document.getElementById("categorySearchInput");
@@ -413,7 +439,6 @@ export async function init() {
         renderSubCategories(e.target.value);
     });
 
-    // 4. Aperçu Média Principal
     const universalFileInput = document.getElementById("adminUniversalFile");
     const canvas = document.getElementById("imageCanvas");
     const videoPreview = document.getElementById("videoPreview");
@@ -447,7 +472,6 @@ export async function init() {
         }
     });
 
-    // 5. Enregistrement et Publication Finale vers Firebase & Cloudinary
     const publishBtn = document.getElementById("adminAddProduct");
     publishBtn.addEventListener("click", async () => {
         const nom = document.getElementById("adminProductName").value.trim();
@@ -458,16 +482,18 @@ export async function init() {
         const prix = parseFloat(document.getElementById("adminProductPrice").value);
         const customSize = document.getElementById("customSizeInput").value.trim();
 
+        const isFlash = document.getElementById("isFlashCheck").checked;
+        const isRecommande = document.getElementById("isRecommandeCheck").checked;
+
         if (customSize && !selectedSizesArray.includes(customSize)) {
             selectedSizesArray.push(customSize);
         }
 
         if (!nom || !categorie || isNaN(prix) || prix < 0) {
-            return alert("⚠️ Veuillez remplir le nom de l'article, choisir une catégorie et indiquer un prix valide.");
+            return alert("⚠️ Veuillez remplir le nom, choisir une catégorie et indiquer un prix valide.");
         }
 
         publishBtn.disabled = true;
-        publishBtn.textContent = "⏳ Envoi des fichiers vers Cloudinary & Firebase...";
 
         try {
             let mainImageUrl = "";
@@ -475,14 +501,20 @@ export async function init() {
             const universalFile = universalFileInput.files[0];
 
             if (universalFile) {
-                publishBtn.textContent = "⏳ Téléchargement du média principal (Cloudinary)...";
-                const uploadedUrl = await uploadToCloudinaryWithProgress(universalFile);
+                const uploadedUrl = await uploadToCloudinaryWithProgress(universalFile, (percent) => {
+                    publishBtn.textContent = `⏳ TELEVERSEMENT : ${percent}%`;
+                    statusBox.textContent = `⏳ Envoi du média vers Cloudinary : ${percent}%`;
+                });
+
                 if (universalFile.type.startsWith("video/")) {
                     mainVideoUrl = uploadedUrl;
                 } else {
                     mainImageUrl = uploadedUrl;
                 }
             }
+
+            publishBtn.textContent = "⚡ PUBLICATION EN COURS (100%)...";
+            statusBox.textContent = "⚡ Enregistrement instantané dans la base de données...";
 
             const newRef = push(ref(db, "publications"));
             const prodId = newRef.key;
@@ -506,6 +538,8 @@ export async function init() {
                 video: mainVideoUrl,
                 description: document.getElementById("adminProductDescription").value.trim(),
                 description_en: document.getElementById("adminProductDescriptionEn").value.trim(),
+                isFlash: isFlash,
+                isRecommande: isRecommande,
                 commissions: {
                     vendeur: parseFloat(document.getElementById("adminCommissionProduit").value) || 80,
                     affiliation: parseFloat(document.getElementById("adminCommissionAffiliation").value) || 5,
@@ -520,14 +554,16 @@ export async function init() {
             await set(ref(db, `publications/${prodId}`), payload);
             await set(ref(db, `produits/${prodId}`), payload);
 
-            alert("✅ VOTRE ARTICLE (MOTO, CAMÉRA, ACCESSOIRE OU AUTRE) A ÉTÉ PUBLIÉ AVEC SUCCÈS !");
+            statusBox.textContent = "✅ PUBLICATION RÉUSSIE À 100% !";
+            alert("✅ ARTICLE PUBLIÉ AVEC SUCCÈS SUR DAKPROÉLITE !");
             location.reload();
         } catch (err) {
             console.error(err);
             alert("❌ Erreur de publication : " + err.message);
+            statusBox.textContent = "❌ Erreur de publication rencontrée.";
         } finally {
             publishBtn.disabled = false;
-            publishBtn.textContent = "🚀 Publier l'Article sur DAKPROÉLITE";
+            publishBtn.textContent = "🚀 Publier l'Article";
         }
     });
 }
