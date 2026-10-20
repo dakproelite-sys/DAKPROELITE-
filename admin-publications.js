@@ -1,7 +1,7 @@
 /* ============================================================
    DAKPRO ÉLITE — admin-publications.js
-   MODULE DE PUBLICATION UNIFIÉ AVEC CATÉGORIES VISUELLES,
-   ICÔNES, MULTI-VARIANTES MULTI-PHOTOS ET FIREBASE
+   MODULE DE PUBLICATION UNIFIÉ AVEC LIENS D'AFFILIATION,
+   GESTION COMPTABLE DES COMMISSIONS ET MULTI-VARIANTES ILLIMITÉES
 ============================================================ */
 
 import {
@@ -199,7 +199,7 @@ const presetTaillesVetements = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", 
 const presetPointuresChaussures = ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48"];
 
 let selectedSizesArray = [];
-let variantsArray = []; // Stockera chaque variante avec son image, son nom, son prix, etc.
+let variantsArray = [];
 let selectedCategoryValue = "";
 
 function uploadToCloudinaryWithProgress(file, onProgress) {
@@ -288,7 +288,6 @@ export async function init() {
             .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ffcc00; font-weight: 700; cursor: pointer; }
             .checkbox-item input { width: auto; cursor: pointer; }
 
-            /* STYLES CATALOGUE VISUEL AVEC ICÔNES */
             .category-picker-box { background: #0a0c10; border: 1px solid #282836; border-radius: 8px; padding: 12px; margin-bottom: 15px; max-height: 350px; overflow-y: auto; }
             .cat-search-input { width: 100%; padding: 10px; font-size: 12px; border: 1px solid #282836; border-radius: 6px; background: #050505; color: #ffcc00; margin-bottom: 12px; outline: none; }
             .cat-section { margin-bottom: 15px; }
@@ -306,15 +305,14 @@ export async function init() {
             .size-chip { padding: 5px 10px; background: #181824; border: 1px solid #333; border-radius: 6px; font-size: 11px; color: #ddd; cursor: pointer; user-select: none; transition: .15s; }
             .size-chip.active { background: #ffcc00; color: #000; font-weight: 800; border-color: #ffcc00; }
 
-            /* SECTION MULTI-VARIANTES MULTI-PHOTOS AVANCÉE */
             .variant-box { background: #0a0c10; border: 1px dashed #ffcc00; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
             .variant-title { font-size: 11px; font-weight: 800; color: #ffcc00; margin-bottom: 10px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
-            .variant-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+            .variant-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; padding-right: 4px; }
             .variant-card-item { display: flex; flex-direction: column; gap: 6px; background: #13131a; padding: 10px; border-radius: 8px; border: 1px solid #282836; }
             .variant-card-top { display: flex; align-items: center; gap: 10px; }
-            .variant-card-top img { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ffcc00; background: #000; }
+            .variant-card-top img { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ffcc00; background: #000; flex-shrink: 0; }
             .variant-card-inputs { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 6px; align-items: center; width: 100%; }
-            .variant-card-inputs input { background: #050505; border: 1px solid #282836; color: #ffcc00; padding: 6px 8px; border-radius: 4px; font-size: 11px; }
+            .variant-card-inputs input { background: #050505; border: 1px solid #282836; color: #ffcc00; padding: 6px 8px; border-radius: 4px; font-size: 11px; width: 100%; }
             .btn-remove-variant { color: #ef4444; cursor: pointer; background: transparent; border: none; font-size: 16px; font-weight: 900; padding: 4px 8px; }
             .btn-upload-multiple { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; font-weight: 800; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 11px; text-transform: uppercase; width: 100%; text-align: center; display: block; }
 
@@ -349,9 +347,8 @@ export async function init() {
                         <input type="text" id="adminProductName" placeholder="Ex : Chaussures en Cuir / Moto Électrique...">
                     </div>
 
-                    <!-- SÉLECTEUR DE CATÉGORIE VISUEL AVEC ICÔNES -->
                     <div class="form-group">
-                        <label><i class="fa-solid fa-icons"></i> Sélectionner la Catégorie</label>
+                        <label><i class="fa-solid fa-icons"></i> Sélectionner la Catégorie (Cliquez pour activer)</label>
                         <div class="category-picker-box">
                             <input type="search" id="categorySearchInput" class="cat-search-input" placeholder="🔎 Rechercher une catégorie...">
                             <div id="visualCategoriesContainer"></div>
@@ -396,10 +393,9 @@ export async function init() {
                         <input type="text" id="customSizeInput" placeholder="Option sur-mesure (ex: 42, XL, 2000W)...">
                     </div>
 
-                    <!-- GESTION MULTI-PHOTOS MULTI-VARIANTES (CHOIX DE PLUSIEURS IMAGES EN UN CLIC) -->
                     <div class="variant-box">
                         <div class="variant-title">
-                            <span>🎨 Variantes & Photos Multi-Couleurs (Ex: Noire, Marron...)</span>
+                            <span>🎨 Variantes & Photos Multi-Couleurs (Illimité : 10, 50, 100+ photos)</span>
                             <span id="variantCounter" style="color:#22c55e; font-size:10px;">0 variante(s)</span>
                         </div>
                         <div class="form-group" style="margin-bottom: 8px;">
@@ -424,7 +420,7 @@ export async function init() {
                     </div>
 
                     <div class="commission-box">
-                        <div class="commission-title">💰 Commissions Réparties</div>
+                        <div class="commission-title">💰 Commissions Réparties & Comptabilité</div>
                         <div class="commission-grid">
                             <div class="commission-input">
                                 <label>Vendeur (%)</label>
@@ -441,7 +437,7 @@ export async function init() {
                         </div>
                     </div>
 
-                    <button type="button" id="adminAddProduct" class="btn-pub-action">🚀 Publier l'Article & ses Variantes</button>
+                    <button type="button" id="adminAddProduct" class="btn-pub-action">🚀 Publier l'Article, Variantes & Générer le Lien d'Affiliation</button>
                 </div>
 
                 <div class="pub-card">
@@ -456,7 +452,6 @@ export async function init() {
         </div>
     `;
 
-    /* GESTION DU RENDU DES CATÉGORIES VISUELLES AVEC RECHERCHE ET REDIRECTION INSTANTANÉE */
     const visualCategoriesContainer = document.getElementById("visualCategoriesContainer");
     const categorySearchInput = document.getElementById("categorySearchInput");
     const selectedCategoryDisplay = document.getElementById("selectedCategoryDisplay");
@@ -517,7 +512,6 @@ export async function init() {
     renderVisualCategories();
     categorySearchInput.addEventListener("input", (e) => renderVisualCategories(e.target.value));
 
-    /* GESTION DES TAILLES */
     const sizePresetContainer = document.getElementById("sizePresetContainer");
     const allPresets = [...presetTaillesVetements, ...presetPointuresChaussures, "Standard", "1000W", "2000W", "3000W", "4K Ultra HD", "16Go", "32Go", "64Go", "128Go"];
     sizePresetContainer.innerHTML = allPresets.map(size => `<span class="size-chip" data-size="${size}">${size}</span>`).join("");
@@ -534,11 +528,11 @@ export async function init() {
         });
     });
 
-    /* GESTION MULTI-PHOTOS ET MULTI-VARIANTES INSTANTANÉES */
     const btnTriggerMultiUpload = document.getElementById("btnTriggerMultiUpload");
     const multipleVariantFiles = document.getElementById("multipleVariantFiles");
     const variantList = document.getElementById("variantList");
     const variantCounter = document.getElementById("variantCounter");
+    const statusBox = document.getElementById("adminPublicationStatus");
 
     btnTriggerMultiUpload.addEventListener("click", () => {
         multipleVariantFiles.click();
@@ -552,31 +546,36 @@ export async function init() {
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const defaultColorName = file.name.substring(0, file.name.lastIndexOf('.')) || `Modèle ${variantsArray.length + 1}`;
+            const cleanName = file.name.substring(0, file.name.lastIndexOf('.')) || `Modèle ${variantsArray.length + 1}`;
             
             let uploadedUrl = "";
             try {
-                btnTriggerMultiUpload.textContent = `⏳ Upload variante ${i+1}/${files.length}...`;
+                btnTriggerMultiUpload.textContent = `⏳ Upload variante ${i+1}/${files.length} (0%)...`;
+                statusBox.textContent = `⏳ Traitement et envoi de la variante ${i+1}/${files.length} vers Cloudinary...`;
+
                 uploadedUrl = await uploadToCloudinaryWithProgress(file, (percent) => {
-                    btnTriggerMultiUpload.textContent = `⏳ Upload ${i+1}/${files.length} (${percent}%)`;
+                    btnTriggerMultiUpload.textContent = `⏳ Upload variante ${i+1}/${files.length} (${percent}%)`;
+                    statusBox.textContent = `⏳ Upload variante ${i+1} sur ${files.length} : ${percent}%`;
                 });
             } catch (err) {
-                console.warn("Erreur Cloudinary, passage en Base64", err);
+                console.warn("Erreur Cloudinary, passage en Base64 de secours", err);
                 uploadedUrl = URL.createObjectURL(file);
             }
 
             variantsArray.push({
-                couleur: defaultColorName,
+                couleur: cleanName,
                 prix: null,
                 stock: 10,
                 image: uploadedUrl
             });
+            
+            renderVariantCards();
         }
 
         btnTriggerMultiUpload.disabled = false;
         btnTriggerMultiUpload.textContent = "+ 📁 Sélectionner plusieurs photos de variantes";
         multipleVariantFiles.value = "";
-        renderVariantCards();
+        statusBox.textContent = `✅ ${variantsArray.length} variante(s) chargée(s) avec succès.`;
     });
 
     function renderVariantCards() {
@@ -591,8 +590,8 @@ export async function init() {
                 <div class="variant-card-top">
                     <img src="${item.image}" alt="Variante">
                     <div class="variant-card-inputs">
-                        <input type="text" class="var-name-input" value="${item.couleur}" placeholder="Nom/Couleur (ex: Chaussure Noire)" data-index="${index}">
-                        <input type="number" class="var-price-input" value="${item.prix || ''}" placeholder="Prix spécifique" data-index="${index}">
+                        <input type="text" class="var-name-input" value="${item.couleur}" placeholder="Nom/Couleur" data-index="${index}">
+                        <input type="number" class="var-price-input" value="${item.prix || ''}" placeholder="Prix spéc." data-index="${index}">
                         <input type="number" class="var-stock-input" value="${item.stock || 10}" placeholder="Stock" data-index="${index}">
                         <button type="button" class="btn-remove-variant" onclick="window.removeVariantItem(${index})">✕</button>
                     </div>
@@ -600,7 +599,6 @@ export async function init() {
             </div>
         `).join("");
 
-        // Synchroniser les champs de saisie en temps réel
         variantList.querySelectorAll(".var-name-input").forEach(input => {
             input.addEventListener("input", (e) => {
                 const idx = e.target.dataset.index;
@@ -626,7 +624,6 @@ export async function init() {
         renderVariantCards();
     };
 
-    /* APERÇU DU MÉDIA PRINCIPAL */
     const universalFileInput = document.getElementById("adminUniversalFile");
     const canvas = document.getElementById("imageCanvas");
     const videoPreview = document.getElementById("videoPreview");
@@ -660,9 +657,7 @@ export async function init() {
         }
     });
 
-    /* PUBLICATION VERS FIREBASE */
     const publishBtn = document.getElementById("adminAddProduct");
-    const statusBox = document.getElementById("adminPublicationStatus");
 
     publishBtn.addEventListener("click", async () => {
         const nom = document.getElementById("adminProductName").value.trim();
@@ -690,8 +685,8 @@ export async function init() {
 
             if (universalFile) {
                 const uploadedUrl = await uploadToCloudinaryWithProgress(universalFile, (percent) => {
-                    publishBtn.textContent = `⏳ TELEVERSEMENT PRINCIPAL : ${percent}%`;
-                    statusBox.textContent = `⏳ Envoi du média principal vers Cloudinary : ${percent}%`;
+                    publishBtn.textContent = `⏳ MÉDIA PRINCIPAL : ${percent}%`;
+                    statusBox.textContent = `⏳ Téléversement du média principal : ${percent}%`;
                 });
 
                 if (universalFile.type.startsWith("video/")) {
@@ -701,17 +696,29 @@ export async function init() {
                 }
             }
 
-            // Si aucune image principale n'est fournie mais qu'il y a des variantes photos, on prend la première variante comme image principale
             if (!mainImageUrl && variantsArray.length > 0 && variantsArray[0].image) {
                 mainImageUrl = variantsArray[0].image;
             }
 
-            publishBtn.textContent = "⚡ PUBLICATION EN COURS (100%)...";
-            statusBox.textContent = "⚡ Enregistrement instantané dans la base de données...";
+            publishBtn.textContent = "⚡ ENREGISTREMENT FIREBASE & GÉNÉRATION AFFILIATION...";
+            statusBox.textContent = "⚡ Écriture des données comptables et du lien d'affiliation...";
 
             const newRef = push(ref(db, "publications"));
             const prodId = newRef.key;
             const vendeurUid = currentUser?.uid || "admin_dakpro_id";
+
+            // Génération dynamique du lien d'affiliation unique pour e-commerce
+            const baseUrl = window.location.origin + window.location.pathname;
+            const lienAffiliation = `${baseUrl}?produit=${prodId}&ref=${vendeurUid}`;
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString("fr-FR", { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' });
+            const fullDateTime = `${dateStr} à ${timeStr}`;
+
+            const commVendeurPct = parseFloat(document.getElementById("adminCommissionProduit").value) || 80;
+            const commAffiliationPct = parseFloat(document.getElementById("adminCommissionAffiliation").value) || 5;
+            const commPlateformePct = parseFloat(document.getElementById("adminCommissionPlateforme").value) || 15;
 
             const payload = {
                 id: prodId,
@@ -733,22 +740,30 @@ export async function init() {
                 description_en: document.getElementById("adminProductDescription").value.trim(),
                 isFlash: isFlash,
                 isRecommande: isRecommande,
+                lienAffiliation: lienAffiliation,
                 commissions: {
-                    vendeur: parseFloat(document.getElementById("adminCommissionProduit").value) || 80,
-                    affiliation: parseFloat(document.getElementById("adminCommissionAffiliation").value) || 5,
-                    plateforme: parseFloat(document.getElementById("adminCommissionPlateforme").value) || 15
+                    vendeur: commVendeurPct,
+                    affiliation: commAffiliationPct,
+                    plateforme: commPlateformePct
+                },
+                comptabilite: {
+                    montantVendeur: (prix * commVendeurPct) / 100,
+                    montantAffilie: (prix * commAffiliationPct) / 100,
+                    montantPlateforme: (prix * commPlateformePct) / 100
                 },
                 actif: true,
                 createdBy: vendeurUid,
                 createdAt: serverTimestamp(),
-                datePublication: new Date().toLocaleDateString("fr-FR")
+                datePublication: dateStr,
+                heurePublication: timeStr,
+                horodatageComplet: fullDateTime
             };
 
             await set(ref(db, `publications/${prodId}`), payload);
             await set(ref(db, `produits/${prodId}`), payload);
 
             statusBox.textContent = "✅ PUBLICATION RÉUSSIE À 100% !";
-            alert("✅ ARTICLE ET SES VARIANTES PUBLIÉS AVEC SUCCÈS SUR DAKPROÉLITE !");
+            alert(`✅ ARTICLE, VARIANTES ET LIENS D'AFFILIATION PUBLIÉS !\n\n🔗 Lien d'affiliation généré :\n${lienAffiliation}\n\n🕒 Publié le : ${fullDateTime}`);
             location.reload();
         } catch (err) {
             console.error(err);
@@ -756,7 +771,7 @@ export async function init() {
             statusBox.textContent = "❌ Erreur de publication rencontrée.";
         } finally {
             publishBtn.disabled = false;
-            publishBtn.textContent = "🚀 Publier l'Article & ses Variantes";
+            publishBtn.textContent = "🚀 Publier l'Article, Variantes & Générer le Lien d'Affiliation";
         }
     });
 }
