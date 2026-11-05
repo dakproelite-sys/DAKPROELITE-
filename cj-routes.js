@@ -1,6 +1,8 @@
 // ==========================================
-// MODULE DAKPRO : Intégration CJdropshipping (Backend avec Cloudinary & Firebase)
+// MODULE DAKPRO : Intégration CJdropshipping (Backend Vercel / Express)
 // ==========================================
+const express = require('express');
+const router = express.Router();
 const axios = require('axios');
 const cloudinary = require('cloudinary').v2;
 
@@ -13,130 +15,102 @@ cloudinary.config({
 
 // Configuration CJdropshipping
 const CJ_API_BASE = 'https://developers.cjdropshipping.com/api2.0/v1';
-const CJ_EMAIL = process.env.CJ_EMAIL; 
-const CJ_API_KEY = process.env.CJ_API_KEY; 
-
 let cjAccessToken = null;
 let tokenExpiresAt = null;
 
+// Obtention et rafraîchissement du Token CJ
 async function getCJAccessToken() {
+    const CJ_EMAIL = process.env.CJ_EMAIL;
+    const CJ_API_KEY = process.env.CJ_API_KEY;
+
+    if (!CJ_EMAIL || !CJ_API_KEY) {
+        throw new Error("Les variables CJ_EMAIL ou CJ_API_KEY ne sont pas définies sur Vercel.");
+    }
+
     if (cjAccessToken && tokenExpiresAt && Date.now() < tokenExpiresAt) {
         return cjAccessToken;
     }
+
     try {
         const response = await axios.post(`${CJ_API_BASE}/authentication/getAccessToken`, {
             email: CJ_EMAIL,
             apiKey: CJ_API_KEY
         });
-        if (response.data && response.data.result) {
-            cjAccessToken = response.data.data.accessToken;
-            tokenExpiresAt = Date.now() + (25 * 24 * 60 * 60 * 1000); 
+
+        const resData = response.data;
+        if ((resData.code === 200 || resData.result) && resData.data && resData.data.accessToken) {
+            cjAccessToken = resData.data.accessToken;
+            tokenExpiresAt = Date.now() + (14 * 24 * 60 * 60 * 1000); // 14 jours de sécurité
             return cjAccessToken;
         }
-        throw new Error('Échec d\'authentification CJdropshipping');
+
+        throw new Error(resData.message || 'Échec d\'authentification auprès de CJdropshipping.');
     } catch (error) {
         console.error('Erreur Auth CJ:', error.response?.data || error.message);
         throw error;
     }
 }
 
-module.exports = function(app, db) {
-    // 1. Route de recherche de produits CJ (Gère les deux formats de préfixes pour éviter le 404)
-    const handleSearch = async (req, res) => {
-        try {
-            res.setHeader('Content-Type', 'application/json');
-            const token = await getCJAccessToken();
-            const { keyword, categoryId, pageNum = 1, pageSize = 20 } = req.query;
+// 1. Route de recherche de produits CJ
+const handleSearch = async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+        const token = await getCJAccessToken();
+        const { keyword, categoryId, pageNum = 1, pageSize = 20 } = req.query;
 
-            const response = await axios.get(`${CJ_API_BASE}/product/list`, {
-                headers: { 'CJ-Access-Token': token },
-                params: { keyword, categoryId, pageNum, pageSize }
-            });
+        const response = await axios.get(`${CJ_API_BASE}/product/list`, {
+            headers: { 'CJ-Access-Token': token },
+            params: { keyword, categoryId, pageNum, pageSize }
+        });
 
-            return res.json(response.data);
-        } catch (error) {
-            console.error('Erreur recherche CJ:', error.message);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    };
-
-    app.get('/api/dakpro/cj/search', handleSearch);
-    app.get('/cj/search', handleSearch); // Route de secours
-
-    // 2. Route pour récupérer les détails complets d'un produit
-    const handleDetail = async (req, res) => {
-        try {
-            res.setHeader('Content-Type', 'application/json');
-            const token = await getCJAccessToken();
-            const { pid } = req.params;
-
-            const response = await axios.get(`${CJ_API_BASE}/product/detail`, {
-                headers: { 'CJ-Access-Token': token },
-                params: { pid }
-            });
-
-            return res.json(response.data);
-        } catch (error) {
-            console.error('Erreur détail CJ:', error.message);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    };
-
-    app.get('/api/dakpro/cj/product/:pid', handleDetail);
-    app.get('/cj/product/:pid', handleDetail); // Route de secours
-
-    // 3. Route d'importation : Upload Cloudinary + Enregistrement Firebase
-    const handleImport = async (req, res) => {
-        try {
-            res.setHeader('Content-Type', 'application/json');
-            const productData = req.body;
-            let secureImageUrl = productData.productImage;
-
-            if (secureImageUrl && secureImageUrl.startsWith('http')) {
-                try {
-                    const uploadResponse = await cloudinary.uploader.upload(secureImageUrl, {
-                        folder: 'dakpro_elite/products'
-                    });
-                    secureImageUrl = uploadResponse.secure_url; 
-                } catch (cloudError) {
-                    console.error('Erreur upload Cloudinary (utilisant l\'image de secours):', cloudError.message);
-                }
-            }
-            
-            const newProduct = {
-                title: productData.productName,
-                description: productData.description || '',
-                image: secureImageUrl,
-                images: [secureImageUrl],
-                sku: productData.productSku,
-                costPrice: productData.costPrice || productData.sellPrice, 
-                price: productData.sellPrice, 
-                markupPercentage: productData.markupPercentage || 30, 
-                variants: productData.variants || [],
-                source: 'CJdropshipping',
-                status: productData.publishNow ? 'active' : 'draft',
-                createdAt: new Date()
-            };
-
-            const docRef = await db.collection('products').add(newProduct);
-
-            const actionMessage = productData.publishNow 
-                ? 'Produit publié avec succès sur la marketplace DAKPRO !' 
-                : 'Produit enregistré dans les brouillons avec succès.';
-
-            return res.json({ 
-                success: true, 
-                message: actionMessage,
-                productId: docRef.id,
-                product: newProduct 
-            });
-
-        } catch (error) {
-            console.error('Erreur lors de l\'importation du produit :', error);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    };
-
-    app.post('/api/dakpro/products/import', handleImport);
-    app.post('/dakpro/products/import', handleImport); // Route de secours
+        return res.json({
+            success: true,
+            data: response.data.data || response.data
+        });
+    } catch (error) {
+        console.error('Erreur recherche CJ:', error.message);
+        return res.status(500).json({ success: false, error: error.message });
+    }
 };
+
+// 2. Route pour récupérer les détails complets d'un produit
+const handleDetail = async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+        const token = await getCJAccessToken();
+        const { pid } = req.params;
+
+        const response = await axios.get(`${CJ_API_BASE}/product/detail`, {
+            headers: { 'CJ-Access-Token': token },
+            params: { pid }
+        });
+
+        return res.json({
+            success: true,
+            data: response.data.data || response.data
+        });
+    } catch (error) {
+        console.error('Erreur détail CJ:', error.message);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Déclaration des routes (Prise en charge de tous les préfixes possibles)
+router.get('/dakpro/cj/search', handleSearch);
+router.get('/cj/search', handleSearch);
+router.get('/search', handleSearch);
+
+router.get('/dakpro/cj/product/:pid', handleDetail);
+router.get('/cj/product/:pid', handleDetail);
+router.get('/product/:pid', handleDetail);
+
+// Exportation sous forme de fonction d'initialisation ET de Router Express
+module.exports = function(app, db) {
+    if (app) {
+        app.get('/api/dakpro/cj/search', handleSearch);
+        app.get('/api/dakpro/cj/product/:pid', handleDetail);
+    }
+    return router;
+};
+
+module.exports.router = router;
