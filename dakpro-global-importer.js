@@ -37,7 +37,7 @@ class DakproCJImporter {
 
                     <!-- Barre de recherche -->
                     <div style="display: flex; gap: 12px; margin-bottom: 28px; background: #111827; padding: 16px; border-radius: 12px; border: 1px solid #1F2937;">
-                        <input type="text" id="cj-search-input" placeholder="Rechercher un produit (ex: Chemise, smart watch, shoes)..." 
+                        <input type="text" id="cj-search-input" placeholder="Rechercher un produit (ex: phone, watch, shoes, shirt)..." 
                             style="flex: 1; padding: 14px 18px; background: #0B0F19; border: 1px solid #374151; color: #F8FAFC; border-radius: 8px; font-size: 15px; outline: none;">
                         <button id="cj-search-btn" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: #0B0F19; border: none; padding: 0 28px; border-radius: 8px; font-weight: 800; font-size: 15px; cursor: pointer;">
                             Rechercher
@@ -90,9 +90,15 @@ class DakproCJImporter {
         grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #FBBF24; padding: 50px; font-weight: 600;">Recherche en cours dans le catalogue CJ...</div>';
 
         try {
-            // CORRECTION CRUCIALE : Pointe directement vers /api/search
-            const response = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}&pageNum=${this.currentPage}`);
-            const data = await response.json();
+            const response = await fetch(`/api/dakpro/cj/search?keyword=${encodeURIComponent(keyword)}&pageNum=${this.currentPage}`);
+            const textResponse = await response.text();
+
+            let data;
+            try {
+                data = JSON.parse(textResponse);
+            } catch (e) {
+                throw new Error("Le serveur Vercel renvoie du code brut au lieu du JSON. Vérifie le déploiement.");
+            }
 
             if (data.success && data.data && (data.data.list || data.data.length)) {
                 const products = data.data.list || data.data;
@@ -101,7 +107,7 @@ class DakproCJImporter {
                 grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #EF4444; padding: 50px; background: #111827; border-radius: 12px;">Aucun produit trouvé pour cette recherche.</div>';
             }
         } catch (error) {
-            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #EF4444; padding: 50px; background: #111827; border-radius: 12px;">Erreur de communication : ${error.message}</div>`;
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #EF4444; padding: 30px; background: #111827; border-radius: 12px; font-size: 13px;">Problème de liaison serveur : ${error.message}</div>`;
         }
     }
 
