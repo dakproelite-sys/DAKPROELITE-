@@ -4,7 +4,7 @@
 const axios = require('axios');
 const cloudinary = require('cloudinary').v2;
 
-// Configuration Cloudinary (Récupérée depuis tes variables d'environnement)
+// Configuration Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -41,9 +41,10 @@ async function getCJAccessToken() {
 }
 
 module.exports = function(app, db) {
-    // 1. Route de recherche de produits CJ
-    app.get('/api/dakpro/cj/search', async (req, res) => {
+    // 1. Route de recherche de produits CJ (Gère les deux formats de préfixes pour éviter le 404)
+    const handleSearch = async (req, res) => {
         try {
+            res.setHeader('Content-Type', 'application/json');
             const token = await getCJAccessToken();
             const { keyword, categoryId, pageNum = 1, pageSize = 20 } = req.query;
 
@@ -52,15 +53,20 @@ module.exports = function(app, db) {
                 params: { keyword, categoryId, pageNum, pageSize }
             });
 
-            res.json(response.data);
+            return res.json(response.data);
         } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
+            console.error('Erreur recherche CJ:', error.message);
+            return res.status(500).json({ success: false, error: error.message });
         }
-    });
+    };
+
+    app.get('/api/dakpro/cj/search', handleSearch);
+    app.get('/cj/search', handleSearch); // Route de secours
 
     // 2. Route pour récupérer les détails complets d'un produit
-    app.get('/api/dakpro/cj/product/:pid', async (req, res) => {
+    const handleDetail = async (req, res) => {
         try {
+            res.setHeader('Content-Type', 'application/json');
             const token = await getCJAccessToken();
             const { pid } = req.params;
 
@@ -69,19 +75,23 @@ module.exports = function(app, db) {
                 params: { pid }
             });
 
-            res.json(response.data);
+            return res.json(response.data);
         } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
+            console.error('Erreur détail CJ:', error.message);
+            return res.status(500).json({ success: false, error: error.message });
         }
-    });
+    };
+
+    app.get('/api/dakpro/cj/product/:pid', handleDetail);
+    app.get('/cj/product/:pid', handleDetail); // Route de secours
 
     // 3. Route d'importation : Upload Cloudinary + Enregistrement Firebase
-    app.post('/api/dakpro/products/import', async (req, res) => {
+    const handleImport = async (req, res) => {
         try {
+            res.setHeader('Content-Type', 'application/json');
             const productData = req.body;
             let secureImageUrl = productData.productImage;
 
-            // Sécurité & Migration vers Cloudinary : Si l'image vient de CJ, on l'upload sur Cloudinary
             if (secureImageUrl && secureImageUrl.startsWith('http')) {
                 try {
                     const uploadResponse = await cloudinary.uploader.upload(secureImageUrl, {
@@ -93,7 +103,6 @@ module.exports = function(app, db) {
                 }
             }
             
-            // Formatage complet pour DAKPRO ÉLITE
             const newProduct = {
                 title: productData.productName,
                 description: productData.description || '',
@@ -109,14 +118,13 @@ module.exports = function(app, db) {
                 createdAt: new Date()
             };
 
-            // Enregistrement effectif dans Firebase Firestore
             const docRef = await db.collection('products').add(newProduct);
 
             const actionMessage = productData.publishNow 
                 ? 'Produit publié avec succès sur la marketplace DAKPRO !' 
                 : 'Produit enregistré dans les brouillons avec succès.';
 
-            res.json({ 
+            return res.json({ 
                 success: true, 
                 message: actionMessage,
                 productId: docRef.id,
@@ -125,7 +133,10 @@ module.exports = function(app, db) {
 
         } catch (error) {
             console.error('Erreur lors de l\'importation du produit :', error);
-            res.status(500).json({ success: false, error: error.message });
+            return res.status(500).json({ success: false, error: error.message });
         }
-    });
+    };
+
+    app.post('/api/dakpro/products/import', handleImport);
+    app.post('/dakpro/products/import', handleImport); // Route de secours
 };
