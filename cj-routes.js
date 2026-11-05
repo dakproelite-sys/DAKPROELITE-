@@ -1,5 +1,5 @@
 // ==========================================
-// MODULE DAKPRO : Intégration CJdropshipping (Backend Vercel / Express)
+// MODULE DAKPRO : Intégration CJdropshipping (Backend Vercel / Express + Realtime Database)
 // ==========================================
 const express = require('express');
 const router = express.Router();
@@ -95,7 +95,62 @@ const handleDetail = async (req, res) => {
     }
 };
 
-// Déclaration des routes (Prise en charge de tous les préfixes possibles)
+// 3. Route d'importation (Adaptée pour Firebase Realtime Database & Cloudinary)
+const handleImport = (dbInstance) => async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+        const productData = req.body;
+        let secureImageUrl = productData.productImage;
+
+        if (secureImageUrl && secureImageUrl.startsWith('http')) {
+            try {
+                const uploadResponse = await cloudinary.uploader.upload(secureImageUrl, {
+                    folder: 'dakpro_elite/products'
+                });
+                secureImageUrl = uploadResponse.secure_url; 
+            } catch (cloudError) {
+                console.error('Erreur upload Cloudinary (utilisation image CJ de secours):', cloudError.message);
+            }
+        }
+        
+        const newProduct = {
+            title: productData.productName,
+            description: productData.description || '',
+            image: secureImageUrl,
+            images: [secureImageUrl],
+            sku: productData.productSku,
+            costPrice: productData.costPrice || productData.sellPrice, 
+            price: productData.sellPrice, 
+            markupPercentage: productData.markupPercentage || 30, 
+            variants: productData.variants || [],
+            source: 'CJdropshipping',
+            status: productData.publishNow ? 'active' : 'draft',
+            createdAt: new Date().toISOString()
+        };
+
+        // Enregistrement dans la Realtime Database avec .push()
+        const newProductRef = dbInstance.ref('products').push();
+        await newProductRef.set(newProduct);
+        const productId = newProductRef.key;
+
+        const actionMessage = productData.publishNow 
+            ? 'Produit publié avec succès sur la marketplace DAKPRO !' 
+            : 'Produit enregistré dans les brouillons avec succès.';
+
+        return res.json({ 
+            success: true, 
+            message: actionMessage,
+            productId: productId,
+            product: newProduct 
+        });
+
+    } catch (error) {
+        console.error('Erreur lors de l\'importation du produit :', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Déclaration des routes GET sur le router
 router.get('/dakpro/cj/search', handleSearch);
 router.get('/cj/search', handleSearch);
 router.get('/search', handleSearch);
@@ -104,12 +159,18 @@ router.get('/dakpro/cj/product/:pid', handleDetail);
 router.get('/cj/product/:pid', handleDetail);
 router.get('/product/:pid', handleDetail);
 
-// Exportation sous forme de fonction d'initialisation ET de Router Express
+// Exportation sous forme de fonction recevant `app` et la base `db` (Realtime Database)
 module.exports = function(app, db) {
     if (app) {
         app.get('/api/dakpro/cj/search', handleSearch);
         app.get('/api/dakpro/cj/product/:pid', handleDetail);
+        app.post('/api/dakpro/products/import', handleImport(db));
     }
+    
+    // Route POST aussi sur le router Express
+    router.post('/dakpro/products/import', handleImport(db));
+    router.post('/products/import', handleImport(db));
+
     return router;
 };
 
