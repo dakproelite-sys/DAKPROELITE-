@@ -1,59 +1,42 @@
-// ==========================================
-// MODULE DAKPRO : Intégration CJdropshipping (Backend Vercel / Express + Realtime Database)
-// ==========================================
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const cloudinary = require('cloudinary').v2;
+const admin = require('firebase-admin');
 
-// Configuration Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// Configuration CJdropshipping
 const CJ_API_BASE = 'https://developers.cjdropshipping.com/api2.0/v1';
 let cjAccessToken = null;
 let tokenExpiresAt = null;
 
-// Obtention et rafraîchissement du Token CJ
+// Fonction pour obtenir le token d'accès CJdropshipping
 async function getCJAccessToken() {
     const CJ_EMAIL = process.env.CJ_EMAIL;
     const CJ_API_KEY = process.env.CJ_API_KEY;
 
     if (!CJ_EMAIL || !CJ_API_KEY) {
-        throw new Error("Les variables CJ_EMAIL ou CJ_API_KEY ne sont pas définies sur Vercel.");
+        throw new Error("Les identifiants CJ_EMAIL ou CJ_API_KEY sont manquants dans les variables d'environnement.");
     }
 
     if (cjAccessToken && tokenExpiresAt && Date.now() < tokenExpiresAt) {
         return cjAccessToken;
     }
 
-    try {
-        const response = await axios.post(`${CJ_API_BASE}/authentication/getAccessToken`, {
-            email: CJ_EMAIL,
-            apiKey: CJ_API_KEY
-        });
+    const response = await axios.post(`${CJ_API_BASE}/authentication/getAccessToken`, {
+        email: CJ_EMAIL,
+        apiKey: CJ_API_KEY
+    });
 
-        const resData = response.data;
-        if ((resData.code === 200 || resData.result) && resData.data && resData.data.accessToken) {
-            cjAccessToken = resData.data.accessToken;
-            tokenExpiresAt = Date.now() + (14 * 24 * 60 * 60 * 1000); // 14 jours de sécurité
-            return cjAccessToken;
-        }
-
-        throw new Error(resData.message || 'Échec d\'authentification auprès de CJdropshipping.');
-    } catch (error) {
-        console.error('Erreur Auth CJ:', error.response?.data || error.message);
-        throw error;
+    const resData = response.data;
+    if ((resData.code === 200 || resData.result) && resData.data && resData.data.accessToken) {
+        cjAccessToken = resData.data.accessToken;
+        tokenExpiresAt = Date.now() + (14 * 24 * 60 * 60 * 1000); // Valide 14 jours
+        return cjAccessToken;
     }
+
+    throw new Error(resData.message || "Échec d'authentification auprès de l'API CJdropshipping.");
 }
 
-// 1. Route de recherche de produits CJ
-const handleSearch = async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
+// Route de recherche de produits : /api/dakpro/cj/search
+router.get('/cj/search', async (req, res) => {
     try {
         const token = await getCJAccessToken();
         const { keyword, categoryId, pageNum = 1, pageSize = 20 } = req.query;
@@ -68,14 +51,13 @@ const handleSearch = async (req, res) => {
             data: response.data.data || response.data
         });
     } catch (error) {
-        console.error('Erreur recherche CJ:', error.message);
+        console.error('Erreur recherche CJ :', error.message);
         return res.status(500).json({ success: false, error: error.message });
     }
-};
+});
 
-// 2. Route pour récupérer les détails complets d'un produit
-const handleDetail = async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
+// Route des détails d'un produit : /api/dakpro/cj/product/:pid
+router.get('/cj/product/:pid', async (req, res) => {
     try {
         const token = await getCJAccessToken();
         const { pid } = req.params;
@@ -90,88 +72,34 @@ const handleDetail = async (req, res) => {
             data: response.data.data || response.data
         });
     } catch (error) {
-        console.error('Erreur détail CJ:', error.message);
+        console.error('Erreur détails produit CJ :', error.message);
         return res.status(500).json({ success: false, error: error.message });
     }
-};
+});
 
-// 3. Route d'importation (Adaptée pour Firebase Realtime Database & Cloudinary)
-const handleImport = (dbInstance) => async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
+// Route d'importation des produits : /api/dakpro/products/import
+router.post('/products/import', async (req, res) => {
     try {
         const productData = req.body;
-        let secureImageUrl = productData.productImage;
-
-        if (secureImageUrl && secureImageUrl.startsWith('http')) {
-            try {
-                const uploadResponse = await cloudinary.uploader.upload(secureImageUrl, {
-                    folder: 'dakpro_elite/products'
-                });
-                secureImageUrl = uploadResponse.secure_url; 
-            } catch (cloudError) {
-                console.error('Erreur upload Cloudinary (utilisation image CJ de secours):', cloudError.message);
-            }
-        }
+        const db = admin.database();
         
-        const newProduct = {
-            title: productData.productName,
-            description: productData.description || '',
-            image: secureImageUrl,
-            images: [secureImageUrl],
-            sku: productData.productSku,
-            costPrice: productData.costPrice || productData.sellPrice, 
-            price: productData.sellPrice, 
-            markupPercentage: productData.markupPercentage || 30, 
-            variants: productData.variants || [],
-            source: 'CJdropshipping',
-            status: productData.publishNow ? 'active' : 'draft',
-            createdAt: new Date().toISOString()
-        };
+        // Détermine la destination (Brouillons ou Catalogue Marketplace actif)
+        const targetPath = productData.publishNow ? 'products/active' : 'products/drafts';
+        const newRef = db.ref(targetPath).push();
 
-        // Enregistrement dans la Realtime Database avec .push()
-        const newProductRef = dbInstance.ref('products').push();
-        await newProductRef.set(newProduct);
-        const productId = newProductRef.key;
-
-        const actionMessage = productData.publishNow 
-            ? 'Produit publié avec succès sur la marketplace DAKPRO !' 
-            : 'Produit enregistré dans les brouillons avec succès.';
-
-        return res.json({ 
-            success: true, 
-            message: actionMessage,
-            productId: productId,
-            product: newProduct 
+        await newRef.set({
+            ...productData,
+            importedAt: new Date().toISOString()
         });
 
+        return res.json({
+            success: true,
+            message: productData.publishNow ? 'Produit publié avec succès sur la marketplace !' : 'Produit enregistré dans les brouillons.'
+        });
     } catch (error) {
-        console.error('Erreur lors de l\'importation du produit :', error);
+        console.error('Erreur importation produit :', error.message);
         return res.status(500).json({ success: false, error: error.message });
     }
-};
+});
 
-// Déclaration des routes GET sur le router
-router.get('/dakpro/cj/search', handleSearch);
-router.get('/cj/search', handleSearch);
-router.get('/search', handleSearch);
-
-router.get('/dakpro/cj/product/:pid', handleDetail);
-router.get('/cj/product/:pid', handleDetail);
-router.get('/product/:pid', handleDetail);
-
-// Exportation sous forme de fonction recevant `app` et la base `db` (Realtime Database)
-module.exports = function(app, db) {
-    if (app) {
-        app.get('/api/dakpro/cj/search', handleSearch);
-        app.get('/api/dakpro/cj/product/:pid', handleDetail);
-        app.post('/api/dakpro/products/import', handleImport(db));
-    }
-    
-    // Route POST aussi sur le router Express
-    router.post('/dakpro/products/import', handleImport(db));
-    router.post('/products/import', handleImport(db));
-
-    return router;
-};
-
-module.exports.router = router;
+module.exports = router;

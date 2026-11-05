@@ -1,11 +1,7 @@
 const express = require('express');
-const app = express();
-
-app.use(express.json());
-
-// 1. Initialisation de Firebase Admin pour la Realtime Database
 const admin = require('firebase-admin');
 
+// Initialisation de Firebase Admin (si ce n'est pas déjà fait ailleurs)
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -13,16 +9,21 @@ if (!admin.apps.length) {
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
             privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined
         }),
-        databaseURL: "https://dakproelite-default-rtdb.firebaseio.com" // Ton URL Realtime Database
+        databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`
     });
 }
 
-// Instance de la Realtime Database
-const db = admin.database();
+const app = express();
+app.use(express.json());
 
-// 2. Importation et injection des routes CJdropshipping
-const cjRoutes = require('./cj-routes.js');
-cjRoutes(app, db);
+// Importation et enregistrement des routes de l'API CJdropshipping
+const cjRoutes = require('./cj-routes');
+app.use('/api/dakpro', cjRoutes);
 
-// 3. Export obligatoire pour les Functions Vercel
+// Route de test pour vérifier que le serveur répond en JSON valide
+app.get('/api/health', (req, res) => {
+    res.json({ success: true, message: 'Le serveur DAKPRO ÉLITE fonctionne parfaitement !' });
+});
+
+// Exportation pour Vercel
 module.exports = app;
