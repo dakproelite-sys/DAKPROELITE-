@@ -1,7 +1,7 @@
 /* ============================================================
    DAKPRO ÉLITE — admin-publications.js
-   MODULE DE PUBLICATION UNIFIÉ AVEC LIENS D'AFFILIATION,
-   GESTION COMPTABLE DES COMMISSIONS ET MULTI-VARIANTES ILLIMITÉES
+   MODULE DE PUBLICATION UNIFIÉ AVEC CATÉGORIES VISUELLES (ICÔNE EN HAUT, NOM EN BAS),
+   LIENS D'AFFILIATION, COMMISSIONS ET MULTI-VARIANTES ILLIMITÉES
 ============================================================ */
 
 import {
@@ -288,16 +288,17 @@ export async function init() {
             .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ffcc00; font-weight: 700; cursor: pointer; }
             .checkbox-item input { width: auto; cursor: pointer; }
 
+            /* DESIGN CATÉGORIES VISUELLES : ICÔNE EN HAUT, NOM EN BAS */
             .category-picker-box { background: #0a0c10; border: 1px solid #282836; border-radius: 8px; padding: 12px; margin-bottom: 15px; max-height: 350px; overflow-y: auto; }
             .cat-search-input { width: 100%; padding: 10px; font-size: 12px; border: 1px solid #282836; border-radius: 6px; background: #050505; color: #ffcc00; margin-bottom: 12px; outline: none; }
             .cat-section { margin-bottom: 15px; }
             .cat-section h4 { font-size: 12px; margin: 0 0 8px; color: #ffcc00; border-bottom: 1px solid #282836; padding-bottom: 4px; }
-            .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
-            .cat-card { border: 1px solid #282836; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; background: #13131a; transition: 0.2s; }
+            .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 8px; }
+            .cat-card { border: 1px solid #282836; border-radius: 8px; padding: 12px 6px; text-align: center; cursor: pointer; background: #13131a; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
             .cat-card:hover { border-color: #ffcc00; transform: translateY(-2px); }
             .cat-card.selected { border: 2px solid #ffcc00; background: #2a250a; }
-            .cat-icon { display: block; font-size: 22px; margin-bottom: 4px; }
-            .cat-name { font-size: 10px; color: #f5f5f7; line-height: 1.2; word-break: break-word; }
+            .cat-icon { display: block; font-size: 26px; margin-bottom: 6px; line-height: 1; }
+            .cat-name { font-size: 10.5px; color: #f5f5f7; line-height: 1.25; word-break: break-word; font-weight: 600; }
 
             .size-box { background: #0a0c10; border: 1px dashed #282836; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
             .size-title { font-size: 11px; font-weight: 800; color: #ffcc00; margin-bottom: 8px; text-transform: uppercase; }
@@ -348,7 +349,7 @@ export async function init() {
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fa-solid fa-icons"></i> Sélectionner la Catégorie (Cliquez pour activer)</label>
+                        <label><i class="fa-solid fa-icons"></i> Sélectionner la Catégorie (Icône en haut, Nom en bas)</label>
                         <div class="category-picker-box">
                             <input type="search" id="categorySearchInput" class="cat-search-input" placeholder="🔎 Rechercher une catégorie...">
                             <div id="visualCategoriesContainer"></div>
@@ -482,6 +483,7 @@ export async function init() {
             matchedCats.forEach(([icon, name]) => {
                 const card = document.createElement("div");
                 card.className = `cat-card ${selectedCategoryValue === name ? 'selected' : ''}`;
+                // STRUCTURE VISUELLE : ICÔNE EN HAUT, NOM EN BAS
                 card.innerHTML = `
                     <span class="cat-icon">${icon}</span>
                     <span class="cat-name">${name}</span>
@@ -492,6 +494,7 @@ export async function init() {
                     selectedCategoryDisplay.textContent = `Catégorie active : ${name}`;
                     renderVisualCategories(categorySearchInput.value);
 
+                    // Événement personnalisé pour basculer directement sur la catégorie dans le reste de l'app
                     window.dispatchEvent(new CustomEvent("dakpro-category-selected", {
                         detail: { category: name }
                     }));
@@ -707,7 +710,6 @@ export async function init() {
             const prodId = newRef.key;
             const vendeurUid = currentUser?.uid || "admin_dakpro_id";
 
-            // Génération dynamique du lien d'affiliation unique pour e-commerce
             const baseUrl = window.location.origin + window.location.pathname;
             const lienAffiliation = `${baseUrl}?produit=${prodId}&ref=${vendeurUid}`;
 
