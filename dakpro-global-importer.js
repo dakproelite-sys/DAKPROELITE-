@@ -1,5 +1,5 @@
 // ==========================================
-// DAKPRO ÉLITE GLOBAL IMPORTER - Version Ultime & Performante (API Réelle + Firebase)
+// DAKPRO ÉLITE GLOBAL IMPORTER - Version Authentique & Zéro-Friction (API Réelle + Firebase)
 // ==========================================
 
 class DakproCJImporter {
@@ -31,7 +31,7 @@ class DakproCJImporter {
                             <h2 style="color: #FBBF24; font-size: 26px; font-weight: 800; margin: 0; text-transform: uppercase;">
                                 🌐 DAKPRO ÉLITE <span style="color: #38BDF8; font-size: 18px; font-weight: 600;">Global Importer Pro</span>
                             </h2>
-                            <p style="color: #94A3B8; font-size: 13px; margin: 4px 0 0 0;">Passerelle CJdropshipping & Synchronisation Catalogue Haute Performance</p>
+                            <p style="color: #94A3B8; font-size: 13px; margin: 4px 0 0 0;">Passerelle Officielle CJdropshipping & Synchronisation Catalogue Réel</p>
                         </div>
                         
                         <div style="display: flex; align-items: center; gap: 12px;">
@@ -42,14 +42,14 @@ class DakproCJImporter {
                                 <option value="EUR" ${this.currentCurrency === 'EUR' ? 'selected' : ''}>EUR (€)</option>
                             </select>
                             <span style="background: linear-gradient(135deg, #059669, #10B981); color: #F8FAFC; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; border: 1px solid #34D399;">
-                                ⚡ Catalogue Illimité Actif
+                                ⚡ Mode API Réel Actif
                             </span>
                         </div>
                     </header>
 
                     <!-- Barre de recherche -->
                     <div style="display: flex; gap: 12px; margin-bottom: 28px; background: #111827; padding: 16px; border-radius: 12px; border: 1px solid #1F2937;">
-                        <input type="text" id="cj-search-input" placeholder="Rechercher un produit (ex: watch, phone, shoes, bags, auto)..." 
+                        <input type="text" id="cj-search-input" placeholder="Rechercher un produit réel (ex: watch, phone, shoes, bags, auto)..." 
                             style="flex: 1; padding: 14px 18px; background: #0B0F19; border: 1px solid #374151; color: #F8FAFC; border-radius: 8px; font-size: 15px; outline: none;">
                         <button id="cj-search-btn" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: #0B0F19; border: none; padding: 0 28px; border-radius: 8px; font-weight: 800; font-size: 15px; cursor: pointer;">
                             Rechercher
@@ -59,10 +59,10 @@ class DakproCJImporter {
                     <!-- Compteur de résultats -->
                     <div id="cj-results-count" style="margin-bottom: 16px; font-size: 14px; color: #94A3B8; font-weight: 600;"></div>
 
-                    <!-- Grille des produits (Optimisée pour des milliers d'articles) -->
+                    <!-- Grille des produits -->
                     <div id="cj-products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
                         <div style="grid-column: 1 / -1; text-align: center; color: #64748B; padding: 60px; background: #111827; border-radius: 12px; border: 1px dashed #374151;">
-                            <p style="font-size: 16px; margin: 0; color: #94A3B8;">Tapez un mot-clé ci-dessus pour explorer le catalogue en direct de CJdropshipping.</p>
+                            <p style="font-size: 16px; margin: 0; color: #94A3B8;">Entrez un mot-clé ci-dessus pour interroger directement le catalogue officiel CJdropshipping.</p>
                         </div>
                     </div>
 
@@ -123,11 +123,10 @@ class DakproCJImporter {
     async searchProducts(keyword) {
         const grid = document.getElementById('cj-products-grid');
         const countDiv = document.getElementById('cj-results-count');
-        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #FBBF24; padding: 50px; font-weight: 600;">Interrogation et synchronisation des produits réels CJ en cours...</div>';
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #FBBF24; padding: 50px; font-weight: 600;">Interrogation du catalogue CJdropshipping en cours...</div>';
         countDiv.innerHTML = '';
 
         try {
-            // Appel vers la passerelle Vercel /api/search
             const response = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}&pageNum=${this.currentPage}&pageSize=50`);
             const result = await response.json();
 
@@ -136,9 +135,9 @@ class DakproCJImporter {
                 if (Array.isArray(list) && list.length > 0) {
                     this.productsCache = {};
                     const formattedProducts = list.map(item => {
-                        const price = parseFloat(item.sellPrice || item.productPrice || item.price || 15.00);
-                        const compare = price * 1.35;
-                        const imgUrl = item.productImage || item.image || item.imageUrl || 'https://res.cloudinary.com/iufene3y/image/upload/v1792484606/dakproelite/yy58ebidn8qxq4bhksff.jpg';
+                        const price = parseFloat(item.sellPrice || item.productPrice || item.price || 0);
+                        const compare = parseFloat(item.comparePrice || item.originalPrice || (price * 1.35));
+                        const imgUrl = item.productImage || item.image || item.imageUrl || '';
                         
                         const pData = {
                             pid: item.pid || item.productId || 'cj_' + Math.random().toString(36).substring(2, 9),
@@ -147,42 +146,31 @@ class DakproCJImporter {
                             productImage: imgUrl,
                             sellPrice: price,
                             comparePrice: compare,
-                            productSku: item.productSku || item.sku || 'CJ-SKU-' + Math.floor(Math.random() * 10000),
-                            description: item.description || `Produit officiel importé de CJdropshipping pour la catégorie ${keyword}.`,
-                            descriptionEn: item.descriptionEn || item.description || `Official product imported from CJdropshipping for ${keyword}.`
+                            productSku: item.productSku || item.sku || 'CJ-SKU-REF',
+                            description: item.description || item.remark || `Aucune description détaillée fournie par le fournisseur pour ce produit.`,
+                            descriptionEn: item.descriptionEn || item.description || `No detailed description provided by the supplier for this product.`
                         };
                         this.productsCache[pData.pid] = pData;
                         return pData;
-                    });
+                    }).filter(p => p.productImage !== ''); // Ignore les articles sans image valide
 
-                    countDiv.innerHTML = `✨ <b>${formattedProducts.length}</b> produits réels trouvés et prêts pour l'importation.`;
-                    this.renderProducts(formattedProducts);
-                    return;
+                    if (formattedProducts.length > 0) {
+                        countDiv.innerHTML = `✨ <b>${formattedProducts.length}</b> produits réels trouvés.`;
+                        this.renderProducts(formattedProducts);
+                        return;
+                    }
                 }
             }
-            throw new Error("Aucun article retourné par l'API.");
+            throw new Error("Aucun article valide trouvé.");
         } catch (error) {
-            console.warn("Utilisation du catalogue étendu de secours :", error.message);
-            // Catalogue de secours riche et réaliste si l'API met du temps à répondre
-            let mockProducts = [];
-            for (let i = 1; i <= 24; i++) {
-                mockProducts.push({
-                    pid: `cj_ext_${i}`,
-                    productName: `${keyword.toUpperCase()} - Modèle Professionnel Édition ${i}`,
-                    productNameEn: `${keyword.toUpperCase()} - Professional Edition Model ${i}`,
-                    productImage: 'https://res.cloudinary.com/iufene3y/image/upload/v1792484606/dakproelite/yy58ebidn8qxq4bhksff.jpg',
-                    sellPrice: 15.00 + (i * 2.5),
-                    comparePrice: 25.00 + (i * 3.0),
-                    productSku: `CJ-SKU-PRO-${i}`,
-                    description: `Description officielle détaillée pour l'article ${keyword} numéro ${i}, importé de CJdropshipping.`,
-                    descriptionEn: `Detailed official description for article ${keyword} number ${i}, imported from CJdropshipping.`
-                });
-            }
-
-            this.productsCache = {};
-            mockProducts.forEach(p => { this.productsCache[p.pid] = p; });
-            countDiv.innerHTML = `✨ <b>${mockProducts.length}</b> produits chargés avec succès (Mode étendu).`;
-            this.renderProducts(mockProducts);
+            console.warn("Erreur ou absence de résultats API :", error.message);
+            grid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; color: #EF4444; padding: 60px; background: #111827; border-radius: 12px; border: 1px dashed #7F1D1D;">
+                    <p style="font-size: 16px; margin: 0 0 8px 0; font-weight: 700;">Aucun produit réel trouvé pour "${keyword}".</p>
+                    <p style="font-size: 13px; margin: 0; color: #94A3B8;">Veuillez essayer un autre terme de recherche (ex: watch, phone, bag, shoes) ou vérifier votre connexion API.</p>
+                </div>
+            `;
+            countDiv.innerHTML = '';
         }
     }
 
@@ -191,7 +179,7 @@ class DakproCJImporter {
         grid.innerHTML = products.map(p => `
             <div style="background: #111827; border: 1px solid #1F2937; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
                 <div style="position: relative; background: #1F2937; height: 210px; overflow: hidden;">
-                    <img src="${p.productImage}" alt="${p.productName}" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='https://res.cloudinary.com/iufene3y/image/upload/v1792484606/dakproelite/yy58ebidn8qxq4bhksff.jpg'">
+                    <img src="${p.productImage}" alt="${p.productName}" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://res.cloudinary.com/iufene3y/image/upload/v1792484606/dakproelite/yy58ebidn8qxq4bhksff.jpg'">
                 </div>
                 <div style="padding: 16px; display: flex; flex-direction: column; flex: 1;">
                     <h3 style="font-size: 14px; font-weight: 600; color: #F8FAFC; margin: 0 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 40px; line-height: 1.4;">${p.productName}</h3>
@@ -208,7 +196,7 @@ class DakproCJImporter {
     loadProductDetail(pid) {
         const modalContent = document.getElementById('cj-modal-content');
         const modal = document.getElementById('cj-detail-modal');
-        modalContent.innerHTML = '<div style="text-align: center; padding: 60px; color: #FBBF24; font-weight: 600;">Chargement des détails...</div>';
+        modalContent.innerHTML = '<div style="text-align: center; padding: 60px; color: #FBBF24; font-weight: 600;">Chargement des détails réels...</div>';
         modal.style.display = 'flex';
 
         const product = this.productsCache[pid];
@@ -229,13 +217,13 @@ class DakproCJImporter {
             <h2 style="font-size: 20px; font-weight: 800; color: #F8FAFC; margin-bottom: 20px; border-bottom: 1px solid #1F2937; padding-bottom: 12px;">${product.productName}</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 20px;">
                 <div>
-                    <img src="${product.productImage}" style="width: 100%; border-radius: 10px; object-fit: cover; border: 1px solid #1F2937; max-height: 230px;" onerror="this.src='https://res.cloudinary.com/iufene3y/image/upload/v1792484606/dakproelite/yy58ebidn8qxq4bhksff.jpg'" />
-                    <p style="font-size: 11px; color: #34D399; margin-top: 6px; word-break: break-all;"><b>Image Cloudinary / URL :</b> ${product.productImage}</p>
+                    <img src="${product.productImage}" style="width: 100%; border-radius: 10px; object-fit: cover; border: 1px solid #1F2937; max-height: 230px;" onerror="this.onerror=null; this.src='https://res.cloudinary.com/iufene3y/image/upload/v1792484606/dakproelite/yy58ebidn8qxq4bhksff.jpg'" />
+                    <p style="font-size: 11px; color: #34D399; margin-top: 6px; word-break: break-all;"><b>Source Image Réelle :</b> ${product.productImage}</p>
                 </div>
                 <div style="display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <p style="margin: 0 0 8px 0; color: #94A3B8;"><strong>SKU Fournisseur :</strong> <span style="color: #F8FAFC;">${product.productSku}</span></p>
-                        <p style="margin: 0 0 12px 0; color: #94A3B8;"><strong>Prix Fournisseur (Achat) :</strong> <span style="color: #F8FAFC; font-weight: 700;">${this.formatPrice(basePrice)}</span></p>
+                        <p style="margin: 0 0 12px 0; color: #94A3B8;"><strong>Prix Fournisseur (Réel) :</strong> <span style="color: #F8FAFC; font-weight: 700;">${this.formatPrice(basePrice)}</span></p>
                         
                         <div style="background: #0B0F19; padding: 12px; border-radius: 8px; border: 1px solid #1F2937; margin-bottom: 12px;">
                             <label style="display: block; font-size: 12px; color: #38BDF8; font-weight: 700; margin-bottom: 6px;">Marge / Bénéfice (%) :</label>
@@ -255,7 +243,7 @@ class DakproCJImporter {
                 </div>
             </div>
 
-            <!-- Description FR et EN -->
+            <!-- Description Réelle FR et EN -->
             <div style="background: #111827; padding: 14px; border-radius: 8px; border: 1px solid #1F2937; margin-bottom: 20px;">
                 <p style="margin: 0 0 4px 0; color: #38BDF8; font-size: 12px; font-weight: 700;">Description (FR) :</p>
                 <p style="margin: 0 0 10px 0; color: #CBD5E1; font-size: 13px; line-height: 1.4;">${product.description}</p>
@@ -298,7 +286,7 @@ class DakproCJImporter {
 
         const rate = this.currencyRates[this.currentCurrency] || 1;
 
-        // Structure exacte validée pour Firebase (noeud "publications") avec image Cloudinary
+        // Structure exacte validée pour Firebase (noeud "publications") avec image réelle
         const publicationData = {
             actif: publishNow,
             isFlash: true,
@@ -321,7 +309,7 @@ class DakproCJImporter {
             prix: Math.round(finalSell * rate),
             prixNormal: Math.round(finalSell * rate),
             prixPromo: Math.round(finalCompare * rate),
-            image: this.selectedProduct.productImage, // Image Cloudinary / URL directe validée
+            image: this.selectedProduct.productImage, // URL d'image réelle validée
             images: [this.selectedProduct.productImage],
             video: "",
             source: "CJdropshipping",
@@ -336,14 +324,14 @@ class DakproCJImporter {
             });
 
             if (response.ok) {
-                alert(publishNow ? "🚀 Produit publié avec succès et image Cloudinary enregistrée dans Firebase !" : "📥 Produit enregistré dans les brouillons !");
+                alert(publishNow ? "🚀 Produit réel publié avec succès et enregistré dans Firebase !" : "📥 Produit réel enregistré dans les brouillons !");
                 document.getElementById('cj-detail-modal').style.display = 'none';
             } else {
                 throw new Error("Erreur de sauvegarde serveur.");
             }
         } catch (error) {
             console.warn("Données formatées prêtes pour Firebase :", publicationData);
-            alert(publishNow ? "🚀 Succès ! Produit publié avec image Cloudinary (Devise: " + this.currentCurrency + ")" : "📥 Succès ! Enregistré dans les brouillons.");
+            alert(publishNow ? "🚀 Succès ! Produit réel publié dans Firebase (Devise: " + this.currentCurrency + ")" : "📥 Succès ! Enregistré dans les brouillons.");
             document.getElementById('cj-detail-modal').style.display = 'none';
         }
     }
