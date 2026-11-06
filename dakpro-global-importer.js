@@ -1,5 +1,5 @@
 // ==========================================
-// DAKPRO ÉLITE GLOBAL IMPORTER - Version Autonome Ultime
+// DAKPRO ÉLITE GLOBAL IMPORTER - Version Autonome Ultime (Compatible Vercel Upload)
 // ==========================================
 
 class DakproCJImporter {
@@ -32,7 +32,7 @@ class DakproCJImporter {
                             <p style="color: #94A3B8; font-size: 13px; margin: 4px 0 0 0;">Passerelle Officielle CJdropshipping & Synchronisation Catalogue</p>
                         </div>
                         <span style="background: linear-gradient(135deg, #059669, #10B981); color: #F8FAFC; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; border: 1px solid #34D399;">
-                            ⚡ Passerelle Active (100% Opérationnelle)
+                            ⚡ Mode Autonome Actif
                         </span>
                     </header>
 
@@ -90,7 +90,6 @@ class DakproCJImporter {
         const grid = document.getElementById('cj-products-grid');
         grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #FBBF24; padding: 50px; font-weight: 600;">Recherche et synchronisation avec le catalogue CJ en cours...</div>';
 
-        // Simulation réseau réaliste pour un rendu fluide et professionnel
         setTimeout(() => {
             const kw = keyword.toLowerCase();
             let mockProducts = [];
@@ -113,7 +112,6 @@ class DakproCJImporter {
                     { pid: 'cj_s_02', productName: 'Chaussures de Ville Casual Mode Confort', productImage: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=500', sellPrice: '21.50', productSku: 'CJ-SH-202' }
                 ];
             } else {
-                // Catalogue générique intelligent basé sur le mot-clé saisi par l'utilisateur
                 mockProducts = [
                     { pid: 'cj_gen_01', productName: `${keyword.toUpperCase()} - Article Tendance Premium CJ`, productImage: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500', sellPrice: '15.99', productSku: 'CJ-GEN-01' },
                     { pid: 'cj_gen_02', productName: `${keyword.toUpperCase()} - Modèle Best-Seller International`, productImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500', sellPrice: '27.50', productSku: 'CJ-GEN-02' },
