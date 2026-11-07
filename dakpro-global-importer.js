@@ -27,15 +27,11 @@ class DakproCJImporter {
         this.productsCache = {};
         this.db = getDatabase();
         
-        // URL de base du backend (si vide, utilise l'API Serverless relative /api/search)
-        this.backendUrl = window.DAKPRO_BACKEND_URL || '';
+        // Sur Vercel, l'API Serverless est accessible directement via /api/search
+        this.backendUrl = ''; 
         
         this.initUI();
     }
-
-    // ========================================================
-    // INITIALISATION DE L'INTERFACE
-    // ========================================================
 
     initUI() {
         if (!this.container) return;
@@ -358,11 +354,6 @@ class DakproCJImporter {
             border:none;
         }
 
-        .cj-action:disabled {
-            opacity:.5;
-            cursor:wait;
-        }
-
         .cj-close {
             position:absolute;
             right:15px;
@@ -375,12 +366,6 @@ class DakproCJImporter {
             color:#FFD700;
             font-size:21px;
             cursor:pointer;
-        }
-
-        @media(max-width:600px) {
-            .dakpro-cj {padding:12px;}
-            .cj-title {font-size:20px;}
-            .cj-modal-box {padding:17px;}
         }
         </style>
 
@@ -444,10 +429,6 @@ class DakproCJImporter {
         });
     }
 
-    // ========================================================
-    // RECHERCHE EN DIRECT VIA L'API SERVERLESS VERCEL
-    // ========================================================
-
     async searchProducts(keyword) {
         const grid = document.getElementById('cj-products-grid');
         const info = document.getElementById('cj-search-info');
@@ -476,7 +457,6 @@ class DakproCJImporter {
         let rawProducts = [];
 
         try {
-            // Appel direct vers l'API Serverless Vercel (/api/search)
             const res = await fetch(`/api/search?keyword=${encodeURIComponent(searchKeyword)}&page=${this.currentPage}&size=50`);
             if (res.ok) {
                 const data = await res.json();
@@ -577,7 +557,6 @@ class DakproCJImporter {
                     <p style="color:#D4AF37;font-size:12px;margin-top:12px;">FOURNISSEUR : CJ DROPSHIPPING</p>
                     <p style="color:#aaa;font-size:12px;">SKU : <strong style="color:white;">${this.escapeHTML(product.productSku)}</strong></p>
                     <p style="color:#aaa;font-size:13px;">Prix fournisseur : <strong style="color:#FFD700;">$${basePriceUSD.toFixed(2)}</strong></p>
-                    <p style="color:#ccc;font-size:12px;margin-top:10px;line-height:1.4;">${this.escapeHTML(product.description)}</p>
                 </div>
 
                 <div>
@@ -597,7 +576,6 @@ class DakproCJImporter {
                                     <option value="FCFA" selected>Franc CFA (FCFA)</option>
                                     <option value="USD">Dollar ($)</option>
                                     <option value="EUR">Euro (€)</option>
-                                    <option value="NGN">Naira (₦)</option>
                                 </select>
                             </div>
                         </div>
@@ -609,35 +587,9 @@ class DakproCJImporter {
                         <input type="number" id="cj-margin-input" class="cj-field" value="30" min="0" max="1000" step="0.01">
                     </div>
 
-                    <div class="cj-section">
-                        <h3 class="cj-section-title">💰 RÉPARTITION DE LA MARGE (COMMISSIONS)</h3>
-                        <div class="cj-commission-grid">
-                            <div class="cj-commission-card">
-                                <label>VENDEUR (%)</label>
-                                <input type="number" id="cj-commission-vendeur" min="0" max="100" value="80">
-                                <div class="cj-commission-amount" id="cj-montant-vendeur">0 FCFA</div>
-                            </div>
-                            <div class="cj-commission-card">
-                                <label>AFFILIATION (%)</label>
-                                <input type="number" id="cj-commission-affiliation" min="0" max="100" value="5">
-                                <div class="cj-commission-amount" id="cj-montant-affiliation">0 FCFA</div>
-                            </div>
-                            <div class="cj-commission-card">
-                                <label>PLATEFORME (%)</label>
-                                <input type="number" id="cj-commission-plateforme" min="0" max="100" value="15">
-                                <div class="cj-commission-amount" id="cj-montant-plateforme">0 FCFA</div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="cj-final-price">
-                        <div style="font-size:12px;color:#aaa;margin-bottom:5px;">RÉCAPITULATIF DES COÛTS :</div>
-                        <div class="cj-calculation-line"><span>Prix Fournisseur Normal :</span> <strong id="cj-base-price-display">0 FCFA</strong></div>
-                        <div class="cj-calculation-line"><span>Marge Bénéficiaire Ajoutée :</span> <strong id="cj-margin-amount-display" style="color:#22c55e;">0 FCFA</strong></div>
-                        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #D4AF3744;">
-                            PRIX DE VENTE FINAL :
-                            <div id="cj-final-price-display" style="font-size:24px;margin-top:6px;color:#FFD700;">À calculer</div>
-                        </div>
+                        PRIX DE VENTE FINAL :
+                        <div id="cj-final-price-display" style="font-size:24px;margin-top:6px;">À calculer</div>
                     </div>
 
                     <button id="cj-save-draft" class="cj-action cj-draft">📥 ENREGISTRER EN BROUILLON</button>
@@ -651,7 +603,7 @@ class DakproCJImporter {
         });
 
         const update = () => this.updateCalculatedPrice(basePriceUSD);
-        ['cj-margin-input','cj-usd-rate','cj-currency-select','cj-commission-vendeur','cj-commission-affiliation','cj-commission-plateforme'].forEach(id => {
+        ['cj-margin-input','cj-usd-rate','cj-currency-select'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', update);
             if (el && el.tagName === 'SELECT') el.addEventListener('change', update);
@@ -668,48 +620,23 @@ class DakproCJImporter {
         const rateInput = document.getElementById('cj-usd-rate');
         const currencySelect = document.getElementById('cj-currency-select');
         const display = document.getElementById('cj-final-price-display');
-        const baseDisplay = document.getElementById('cj-base-price-display');
-        const marginDisplay = document.getElementById('cj-margin-amount-display');
 
         if (!marginInput || !rateInput || !display) return;
 
-        const marginPercent = Number(marginInput.value);
+        const margin = Number(marginInput.value);
         const rate = Number(rateInput.value);
         const currency = currencySelect.value;
 
-        const vendeurPct = Number(document.getElementById('cj-commission-vendeur')?.value || 80);
-        const affiliationPct = Number(document.getElementById('cj-commission-affiliation')?.value || 5);
-        const plateformePct = Number(document.getElementById('cj-commission-plateforme')?.value || 15);
+        const prixAchatFCFA = Math.round(basePriceUSD * rate);
+        const montantMargeFCFA = Math.round(prixAchatFCFA * margin / 100);
+        const prixFinalFCFA = prixAchatFCFA + montantMargeFCFA;
 
-        // 1. Calcul du prix de base fournisseur
-        const prixAchatBaseFCFA = Math.round(basePriceUSD * rate);
-        
-        // 2. Calcul du montant de la marge en FCFA
-        const montantMargeFCFA = Math.round(prixAchatBaseFCFA * (marginPercent / 100));
-        
-        // 3. Prix de vente final brut en FCFA
-        const prixFinalFCFA = prixAchatBaseFCFA + montantMargeFCFA;
-
-        // Gestion des facteurs de conversion selon la devise choisie
         let factor = 1;
         if (currency === 'USD') factor = 1 / rate;
         else if (currency === 'EUR') factor = 0.001525;
-        else if (currency === 'NGN') factor = 1.65;
 
-        // Affichage converti
         const finalDisplay = prixFinalFCFA * factor;
-        const baseDisplayVal = prixAchatBaseFCFA * factor;
-        const marginDisplayVal = montantMargeFCFA * factor;
-
-        if(baseDisplay) baseDisplay.innerText = this.formatPrice(baseDisplayVal, currency);
-        if(marginDisplay) marginDisplay.innerText = '+' + this.formatPrice(marginDisplayVal, currency) + ` (${marginPercent}%)`;
         display.innerText = this.formatPrice(finalDisplay, currency);
-
-        // Partage de la marge entre Vendeur, Affiliation et Plateforme
-        const totalMargeDevise = marginDisplayVal;
-        document.getElementById('cj-montant-vendeur').innerText = this.formatPrice(totalMargeDevise * vendeurPct / 100, currency);
-        document.getElementById('cj-montant-affiliation').innerText = this.formatPrice(totalMargeDevise * affiliationPct / 100, currency);
-        document.getElementById('cj-montant-plateforme').innerText = this.formatPrice(totalMargeDevise * plateformePct / 100, currency);
     }
 
     async triggerImport(publishNow) {
@@ -737,7 +664,6 @@ class DakproCJImporter {
             let factor = 1;
             if (currency === 'USD') factor = 1 / rate;
             else if (currency === 'EUR') factor = 0.001525;
-            else if (currency === 'NGN') factor = 1.65;
 
             const prixFinalExport = Math.round(prixFinalFCFA * factor * 100) / 100;
 
