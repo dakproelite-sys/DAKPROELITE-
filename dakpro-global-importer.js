@@ -1,16 +1,37 @@
-// ==========================================
-// DAKPRO ÉLITE GLOBAL IMPORTER - Version Autonome Ultime (Compatible Vercel Upload)
-// ==========================================
+// ============================================================
+// DAKPRO ÉLITE — GLOBAL CJ DROPSHIPPING IMPORTER
+// Catalogue CJ — Firebase — Prix dynamique — Commissions modifiables
+// CHARTE : NOIR / OR MÉTALLIQUE / JAUNE OR / BLEU BRILLANT
+// ============================================================
+
+import {
+    getDatabase,
+    ref,
+    push,
+    set,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+import {
+    getAuth
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 
 class DakproCJImporter {
+
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         this.currentPage = 1;
         this.currentKeyword = '';
         this.selectedProduct = null;
         this.productsCache = {};
+        this.db = getDatabase();
         this.initUI();
     }
+
+    // ========================================================
+    // INITIALISATION
+    // ========================================================
 
     initUI() {
         if (!this.container) return;
@@ -18,209 +39,1469 @@ class DakproCJImporter {
         this.attachEvents();
     }
 
+    // ========================================================
+    // INTERFACE DAKPRO ÉLITE
+    // ========================================================
+
     renderLayout() {
+
         this.container.innerHTML = `
-            <div style="font-family: 'Inter', sans-serif; padding: 24px; background: #0B0F19; min-height: 100vh; color: #F8FAFC;">
-                <div style="max-width: 1200px; margin: 0 auto;">
-                    
-                    <!-- En-tête -->
-                    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; border-bottom: 2px solid #1E293B; padding-bottom: 16px;">
-                        <div>
-                            <h2 style="color: #FBBF24; font-size: 26px; font-weight: 800; margin: 0; text-transform: uppercase;">
-                                🌐 DAKPRO ÉLITE <span style="color: #38BDF8; font-size: 18px; font-weight: 600;">Global Importer</span>
-                            </h2>
-                            <p style="color: #94A3B8; font-size: 13px; margin: 4px 0 0 0;">Passerelle Officielle CJdropshipping & Synchronisation Catalogue</p>
-                        </div>
-                        <span style="background: linear-gradient(135deg, #059669, #10B981); color: #F8FAFC; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; border: 1px solid #34D399;">
-                            ⚡ Mode Autonome Actif
-                        </span>
-                    </header>
 
-                    <!-- Barre de recherche -->
-                    <div style="display: flex; gap: 12px; margin-bottom: 28px; background: #111827; padding: 16px; border-radius: 12px; border: 1px solid #1F2937;">
-                        <input type="text" id="cj-search-input" placeholder="Rechercher un produit (ex: watch, phone, shoes, bags, chemise)..." 
-                            style="flex: 1; padding: 14px 18px; background: #0B0F19; border: 1px solid #374151; color: #F8FAFC; border-radius: 8px; font-size: 15px; outline: none;">
-                        <button id="cj-search-btn" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: #0B0F19; border: none; padding: 0 28px; border-radius: 8px; font-weight: 800; font-size: 15px; cursor: pointer;">
-                            Rechercher
-                        </button>
+        <style>
+
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+        .dakpro-cj {
+            font-family:'Poppins',sans-serif;
+            background:#050505;
+            color:#fff;
+            min-height:100vh;
+            padding:24px;
+        }
+
+        .dakpro-cj * {
+            box-sizing:border-box;
+        }
+
+        .cj-header {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:15px;
+            padding-bottom:20px;
+            margin-bottom:25px;
+            border-bottom:2px solid #D4AF37;
+        }
+
+        .cj-title {
+            color:#FFD700;
+            font-size:25px;
+            font-weight:800;
+            margin:0;
+        }
+
+        .cj-subtitle {
+            color:#aaa;
+            font-size:12px;
+            margin-top:5px;
+        }
+
+        .cj-status {
+            background:linear-gradient(135deg,#D4AF37,#FFD700);
+            color:#050505;
+            padding:9px 15px;
+            border-radius:8px;
+            font-size:12px;
+            font-weight:800;
+        }
+
+        .cj-search-box {
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+            background:#101010;
+            border:1px solid #D4AF37;
+            padding:15px;
+            border-radius:12px;
+            margin-bottom:25px;
+        }
+
+        .cj-search-box input {
+            flex:1;
+            min-width:180px;
+            padding:14px;
+            border:1px solid #555;
+            background:#080808;
+            color:white;
+            border-radius:8px;
+            outline:none;
+            font-family:inherit;
+        }
+
+        .cj-search-box input:focus {
+            border-color:#FFD700;
+            box-shadow:0 0 8px #D4AF3755;
+        }
+
+        .cj-btn-search {
+            background:linear-gradient(135deg,#D4AF37,#FFD700);
+            color:#050505;
+            border:none;
+            border-radius:8px;
+            padding:12px 25px;
+            font-weight:800;
+            cursor:pointer;
+        }
+
+        .cj-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+            gap:20px;
+        }
+
+        .cj-card {
+            background:#101010;
+            border:1px solid #554719;
+            border-radius:12px;
+            overflow:hidden;
+            transition:.25s;
+        }
+
+        .cj-card:hover {
+            border-color:#FFD700;
+            transform:translateY(-4px);
+            box-shadow:0 5px 20px #D4AF3730;
+        }
+
+        .cj-card-image {
+            height:210px;
+            background:#080808;
+        }
+
+        .cj-card-image img {
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+
+        .cj-card-body {
+            padding:15px;
+        }
+
+        .cj-card-name {
+            font-size:13px;
+            font-weight:600;
+            min-height:42px;
+            color:#fff;
+        }
+
+        .cj-card-price {
+            color:#FFD700;
+            font-size:19px;
+            font-weight:800;
+            margin:12px 0;
+        }
+
+        .cj-btn-view {
+            width:100%;
+            padding:11px;
+            border:1px solid #007BFF;
+            background:linear-gradient(135deg,#007BFF,#003B8E);
+            color:white;
+            border-radius:8px;
+            font-weight:700;
+            cursor:pointer;
+        }
+
+        .cj-modal {
+            display:none;
+            position:fixed;
+            inset:0;
+            background:#000e;
+            backdrop-filter:blur(6px);
+            z-index:99999;
+            align-items:center;
+            justify-content:center;
+            padding:15px;
+        }
+
+        .cj-modal-box {
+            background:#101010;
+            border:1px solid #D4AF37;
+            border-radius:15px;
+            width:100%;
+            max-width:900px;
+            max-height:90vh;
+            overflow:auto;
+            padding:25px;
+            position:relative;
+        }
+
+        .cj-modal-title {
+            color:#FFD700;
+            font-size:20px;
+            font-weight:800;
+            padding-right:35px;
+        }
+
+        .cj-detail-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+            gap:22px;
+            margin-top:20px;
+        }
+
+        .cj-detail-image {
+            width:100%;
+            border-radius:10px;
+            border:1px solid #D4AF37;
+        }
+
+        .cj-field {
+            width:100%;
+            padding:11px;
+            background:#080808;
+            border:1px solid #554719;
+            border-radius:7px;
+            color:white;
+            margin:7px 0 15px;
+            font-family:inherit;
+        }
+
+        .cj-field:focus {
+            outline:none;
+            border-color:#FFD700;
+            box-shadow:0 0 7px #D4AF3740;
+        }
+
+        .cj-label {
+            color:#FFD700;
+            font-size:12px;
+            font-weight:700;
+        }
+
+        .cj-section {
+            border:1px solid #554719;
+            background:#090909;
+            border-radius:10px;
+            padding:15px;
+            margin-top:18px;
+        }
+
+        .cj-section-title {
+            color:#FFD700;
+            font-size:14px;
+            font-weight:800;
+            margin:0 0 12px;
+        }
+
+        .cj-final-price {
+            color:#FFD700;
+            font-size:21px;
+            font-weight:800;
+            margin:15px 0;
+            padding:15px;
+            background:#151208;
+            border:1px solid #D4AF37;
+            border-radius:9px;
+        }
+
+        .cj-calculation-line {
+            display:flex;
+            justify-content:space-between;
+            gap:10px;
+            padding:7px 0;
+            border-bottom:1px solid #282828;
+            font-size:12px;
+            color:#bbb;
+        }
+
+        .cj-calculation-line strong {
+            color:#fff;
+        }
+
+        .cj-commission-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+            gap:12px;
+        }
+
+        .cj-commission-card {
+            background:#111;
+            border:1px solid #554719;
+            border-radius:8px;
+            padding:12px;
+        }
+
+        .cj-commission-card label {
+            display:block;
+            color:#D4AF37;
+            font-size:11px;
+            font-weight:700;
+        }
+
+        .cj-commission-card input {
+            width:100%;
+            padding:10px;
+            margin-top:8px;
+            background:#050505;
+            color:#FFD700;
+            border:1px solid #554719;
+            border-radius:6px;
+            font-size:17px;
+            font-weight:800;
+        }
+
+        .cj-commission-amount {
+            color:#fff;
+            font-size:12px;
+            margin-top:8px;
+        }
+
+        .cj-total-commission {
+            margin-top:13px;
+            padding:12px;
+            border-radius:8px;
+            background:#111;
+            color:#FFD700;
+            font-weight:800;
+            font-size:13px;
+        }
+
+        .cj-validation {
+            margin-top:10px;
+            font-size:12px;
+            font-weight:700;
+        }
+
+        .cj-valid {
+            color:#22c55e;
+        }
+
+        .cj-invalid {
+            color:#ff5252;
+        }
+
+        .cj-action {
+            width:100%;
+            padding:13px;
+            border-radius:8px;
+            font-weight:800;
+            cursor:pointer;
+            margin-top:9px;
+            font-family:inherit;
+        }
+
+        .cj-draft {
+            background:#111;
+            color:#FFD700;
+            border:1px solid #D4AF37;
+        }
+
+        .cj-publish {
+            background:linear-gradient(135deg,#D4AF37,#FFD700);
+            color:#050505;
+            border:none;
+        }
+
+        .cj-action:disabled {
+            opacity:.5;
+            cursor:wait;
+        }
+
+        .cj-close {
+            position:absolute;
+            right:15px;
+            top:12px;
+            width:35px;
+            height:35px;
+            border:1px solid #D4AF37;
+            border-radius:50%;
+            background:#080808;
+            color:#FFD700;
+            font-size:21px;
+            cursor:pointer;
+        }
+
+        @media(max-width:600px) {
+            .dakpro-cj {padding:12px;}
+            .cj-title {font-size:20px;}
+            .cj-modal-box {padding:17px;}
+        }
+
+        </style>
+
+
+        <div class="dakpro-cj">
+
+            <div style="max-width:1250px;margin:auto;">
+
+                <header class="cj-header">
+
+                    <div>
+                        <h2 class="cj-title">
+                            🌐 DAKPRO ÉLITE
+                            <span style="color:#007BFF;font-size:16px;">
+                                GLOBAL IMPORTER
+                            </span>
+                        </h2>
+
+                        <p class="cj-subtitle">
+                            Passerelle CJdropshipping — Importation et publication du catalogue
+                        </p>
                     </div>
 
-                    <!-- Grille des produits -->
-                    <div id="cj-products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
-                        <div style="grid-column: 1 / -1; text-align: center; color: #64748B; padding: 60px; background: #111827; border-radius: 12px; border: 1px dashed #374151;">
-                            <p style="font-size: 16px; margin: 0; color: #94A3B8;">Tapez un mot-clé ci-dessus (ex: <b>watch</b>, <b>phone</b>, <b>shoes</b>) pour explorer le catalogue instantanément.</p>
-                        </div>
-                    </div>
+                    <span class="cj-status">
+                        ⚡ IMPORTATEUR ACTIF
+                    </span>
 
-                    <!-- Modal des détails -->
-                    <div id="cj-detail-modal" style="display: none; position: fixed; inset: 0; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-                        <div style="background: #111827; width: 100%; max-width: 850px; max-height: 90vh; overflow-y: auto; border-radius: 16px; padding: 28px; position: relative; border: 1px solid #1F2937;">
-                            <button id="cj-close-modal" style="position: absolute; top: 18px; right: 18px; background: #1F2937; color: #F8FAFC; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
-                            <div id="cj-modal-content"></div>
-                        </div>
-                    </div>
+                </header>
+
+
+                <div class="cj-search-box">
+
+                    <input
+                        type="text"
+                        id="cj-search-input"
+                        placeholder="Rechercher : montre, téléphone, chaussures, vêtements..."
+                    >
+
+                    <button
+                        id="cj-search-btn"
+                        class="cj-btn-search"
+                    >
+                        🔎 RECHERCHER
+                    </button>
+
                 </div>
+
+
+                <div id="cj-search-info"
+                    style="color:#D4AF37;font-size:12px;margin-bottom:15px;">
+                </div>
+
+
+                <div id="cj-products-grid" class="cj-grid">
+
+                    <div style="
+                        grid-column:1/-1;
+                        padding:50px;
+                        text-align:center;
+                        background:#101010;
+                        border:1px dashed #D4AF37;
+                        border-radius:12px;
+                        color:#aaa;
+                    ">
+                        Recherchez un produit pour explorer le catalogue CJ.
+                    </div>
+
+                </div>
+
+
+                <div class="cj-modal" id="cj-detail-modal">
+
+                    <div class="cj-modal-box">
+
+                        <button
+                            class="cj-close"
+                            id="cj-close-modal"
+                        >
+                            ×
+                        </button>
+
+                        <div id="cj-modal-content"></div>
+
+                    </div>
+
+                </div>
+
             </div>
+
+        </div>
+
         `;
     }
 
+    // ========================================================
+    // ÉVÉNEMENTS
+    // ========================================================
+
     attachEvents() {
+
         const searchBtn = document.getElementById('cj-search-btn');
         const searchInput = document.getElementById('cj-search-input');
-        const closeModal = document.getElementById('cj-close-modal');
 
         searchBtn.addEventListener('click', () => {
+
             this.currentKeyword = searchInput.value.trim();
-            if (this.currentKeyword) this.searchProducts(this.currentKeyword);
-        });
+            this.currentPage = 1;
 
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.currentKeyword = searchInput.value.trim();
-                if (this.currentKeyword) this.searchProducts(this.currentKeyword);
+            if (this.currentKeyword) {
+                this.searchProducts(this.currentKeyword);
             }
+
         });
 
-        closeModal.addEventListener('click', () => {
-            document.getElementById('cj-detail-modal').style.display = 'none';
+        searchInput.addEventListener('keypress', e => {
+
+            if (e.key === 'Enter') {
+
+                this.currentKeyword = searchInput.value.trim();
+                this.currentPage = 1;
+
+                if (this.currentKeyword) {
+                    this.searchProducts(this.currentKeyword);
+                }
+
+            }
+
         });
+
+        document.getElementById('cj-close-modal')
+            .addEventListener('click', () => {
+
+                document.getElementById('cj-detail-modal')
+                    .style.display = 'none';
+
+            });
+
     }
 
+    // ========================================================
+    // RECHERCHE DU CATALOGUE CJ EXISTANT
+    // ========================================================
+
     async searchProducts(keyword) {
+
         const grid = document.getElementById('cj-products-grid');
-        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #FBBF24; padding: 50px; font-weight: 600;">Recherche et synchronisation avec le catalogue CJ en cours...</div>';
+        const info = document.getElementById('cj-search-info');
 
-        setTimeout(() => {
-            const kw = keyword.toLowerCase();
-            let mockProducts = [];
+        grid.innerHTML = `
+            <div style="
+                grid-column:1/-1;
+                text-align:center;
+                padding:50px;
+                color:#FFD700;
+            ">
+                Synchronisation avec le catalogue CJ en cours...
+            </div>
+        `;
 
-            if (kw.includes('watch') || kw.includes('montre')) {
-                mockProducts = [
-                    { pid: 'cj_w_01', productName: 'Smartwatch Connectée État Pro - Moniteur Cardiaque & Sport', productImage: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500', sellPrice: '19.99', productSku: 'CJ-SW-001' },
-                    { pid: 'cj_w_02', productName: 'Montre Quartz Élégante Cuir Véritable pour Homme', productImage: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500', sellPrice: '14.50', productSku: 'CJ-MQ-002' },
-                    { pid: 'cj_w_03', productName: 'Montre de Sport Étanche 5ATM Outdoor', productImage: 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=500', sellPrice: '22.00', productSku: 'CJ-MS-003' }
-                ];
-            } else if (kw.includes('phone') || kw.includes('telephone') || kw.includes('electro')) {
-                mockProducts = [
-                    { pid: 'cj_p_01', productName: 'Support Téléphone Magnétique Sans Fil pour Voiture', productImage: 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=500', sellPrice: '8.99', productSku: 'CJ-PH-101' },
-                    { pid: 'cj_p_02', productName: 'Anneau lumineux LED Selfie Ring Light avec Trépied', productImage: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500', sellPrice: '12.50', productSku: 'CJ-PH-102' },
-                    { pid: 'cj_p_03', productName: 'Écouteurs Bluetooth TWS Stéréo Haute Fidélité', productImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500', sellPrice: '16.80', productSku: 'CJ-PH-103' }
-                ];
-            } else if (kw.includes('shoe') || kw.includes('chaussure')) {
-                mockProducts = [
-                    { pid: 'cj_s_01', productName: 'Baskets Sneakers Running Respirantes Homme/Femme', productImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500', sellPrice: '25.00', productSku: 'CJ-SH-201' },
-                    { pid: 'cj_s_02', productName: 'Chaussures de Ville Casual Mode Confort', productImage: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=500', sellPrice: '21.50', productSku: 'CJ-SH-202' }
-                ];
-            } else {
-                mockProducts = [
-                    { pid: 'cj_gen_01', productName: `${keyword.toUpperCase()} - Article Tendance Premium CJ`, productImage: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500', sellPrice: '15.99', productSku: 'CJ-GEN-01' },
-                    { pid: 'cj_gen_02', productName: `${keyword.toUpperCase()} - Modèle Best-Seller International`, productImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500', sellPrice: '27.50', productSku: 'CJ-GEN-02' },
-                    { pid: 'cj_gen_03', productName: `${keyword.toUpperCase()} - Édition Limitée Haut de Gamme`, productImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500', sellPrice: '12.99', productSku: 'CJ-GEN-03' }
-                ];
+        info.innerText = '';
+
+        try {
+
+            const response = await fetch(
+                `/api/search?keyword=${encodeURIComponent(keyword)}&page=${this.currentPage}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Le serveur de recherche CJ a répondu avec une erreur.");
+            }
+
+            const result = await response.json();
+
+            if (result.success === false) {
+                throw new Error(result.message || "Recherche CJ impossible.");
+            }
+
+            const products =
+                result.products ||
+                result.data?.products ||
+                result.data?.content ||
+                result.data ||
+                [];
+
+            if (!Array.isArray(products)) {
+                throw new Error("Format de réponse du catalogue CJ non reconnu.");
             }
 
             this.productsCache = {};
-            mockProducts.forEach(p => {
-                this.productsCache[p.pid] = p;
-            });
 
-            this.renderProducts(mockProducts);
-        }, 600);
+            const normalized = products.map(p => {
+
+                const product = {
+                    ...p,
+
+                    pid: p.pid || p.productId || p.id,
+
+                    productName:
+                        p.productName ||
+                        p.name ||
+                        p.nameEn ||
+                        p.title ||
+                        "Produit CJ",
+
+                    productImage:
+                        p.productImage ||
+                        p.bigImage ||
+                        p.image ||
+                        p.productImageUrl ||
+                        "",
+
+                    sellPrice:
+                        p.sellPrice ??
+                        p.price ??
+                        p.nowPrice ??
+                        "",
+
+                    productSku:
+                        p.productSku ||
+                        p.sku ||
+                        p.spu ||
+                        "",
+
+                    categoryName:
+                        p.categoryName ||
+                        p.category ||
+                        p.threeCategoryName ||
+                        "Importation CJ",
+
+                    description:
+                        p.description ||
+                        p.descriptionEn ||
+                        "",
+
+                    stock:
+                        p.stock ??
+                        p.inventory ??
+                        p.warehouseInventoryNum,
+
+                    raw: p.raw || p
+                };
+
+                if (product.pid) {
+                    this.productsCache[product.pid] = product;
+                }
+
+                return product;
+
+            }).filter(p => p.pid && p.productImage);
+
+            if (!normalized.length) {
+
+                grid.innerHTML = `
+                    <div style="
+                        grid-column:1/-1;
+                        padding:45px;
+                        text-align:center;
+                        color:#FFD700;
+                    ">
+                        Aucun produit exploitable trouvé.
+                    </div>
+                `;
+
+                return;
+            }
+
+            this.renderProducts(normalized);
+
+            info.innerText =
+                `${normalized.length} produits affichés — Catalogue CJdropshipping`;
+
+        } catch (error) {
+
+            console.error("DAKPRO CJ SEARCH:", error);
+
+            grid.innerHTML = `
+                <div style="
+                    grid-column:1/-1;
+                    padding:35px;
+                    text-align:center;
+                    background:#101010;
+                    border:1px solid #D4AF37;
+                    border-radius:12px;
+                    color:#FFD700;
+                ">
+                    ${this.escapeHTML(error.message)}
+                </div>
+            `;
+
+        }
+
     }
+
+    // ========================================================
+    // PROTECTION AFFICHAGE TEXTE
+    // ========================================================
+
+    escapeHTML(value) {
+
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&':'&amp;',
+            '<':'&lt;',
+            '>':'&gt;',
+            '"':'&quot;',
+            "'":'&#39;'
+        })[char]);
+
+    }
+
+    // ========================================================
+    // FORMATAGE FCFA
+    // ========================================================
+
+    formatFCFA(value) {
+
+        return Math.round(Number(value) || 0)
+            .toLocaleString('fr-FR') + ' FCFA';
+
+    }
+
+    // ========================================================
+    // AFFICHAGE PRODUITS
+    // ========================================================
 
     renderProducts(products) {
+
         const grid = document.getElementById('cj-products-grid');
+
         grid.innerHTML = products.map(p => `
-            <div style="background: #111827; border: 1px solid #1F2937; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
-                <div style="position: relative; background: #1F2937; height: 210px;">
-                    <img src="${p.productImage}" alt="${p.productName}" style="width: 100%; height: 100%; object-fit: cover;">
+
+            <div class="cj-card">
+
+                <div class="cj-card-image">
+
+                    <img
+                        src="${this.escapeHTML(p.productImage)}"
+                        alt="${this.escapeHTML(p.productName)}"
+                        loading="lazy"
+                    >
+
                 </div>
-                <div style="padding: 16px; display: flex; flex-direction: column; flex: 1;">
-                    <h3 style="font-size: 14px; font-weight: 600; color: #F8FAFC; margin: 0 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 40px; line-height: 1.4;">${p.productName}</h3>
-                    <div style="color: #FBBF24; font-weight: 800; font-size: 18px; margin-bottom: 14px;">$${p.sellPrice}</div>
-                    <button onclick="window.dakproImporterInstance.loadProductDetail('${p.pid}')" style="margin-top: auto; background: linear-gradient(135deg, #0284C7, #1E3A8A); color: #F8FAFC; border: none; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;">Voir & Importer</button>
+
+                <div class="cj-card-body">
+
+                    <div class="cj-card-name">
+                        ${this.escapeHTML(p.productName)}
+                    </div>
+
+                    <div class="cj-card-price">
+                        $${this.escapeHTML(p.sellPrice)}
+                    </div>
+
+                    <button
+                        class="cj-btn-view"
+                        data-cj-id="${this.escapeHTML(p.pid)}"
+                    >
+                        VOIR & IMPORTER
+                    </button>
+
                 </div>
+
             </div>
+
         `).join('');
+
+        grid.querySelectorAll('[data-cj-id]').forEach(button => {
+
+            button.addEventListener('click', () => {
+                this.loadProductDetail(button.dataset.cjId);
+            });
+
+        });
+
     }
 
+    // ========================================================
+    // DÉTAILS PRODUIT
+    // ========================================================
+
     loadProductDetail(pid) {
-        const modalContent = document.getElementById('cj-modal-content');
-        const modal = document.getElementById('cj-detail-modal');
-        modalContent.innerHTML = '<div style="text-align: center; padding: 60px; color: #FBBF24; font-weight: 600;">Chargement des détails...</div>';
-        modal.style.display = 'flex';
 
         const product = this.productsCache[pid];
+
+        const modal = document.getElementById('cj-detail-modal');
+        const content = document.getElementById('cj-modal-content');
+
         if (!product) {
-            modalContent.innerHTML = '<p style="color: #EF4444; text-align: center; padding: 30px;">Produit introuvable.</p>';
+            alert("Produit introuvable.");
             return;
         }
 
         this.selectedProduct = product;
-        const basePrice = parseFloat(product.sellPrice) || 0;
-        const defaultMargin = 30; 
-        const calculatedPrice = (basePrice * (1 + defaultMargin / 100)).toFixed(2);
 
-        modalContent.innerHTML = `
-            <h2 style="font-size: 20px; font-weight: 800; color: #F8FAFC; margin-bottom: 20px; border-bottom: 1px solid #1F2937; padding-bottom: 12px;">${product.productName}</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        const basePrice = Number(product.sellPrice);
+
+        if (!Number.isFinite(basePrice) || basePrice <= 0) {
+            alert("Prix fournisseur invalide.");
+            return;
+        }
+
+        const configuredRate = Number(
+            window.DAKPRO_CONFIG?.tauxUsdFcfa ||
+            window.CJ_USD_FCFA ||
+            ''
+        );
+
+        modal.style.display = 'flex';
+
+        content.innerHTML = `
+
+            <h2 class="cj-modal-title">
+                ${this.escapeHTML(product.productName)}
+            </h2>
+
+            <div class="cj-detail-grid">
+
                 <div>
-                    <img src="${product.productImage}" style="width: 100%; border-radius: 10px; object-fit: cover; border: 1px solid #1F2937;" />
+
+                    <img
+                        class="cj-detail-image"
+                        src="${this.escapeHTML(product.productImage)}"
+                        alt="${this.escapeHTML(product.productName)}"
+                    >
+
+                    <p style="color:#D4AF37;font-size:12px;margin-top:12px;">
+                        FOURNISSEUR : CJ DROPSHIPPING
+                    </p>
+
+                    <p style="color:#aaa;font-size:12px;">
+                        SKU :
+                        <strong style="color:white;">
+                            ${this.escapeHTML(product.productSku)}
+                        </strong>
+                    </p>
+
+                    <p style="color:#aaa;font-size:13px;">
+                        Prix fournisseur :
+                        <strong style="color:#FFD700;">
+                            $${basePrice.toFixed(2)}
+                        </strong>
+                    </p>
+
                 </div>
-                <div style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <p style="margin: 0 0 8px 0; color: #94A3B8;"><strong>SKU Fournisseur :</strong> <span style="color: #F8FAFC;">${product.productSku}</span></p>
-                        <p style="margin: 0 0 12px 0; color: #94A3B8;"><strong>Prix Fournisseur (Achat) :</strong> <span style="color: #F8FAFC; font-weight: 700;">$${basePrice.toFixed(2)}</span></p>
-                        
-                        <div style="background: #0B0F19; padding: 12px; border-radius: 8px; border: 1px solid #1F2937; margin-bottom: 12px;">
-                            <label style="display: block; font-size: 12px; color: #38BDF8; font-weight: 700; margin-bottom: 6px;">Marge / Bénéfice (%) :</label>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <input type="number" id="cj-margin-input" value="${defaultMargin}" min="0" max="500" oninput="window.dakproImporterInstance.updateCalculatedPrice(${basePrice})" 
-                                    style="width: 80px; padding: 6px 10px; background: #111827; border: 1px solid #374151; color: #F8FAFC; border-radius: 6px; font-weight: 700; text-align: center; outline: none;">
-                                <span style="font-size: 12px; color: #94A3B8;">%</span>
-                            </div>
-                            <div style="margin-top: 8px; font-size: 14px; color: #FBBF24; font-weight: 800;">
-                                Prix de Vente Final : $<span id="cj-final-price-display">${calculatedPrice}</span>
-                            </div>
-                        </div>
+
+
+                <div>
+
+                    <div class="cj-section">
+
+                        <h3 class="cj-section-title">
+                            ⚙️ PARAMÈTRES DE PRIX
+                        </h3>
+
+                        <label class="cj-label">
+                            TAUX DE CONVERSION USD / FCFA
+                        </label>
+
+                        <input
+                            type="number"
+                            id="cj-usd-rate"
+                            class="cj-field"
+                            min="0.01"
+                            step="0.01"
+                            value="${configuredRate > 0 ? configuredRate : ''}"
+                            placeholder="Saisir ton taux USD / FCFA"
+                        >
+
+                        <label class="cj-label">
+                            MARGE BÉNÉFICIAIRE PERSONNALISÉE (%)
+                        </label>
+
+                        <input
+                            type="number"
+                            id="cj-margin-input"
+                            class="cj-field"
+                            value="30"
+                            min="0"
+                            max="1000"
+                            step="0.01"
+                        >
+
+                        <p style="color:#888;font-size:11px;">
+                            Tu peux choisir 20 %, 50 %, 130 % ou une autre marge.
+                            Le calcul se met à jour automatiquement.
+                        </p>
+
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button onclick="window.dakproImporterInstance.triggerImport(false)" style="background: #1F2937; color: #FBBF24; border: 1px solid #FBBF24; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;">📥 ENREGISTRER DANS LES BROUILLONS</button>
-                        <button onclick="window.dakproImporterInstance.triggerImport(true)" style="background: linear-gradient(135deg, #10B981, #059669); color: #F8FAFC; border: none; padding: 12px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer;">🚀 PUBLIER SUR LA MARKETPLACE</button>
+
+                    <div class="cj-section">
+
+                        <h3 class="cj-section-title">
+                            💰 RÉPARTITION DES COMMISSIONS
+                        </h3>
+
+                        <div class="cj-commission-grid">
+
+                            <div class="cj-commission-card">
+
+                                <label>VENDEUR (%)</label>
+
+                                <input
+                                    type="number"
+                                    id="cj-commission-vendeur"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value="80"
+                                >
+
+                                <div class="cj-commission-amount"
+                                    id="cj-montant-vendeur">
+                                    0 FCFA
+                                </div>
+
+                            </div>
+
+
+                            <div class="cj-commission-card">
+
+                                <label>AFFILIATION (%)</label>
+
+                                <input
+                                    type="number"
+                                    id="cj-commission-affiliation"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value="5"
+                                >
+
+                                <div class="cj-commission-amount"
+                                    id="cj-montant-affiliation">
+                                    0 FCFA
+                                </div>
+
+                            </div>
+
+
+                            <div class="cj-commission-card">
+
+                                <label>PLATEFORME (%)</label>
+
+                                <input
+                                    type="number"
+                                    id="cj-commission-plateforme"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value="15"
+                                >
+
+                                <div class="cj-commission-amount"
+                                    id="cj-montant-plateforme">
+                                    0 FCFA
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="cj-total-commission">
+                            TOTAL DES COMMISSIONS :
+                            <span id="cj-total-commission">100</span> %
+                        </div>
+
+                        <div
+                            id="cj-commission-validation"
+                            class="cj-validation cj-valid"
+                        >
+                            ✓ Répartition valide : 100 %
+                        </div>
+
                     </div>
+
+
+                    <div class="cj-final-price">
+
+                        PRIX DE VENTE ESTIMÉ :
+
+                        <div id="cj-final-price-display"
+                            style="font-size:26px;margin-top:8px;">
+                            À calculer
+                        </div>
+
+                    </div>
+
+
+                    <div class="cj-section">
+
+                        <h3 class="cj-section-title">
+                            📊 RÉCAPITULATIF AUTOMATIQUE
+                        </h3>
+
+                        <div class="cj-calculation-line">
+                            <span>Prix fournisseur converti</span>
+                            <strong id="cj-purchase-price">—</strong>
+                        </div>
+
+                        <div class="cj-calculation-line">
+                            <span>Marge bénéficiaire</span>
+                            <strong id="cj-margin-amount">—</strong>
+                        </div>
+
+                        <div class="cj-calculation-line">
+                            <span>Prix final de vente</span>
+                            <strong id="cj-summary-price">—</strong>
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="cj-save-draft"
+                        class="cj-action cj-draft"
+                    >
+                        📥 ENREGISTRER EN BROUILLON
+                    </button>
+
+
+                    <button
+                        id="cj-publish-now"
+                        class="cj-action cj-publish"
+                    >
+                        🚀 PUBLIER SUR DAKPRO ÉLITE
+                    </button>
+
                 </div>
+
             </div>
+
         `;
+
+        const update = () => this.updateCalculatedPrice(basePrice);
+
+        [
+            'cj-margin-input',
+            'cj-usd-rate',
+            'cj-commission-vendeur',
+            'cj-commission-affiliation',
+            'cj-commission-plateforme'
+        ].forEach(id => {
+
+            document.getElementById(id)
+                .addEventListener('input', update);
+
+        });
+
+        document.getElementById('cj-save-draft')
+            .addEventListener('click', () => this.triggerImport(false));
+
+        document.getElementById('cj-publish-now')
+            .addEventListener('click', () => this.triggerImport(true));
+
+        update();
+
     }
+
+    // ========================================================
+    // VALIDATION ET RÉCUPÉRATION DES COMMISSIONS
+    // ========================================================
+
+    validateCommissions() {
+
+        const vendeur = Number(
+            document.getElementById('cj-commission-vendeur')?.value
+        );
+
+        const affiliation = Number(
+            document.getElementById('cj-commission-affiliation')?.value
+        );
+
+        const plateforme = Number(
+            document.getElementById('cj-commission-plateforme')?.value
+        );
+
+        const values = [vendeur, affiliation, plateforme];
+
+        if (values.some(value =>
+            !Number.isFinite(value) || value < 0 || value > 100
+        )) {
+            throw new Error(
+                "Chaque commission doit être comprise entre 0 et 100 %."
+            );
+        }
+
+        const total = Math.round(
+            (vendeur + affiliation + plateforme) * 100
+        ) / 100;
+
+        if (total !== 100) {
+            throw new Error(
+                `Les commissions doivent totaliser 100 %. Total actuel : ${total} %.`
+            );
+        }
+
+        return {
+            vendeur,
+            affiliation,
+            plateforme
+        };
+
+    }
+
+    // ========================================================
+    // CALCUL AUTOMATIQUE PRIX + COMMISSIONS
+    // ========================================================
 
     updateCalculatedPrice(basePrice) {
-        const marginInput = document.getElementById('cj-margin-input');
-        const priceDisplay = document.getElementById('cj-final-price-display');
-        if (!marginInput || !priceDisplay) return;
-
-        const margin = parseFloat(marginInput.value) || 0;
-        const finalPrice = (basePrice * (1 + margin / 100)).toFixed(2);
-        priceDisplay.innerText = finalPrice;
-    }
-
-    triggerImport(publishNow) {
-        if (!this.selectedProduct) return;
 
         const marginInput = document.getElementById('cj-margin-input');
-        const margin = marginInput ? parseFloat(marginInput.value) || 0 : 30;
-        const basePrice = parseFloat(this.selectedProduct.sellPrice) || 0;
-        const finalSellPrice = parseFloat((basePrice * (1 + margin / 100)).toFixed(2));
+        const rateInput = document.getElementById('cj-usd-rate');
 
-        const actionText = publishNow 
-            ? "🚀 Produit publié avec succès sur la marketplace DAKPRO ÉLITE !" 
-            : "📥 Produit enregistré avec succès dans vos brouillons !";
+        const display = document.getElementById('cj-final-price-display');
 
-        alert(actionText);
-        document.getElementById('cj-detail-modal').style.display = 'none';
+        if (!marginInput || !rateInput || !display) return;
+
+        const margin = Number(marginInput.value);
+        const rate = Number(rateInput.value);
+
+        const vendeur = Number(
+            document.getElementById('cj-commission-vendeur')?.value
+        );
+
+        const affiliation = Number(
+            document.getElementById('cj-commission-affiliation')?.value
+        );
+
+        const plateforme = Number(
+            document.getElementById('cj-commission-plateforme')?.value
+        );
+
+        const total = Math.round(
+            (vendeur + affiliation + plateforme) * 100
+        ) / 100;
+
+        const totalElement = document.getElementById(
+            'cj-total-commission'
+        );
+
+        const validation = document.getElementById(
+            'cj-commission-validation'
+        );
+
+        if (totalElement) {
+            totalElement.innerText =
+                Number.isFinite(total) ? total : 'Invalide';
+        }
+
+        const commissionsValides =
+            [vendeur, affiliation, plateforme].every(value =>
+                Number.isFinite(value) && value >= 0 && value <= 100
+            ) && total === 100;
+
+        if (validation) {
+
+            validation.className = commissionsValides
+                ? 'cj-validation cj-valid'
+                : 'cj-validation cj-invalid';
+
+            validation.innerText = commissionsValides
+                ? '✓ Répartition valide : 100 %'
+                : '⚠️ Les commissions doivent totaliser exactement 100 %.';
+
+        }
+
+        const rateValide = Number.isFinite(rate) && rate > 0;
+
+        const marginValide =
+            Number.isFinite(margin) && margin >= 0 && margin <= 1000;
+
+        if (!rateValide || !marginValide) {
+
+            display.innerText = !rateValide
+                ? 'Saisir le taux USD/FCFA'
+                : 'Marge invalide';
+
+            return;
+
+        }
+
+        const prixAchat = Math.round(basePrice * rate);
+
+        const montantMarge = Math.round(
+            prixAchat * margin / 100
+        );
+
+        const prixFinal = prixAchat + montantMarge;
+
+        display.innerText = this.formatFCFA(prixFinal);
+
+        document.getElementById('cj-purchase-price').innerText =
+            this.formatFCFA(prixAchat);
+
+        document.getElementById('cj-margin-amount').innerText =
+            this.formatFCFA(montantMarge);
+
+        document.getElementById('cj-summary-price').innerText =
+            this.formatFCFA(prixFinal);
+
+        // Répartition des commissions sur le prix de vente final.
+
+        document.getElementById('cj-montant-vendeur').innerText =
+            this.formatFCFA(prixFinal * vendeur / 100);
+
+        document.getElementById('cj-montant-affiliation').innerText =
+            this.formatFCFA(prixFinal * affiliation / 100);
+
+        document.getElementById('cj-montant-plateforme').innerText =
+            this.formatFCFA(prixFinal * plateforme / 100);
+
     }
+
+    // ========================================================
+    // PUBLICATION FIREBASE
+    // ========================================================
+
+    async triggerImport(publishNow) {
+
+        if (!this.selectedProduct) {
+            alert("Aucun produit sélectionné.");
+            return;
+        }
+
+        const button = document.getElementById(
+            publishNow ? 'cj-publish-now' : 'cj-save-draft'
+        );
+
+        const originalText = button?.innerText;
+
+        try {
+
+            if (button) {
+                button.disabled = true;
+                button.innerText = "IMPORTATION EN COURS...";
+            }
+
+            const product = this.selectedProduct;
+
+            const margin = Number(
+                document.getElementById('cj-margin-input')?.value
+            );
+
+            const rate = Number(
+                document.getElementById('cj-usd-rate')?.value
+            );
+
+            if (!Number.isFinite(margin) || margin < 0 || margin > 1000) {
+                throw new Error(
+                    "La marge doit être comprise entre 0 et 1 000 %."
+                );
+            }
+
+            if (!Number.isFinite(rate) || rate <= 0) {
+                throw new Error("Configure un taux USD/FCFA valide.");
+            }
+
+            const commissions = this.validateCommissions();
+
+            const basePrice = Number(product.sellPrice);
+
+            if (!Number.isFinite(basePrice) || basePrice <= 0) {
+                throw new Error("Prix fournisseur CJ invalide.");
+            }
+
+            if (!product.productImage) {
+                throw new Error("Image du produit introuvable.");
+            }
+
+            const auth = getAuth();
+
+            const currentUser = window.currentUser || auth.currentUser;
+
+            if (!currentUser) {
+                throw new Error(
+                    "Connecte-toi à ton compte administrateur."
+                );
+            }
+
+            const vendeurId = currentUser.uid;
+
+            const vendeurNom =
+                currentUser.displayName ||
+                currentUser.nom ||
+                "DAKPRO ÉLITE";
+
+            const prixAchatFCFA = Math.round(basePrice * rate);
+
+            const montantMarge = Math.round(
+                prixAchatFCFA * margin / 100
+            );
+
+            const prixFinalFCFA = prixAchatFCFA + montantMarge;
+
+            const publicationRef = push(ref(this.db, 'publications'));
+
+            const prodId = publicationRef.key;
+
+            if (!prodId) {
+                throw new Error(
+                    "Identifiant de publication impossible à générer."
+                );
+            }
+
+            const now = new Date();
+
+            const datePublication = now.toLocaleDateString('fr-FR', {
+                timeZone:'Africa/Porto-Novo'
+            });
+
+            const heurePublication = now.toLocaleTimeString('fr-FR', {
+                timeZone:'Africa/Porto-Novo',
+                hour:'2-digit',
+                minute:'2-digit',
+                hour12:false
+            });
+
+            const lienAffiliation =
+                `${window.location.origin}/index.html?produit=${prodId}&ref=${vendeurId}`;
+
+            const videoValue =
+                typeof product.video === 'string'
+                    ? product.video
+                    : typeof product.videoUrl === 'string'
+                        ? product.videoUrl
+                        : typeof product.videoList?.[0] === 'string'
+                            ? product.videoList[0]
+                            : '';
+
+            const stockValue = Number(product.stock);
+
+            const payload = {
+
+                id:prodId,
+
+                nom:product.productName,
+
+                titre:product.productName,
+
+                nom_en:product.productName,
+
+                description:
+                    product.description || product.productName,
+
+                description_en:
+                    product.description || product.productName,
+
+                categorie:
+                    product.categoryName || "Importation CJ",
+
+                sousCategorie:
+                    product.categoryName || "Importation CJ",
+
+                prix:prixFinalFCFA,
+
+                prixPromo:null,
+
+                devise:"FCFA",
+
+                image:product.productImage,
+
+                video:videoValue,
+
+                document:"",
+
+                catalogLink:"",
+
+                vendeurId,
+
+                vendeurNom,
+
+                createdBy:vendeurId,
+
+                commissions:{
+
+                    vendeur:commissions.vendeur,
+
+                    affiliation:commissions.affiliation,
+
+                    plateforme:commissions.plateforme
+
+                },
+
+                lienAffiliation,
+
+                actif:Boolean(publishNow),
+
+                statut:publishNow ? "actif" : "brouillon",
+
+                stock:Number.isFinite(stockValue)
+                    ? stockValue
+                    : 0,
+
+                fournisseur:"CJdropshipping",
+
+                cjPid:product.pid,
+
+                sku:product.productSku || "",
+
+                typeImportation:"CJ_DROPSHIPPING",
+
+                prixFournisseurUSD:basePrice,
+
+                comptabilité:{
+
+                    prixAchat:prixAchatFCFA,
+
+                    prixVente:prixFinalFCFA,
+
+                    montantMarge,
+
+                    devise:"FCFA",
+
+                    fournisseur:"CJdropshipping",
+
+                    fournisseurPrixUSD:basePrice,
+
+                    tauxConversion:rate,
+
+                    margePourcentage:margin
+
+                },
+
+                variantes:
+                    product.raw?.variants ||
+                    product.variants ||
+                    {},
+
+                isFlash:false,
+
+                isRecommande:false,
+
+                createdAt:serverTimestamp(),
+
+                datePublication,
+
+                heurePublication
+
+            };
+
+            await set(publicationRef, payload);
+
+            console.log(
+                "DAKPRO ÉLITE — Produit importé :",
+                prodId,
+                payload
+            );
+
+            alert(
+                publishNow
+                    ? "🚀 Produit publié avec succès sur DAKPRO ÉLITE !"
+                    : "📥 Produit enregistré dans les brouillons !"
+            );
+
+            document.getElementById('cj-detail-modal').style.display = 'none';
+
+            this.selectedProduct = null;
+
+        }
+
+        catch (error) {
+
+            console.error("DAKPRO CJ IMPORT:", error);
+
+            alert(
+                "Échec de l'importation : " +
+                (error.message || "Erreur inconnue.")
+            );
+
+        }
+
+        finally {
+
+            if (button) {
+                button.disabled = false;
+                button.innerText = originalText ||
+                    "PUBLIER SUR DAKPRO ÉLITE";
+            }
+
+        }
+
+    }
+
 }
 
+
+// ============================================================
+// INITIALISATION
+// ============================================================
+
 export async function init() {
-    window.dakproImporterInstance = new DakproCJImporter('module-container');
+
+    window.dakproImporterInstance =
+        new DakproCJImporter('module-container');
+
 }
