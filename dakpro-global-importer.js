@@ -27,8 +27,8 @@ class DakproCJImporter {
         this.productsCache = {};
         this.db = getDatabase();
         
-        // URL officielle de ton backend déployé sur Render
-        this.backendUrl = window.DAKPRO_BACKEND_URL || 'https://dakpro-cj-backend.onrender.com';
+        // URL de base du backend (si vide, utilise l'API Serverless relative /api/search)
+        this.backendUrl = window.DAKPRO_BACKEND_URL || '';
         
         this.initUI();
     }
@@ -394,7 +394,7 @@ class DakproCJImporter {
                         </h2>
                         <p class="cj-subtitle">Passerelle CJdropshipping — Synchronisation Directe & Importation</p>
                     </div>
-                    <span class="cj-status">⚡ API CJ ACTIVE (RENDER)</span>
+                    <span class="cj-status">⚡ API CJ ACTIVE</span>
                 </header>
 
                 <div class="cj-search-box">
@@ -445,7 +445,7 @@ class DakproCJImporter {
     }
 
     // ========================================================
-    // RECHERCHE EN DIRECT VIA LE BACKEND RENDER
+    // RECHERCHE EN DIRECT VIA L'API SERVERLESS VERCEL
     // ========================================================
 
     async searchProducts(keyword) {
@@ -454,38 +454,61 @@ class DakproCJImporter {
 
         grid.innerHTML = `
             <div style="grid-column:1/-1;text-align:center;padding:50px;color:#FFD700;">
-                Interrogation des serveurs CJdropshipping via Render pour "${this.escapeHTML(keyword)}"...
+                Interrogation du catalogue officiel CJdropshipping pour "${this.escapeHTML(keyword)}"...
             </div>
         `;
         info.innerText = '';
 
+        // Dictionnaire de conversion automatique FR -> EN pour l'API CJ
+        const dictionaryFR = {
+            'trépied': 'tripod', 'trepied': 'tripod',
+            'montre': 'watch', 'montres': 'watch',
+            'voiture': 'car', 'voitures': 'car',
+            'téléphone': 'phone', 'telephone': 'phone',
+            'écouteurs': 'earphones', 'ecouteurs': 'earphones',
+            'chaussures': 'shoes', 'chaussure': 'shoes',
+            'sac': 'bag', 'sacs': 'bag'
+        };
+
+        const cleanKw = keyword.toLowerCase().trim();
+        const searchKeyword = dictionaryFR[cleanKw] || keyword;
+
         let rawProducts = [];
 
         try {
-            const res = await fetch(`${this.backendUrl}/api/cj/search?keyword=${encodeURIComponent(keyword)}&page=${this.currentPage}&size=50`);
+            // Appel direct vers l'API Serverless Vercel (/api/search)
+            const res = await fetch(`/api/search?keyword=${encodeURIComponent(searchKeyword)}&page=${this.currentPage}&size=50`);
             if (res.ok) {
                 const data = await res.json();
-                rawProducts = data.data?.list || data.data?.products || data.list || [];
+                rawProducts = data.data?.list || data.data?.products || data.list || data.result?.list || [];
             }
         } catch (e) {
-            console.warn("Erreur de liaison backend Render, activation du catalogue de secours.");
-        }
-
-        if (!Array.isArray(rawProducts) || rawProducts.length === 0) {
-            rawProducts = this.getFallbackCatalog(keyword);
+            console.warn("Erreur réseau lors de la liaison API.");
         }
 
         this.productsCache = {};
 
+        if (!Array.isArray(rawProducts) || rawProducts.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column:1/-1;padding:40px;text-align:center;background:#101010;border:1px solid #ff4444;border-radius:12px;color:#fff;">
+                    <h3 style="color:#ff4444;margin-bottom:10px;">⚠️ Aucun article trouvé</h3>
+                    <p style="color:#ccc;font-size:13px;">Aucun produit n'a été trouvé pour "<strong>${this.escapeHTML(keyword)}</strong>".</p>
+                    <p style="color:#aaa;font-size:12px;margin-top:10px;">Essayez un terme en anglais (ex: <em>watch, tripod, bag, shoes</em>).</p>
+                </div>
+            `;
+            info.innerText = `0 article trouvé.`;
+            return;
+        }
+
         const normalized = rawProducts.map((p, idx) => {
             const product = {
                 pid: p.pid || p.productId || `cj_prod_${idx}`,
-                productName: p.productName || p.name || `Article CJ ${keyword}`,
+                productName: p.productNameEn || p.productName || p.name || `Article CJ ${keyword}`,
                 productImage: p.productImage || p.bigImage || p.image || p.img || '',
                 sellPrice: Number(p.sellPrice || p.price || 10.00),
                 productSku: p.productSku || p.sku || `CJ-SKU-${idx}`,
                 categoryName: p.categoryName || keyword,
-                description: p.description || `Produit officiel synchronisé depuis le catalogue international CJdropshipping via DAKPRO ÉLITE.`,
+                description: p.description || `Produit officiel synchronisé depuis le catalogue international CJdropshipping.`,
                 stock: Number(p.inventory || p.stock || 1000),
                 raw: p
             };
@@ -494,15 +517,7 @@ class DakproCJImporter {
         });
 
         this.renderProducts(normalized);
-        info.innerText = `${normalized.length} articles chargés pour "${this.escapeHTML(keyword)}" — Synchronisation CJdropshipping Active`;
-    }
-
-    getFallbackCatalog(keyword) {
-        const kw = keyword.toLowerCase();
-        return [
-            { name: `${keyword.toUpperCase()} — Produit Certifié CJ Pro #1`, price: 8.50, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600", sku: `CJ-${kw.substring(0,3).toUpperCase()}-01` },
-            { name: `${keyword.toUpperCase()} — Modèle Standard Importation #2`, price: 12.90, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600", sku: `CJ-${kw.substring(0,3).toUpperCase()}-02` }
-        ];
+        info.innerText = `⚡ ${normalized.length} articles officiels chargés pour "${this.escapeHTML(keyword)}"`;
     }
 
     escapeHTML(value) {
