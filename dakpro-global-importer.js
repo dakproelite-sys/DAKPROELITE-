@@ -1,6 +1,6 @@
 // ============================================================
 // DAKPRO ÉLITE — GLOBAL CJ DROPSHIPPING IMPORTER
-// Catalogue CJ — Firebase — Prix dynamique — Commissions modifiables
+// Catalogue CJ Authentique — Firebase — Multi-devises / Multi-langues
 // CHARTE : NOIR / OR MÉTALLIQUE / JAUNE OR / BLEU BRILLANT
 // ============================================================
 
@@ -434,12 +434,12 @@ class DakproCJImporter {
                         </h2>
 
                         <p class="cj-subtitle">
-                            Passerelle CJdropshipping — Importation et publication du catalogue
+                            Passerelle CJdropshipping — Importation et publication du catalogue authentique
                         </p>
                     </div>
 
                     <span class="cj-status">
-                        ⚡ IMPORTATEUR ACTIF
+                        ⚡ API CJ ACTIVE
                     </span>
 
                 </header>
@@ -450,7 +450,7 @@ class DakproCJImporter {
                     <input
                         type="text"
                         id="cj-search-input"
-                        placeholder="Rechercher : montre, téléphone, chaussures, vêtements..."
+                        placeholder="Rechercher un produit réel (ex: watch, phone, shoes, bag)..."
                     >
 
                     <button
@@ -479,7 +479,7 @@ class DakproCJImporter {
                         border-radius:12px;
                         color:#aaa;
                     ">
-                        Recherchez un produit pour explorer le catalogue CJ.
+                        Entrez un mot-clé précis pour interroger les produits réels de CJdropshipping.
                     </div>
 
                 </div>
@@ -555,7 +555,7 @@ class DakproCJImporter {
     }
 
     // ========================================================
-    // RECHERCHE DU CATALOGUE CJ (AVEC IMAGES RÉELLES STABLES)
+    // RECHERCHE DIRECTE DU CATALOGUE CJ AUTHENTIQUE
     // ========================================================
 
     async searchProducts(keyword) {
@@ -570,58 +570,80 @@ class DakproCJImporter {
                 padding:50px;
                 color:#FFD700;
             ">
-                Recherche dans le catalogue CJ en cours...
+                Interrogation des serveurs CJdropshipping pour "${this.escapeHTML(keyword)}" en cours...
             </div>
         `;
 
         info.innerText = '';
 
         try {
-            let products = [];
+            const response = await fetch(
+                `/api/search?keyword=${encodeURIComponent(keyword)}&page=${this.currentPage}`
+            );
 
-            try {
-                const response = await fetch(
-                    `/api/search?keyword=${encodeURIComponent(keyword)}&page=${this.currentPage}`
-                );
-                if (response.ok) {
-                    const result = await response.json();
-                    products = result.products || result.data?.products || result.data?.content || result.data || [];
-                }
-            } catch (err) {
-                console.warn("API locale non disponible, utilisation du catalogue synchronisé.");
+            if (!response.ok) {
+                throw new Error("Impossible de joindre la passerelle API CJdropshipping.");
             }
 
+            const result = await response.json();
+            const products = result.products || result.data?.products || result.data?.content || result.data || [];
+
             if (!Array.isArray(products) || products.length === 0) {
-                products = this.getRealCJCatalogMock(keyword);
+                grid.innerHTML = `
+                    <div style="
+                        grid-column:1/-1;
+                        padding:45px;
+                        text-align:center;
+                        background:#101010;
+                        border:1px solid #D4AF37;
+                        border-radius:12px;
+                        color:#FFD700;
+                    ">
+                        Aucun produit réel trouvé pour "<b>${this.escapeHTML(keyword)}</b>". Essayez un autre terme en anglais (ex: watch, phone, shoes).
+                    </div>
+                `;
+                return;
             }
 
             this.productsCache = {};
 
             const normalized = products.map(p => {
-                const rawImg = p.productImage || p.bigImage || p.image || p.productImageUrl;
-                const validImage = (typeof rawImg === 'string' && rawImg.startsWith('http')) 
-                    ? rawImg 
-                    : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600';
-
+                const rawImg = p.productImage || p.bigImage || p.image || p.productImageUrl || '';
                 const product = {
                     ...p,
-                    pid: p.pid || p.productId || p.id || 'cj_' + Math.random().toString(36).substring(2, 9),
+                    pid: p.pid || p.productId || p.id,
                     productName: p.productName || p.name || p.nameEn || p.title || keyword,
-                    productImage: validImage,
-                    sellPrice: p.sellPrice ?? p.price ?? p.nowPrice ?? (15.00 + Math.random() * 15).toFixed(2),
-                    productSku: p.productSku || p.sku || p.spu || 'CJ-SKU-' + Math.floor(Math.random() * 100000),
+                    productImage: rawImg,
+                    sellPrice: p.sellPrice ?? p.price ?? p.nowPrice ?? 0,
+                    productSku: p.productSku || p.sku || p.spu || '',
                     categoryName: p.categoryName || p.category || keyword,
-                    description: p.description || p.descriptionEn || `Article officiel synchronisé depuis la plateforme CJdropshipping pour la recherche : ${keyword}.`,
+                    description: p.description || p.descriptionEn || `Description officielle CJdropshipping pour ${keyword}.`,
                     stock: p.stock ?? p.inventory ?? 500,
                     raw: p
                 };
 
-                this.productsCache[product.pid] = product;
+                if (product.pid && product.productImage) {
+                    this.productsCache[product.pid] = product;
+                }
                 return product;
-            });
+            }).filter(p => p.pid && p.productImage);
+
+            if (!normalized.length) {
+                grid.innerHTML = `
+                    <div style="
+                        grid-column:1/-1;
+                        padding:45px;
+                        text-align:center;
+                        color:#FFD700;
+                    ">
+                        Produits trouvés mais sans images valides exploitables.
+                    </div>
+                `;
+                return;
+            }
 
             this.renderProducts(normalized);
-            info.innerText = `${normalized.length} produits réels trouvés — Catalogue CJdropshipping`;
+            info.innerText = `${normalized.length} produits authentiques trouvés — Catalogue CJdropshipping`;
 
         } catch (error) {
             console.error("DAKPRO CJ SEARCH:", error);
@@ -635,38 +657,10 @@ class DakproCJImporter {
                     border-radius:12px;
                     color:#FFD700;
                 ">
-                    ${this.escapeHTML(error.message)}
+                    Erreur de connexion à l'API CJ : ${this.escapeHTML(error.message)}
                 </div>
             `;
         }
-    }
-
-    // Catalogue de secours avec images réelles et stables garantissant un affichage parfait sans image cassée
-    getRealCJCatalogMock(keyword) {
-        const kw = keyword.toLowerCase();
-        const sampleImages = [
-            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600',
-            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600',
-            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600',
-            'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=600',
-            'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600',
-            'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600'
-        ];
-
-        let items = [];
-        for (let i = 1; i <= 12; i++) {
-            items.push({
-                pid: `cj_real_${kw}_${i}`,
-                productName: `${keyword.toUpperCase()} - Article Original CJdropshipping Modèle Pro #${i}`,
-                productImage: sampleImages[(i - 1) % sampleImages.length],
-                sellPrice: (12.50 + (i * 2.5)).toFixed(2),
-                productSku: `CJ-${kw.substring(0,3).toUpperCase()}-00${i}`,
-                categoryName: keyword,
-                description: `Article de qualité supérieure importé directement des entrepôts internationaux CJdropshipping pour la catégorie ${keyword}.`,
-                stock: 1000
-            });
-        }
-        return items;
     }
 
     // ========================================================
@@ -684,11 +678,22 @@ class DakproCJImporter {
     }
 
     // ========================================================
-    // FORMATAGE FCFA
+    // FORMATAGE PRIX SELON LA DEVISE CHOISIE
     // ========================================================
 
-    formatFCFA(value) {
-        return Math.round(Number(value) || 0).toLocaleString('fr-FR') + ' FCFA';
+    formatPrice(value, currency) {
+        const num = Number(value) || 0;
+        switch(currency) {
+            case 'USD':
+                return '$' + num.toFixed(2);
+            case 'EUR':
+                return '€' + num.toFixed(2);
+            case 'NGN':
+                return '₦' + Math.round(num).toLocaleString('en-US');
+            case 'FCFA':
+            default:
+                return Math.round(num).toLocaleString('fr-FR') + ' FCFA';
+        }
     }
 
     // ========================================================
@@ -733,7 +738,7 @@ class DakproCJImporter {
     }
 
     // ========================================================
-    // DÉTAILS PRODUIT
+    // DÉTAILS PRODUIT (AVEC MULTI-LANGUES ET MULTI-DEVISES)
     // ========================================================
 
     loadProductDetail(pid) {
@@ -747,9 +752,9 @@ class DakproCJImporter {
         }
 
         this.selectedProduct = product;
-        const basePrice = Number(product.sellPrice);
+        const basePriceUSD = Number(product.sellPrice);
 
-        if (!Number.isFinite(basePrice) || basePrice <= 0) {
+        if (!Number.isFinite(basePriceUSD) || basePriceUSD <= 0) {
             alert("Prix fournisseur invalide.");
             return;
         }
@@ -775,7 +780,7 @@ class DakproCJImporter {
                         src="${this.escapeHTML(product.productImage)}"
                         alt="${this.escapeHTML(product.productName)}"
                         onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'"
-                    >
+                    />
                     <p style="color:#D4AF37;font-size:12px;margin-top:12px;">
                         FOURNISSEUR : CJ DROPSHIPPING
                     </p>
@@ -783,13 +788,35 @@ class DakproCJImporter {
                         SKU : <strong style="color:white;">${this.escapeHTML(product.productSku)}</strong>
                     </p>
                     <p style="color:#aaa;font-size:13px;">
-                        Prix fournisseur : <strong style="color:#FFD700;">$${basePrice.toFixed(2)}</strong>
+                        Prix fournisseur : <strong style="color:#FFD700;">$${basePriceUSD.toFixed(2)}</strong>
                     </p>
                 </div>
 
                 <div>
                     <div class="cj-section">
-                        <h3 class="cj-section-title">⚙️ PARAMÈTRES DE PRIX</h3>
+                        <h3 class="cj-section-title">⚙️ PARAMÈTRES DE PRIX & LOCALISATION</h3>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <div>
+                                <label class="cj-label">LANGUE DE PUBLICATION</label>
+                                id="cj-lang-select" class="cj-field">
+                                    <option value="fr" selected>Français (FR)</option>
+                                    <option value="en">English (EN)</option>
+                                    <option value="es">Español (ES)</option>
+                                    <option value="zh">中文 (ZH)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="cj-label">DEVISE DE PUBLICATION</label>
+                                <select id="cj-currency-select" class="cj-field">
+                                    <option value="FCFA" selected>Franc CFA (FCFA)</option>
+                                    <option value="USD">Dollar Américain ($)</option>
+                                    <option value="EUR">Euro (€)</option>
+                                    <option value="NGN">Naira Nigérian (₦)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <label class="cj-label">TAUX DE CONVERSION USD / FCFA</label>
                         <input
                             type="number"
@@ -801,7 +828,7 @@ class DakproCJImporter {
                             placeholder="655"
                         >
 
-                        <label class="cj-label">MARGE BÉNÉFICIAIRE PERSONNALISÉE (%) [Ex: 30 %]</label>
+                        <label class="cj-label">MARGE BÉNÉFICIAIRE PERSONNALISÉE (%) [Ex: 30 %, 40 %, 100 %]</label>
                         <input
                             type="number"
                             id="cj-margin-input"
@@ -871,16 +898,19 @@ class DakproCJImporter {
             modal.style.display = 'none';
         });
 
-        const update = () => this.updateCalculatedPrice(basePrice);
+        const update = () => this.updateCalculatedPrice(basePriceUSD);
 
         [
             'cj-margin-input',
             'cj-usd-rate',
+            'cj-currency-select',
             'cj-commission-vendeur',
             'cj-commission-affiliation',
             'cj-commission-plateforme'
         ].forEach(id => {
-            document.getElementById(id).addEventListener('input', update);
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', update);
+            if (el && el.tagName === 'SELECT') el.addEventListener('change', update);
         });
 
         document.getElementById('cj-save-draft').addEventListener('click', () => this.triggerImport(false));
@@ -912,18 +942,20 @@ class DakproCJImporter {
     }
 
     // ========================================================
-    // CALCUL AUTOMATIQUE PRIX + COMMISSIONS
+    // CALCUL AUTOMATIQUE PRIX + COMMISSIONS & DEVISES
     // ========================================================
 
-    updateCalculatedPrice(basePrice) {
+    updateCalculatedPrice(basePriceUSD) {
         const marginInput = document.getElementById('cj-margin-input');
         const rateInput = document.getElementById('cj-usd-rate');
+        const currencySelect = document.getElementById('cj-currency-select');
         const display = document.getElementById('cj-final-price-display');
 
         if (!marginInput || !rateInput || !display) return;
 
         const margin = Number(marginInput.value);
-        const rate = Number(rateInput.value);
+        const rateUSDToFCFA = Number(rateInput.value);
+        const currency = currencySelect ? currencySelect.value : 'FCFA';
 
         const vendeur = Number(document.getElementById('cj-commission-vendeur')?.value);
         const affiliation = Number(document.getElementById('cj-commission-affiliation')?.value);
@@ -942,7 +974,7 @@ class DakproCJImporter {
             validation.innerText = commissionsValides ? '✓ Répartition valide : 100 %' : '⚠️ Les commissions doivent totaliser exactement 100 %.';
         }
 
-        const rateValide = Number.isFinite(rate) && rate > 0;
+        const rateValide = Number.isFinite(rateUSDToFCFA) && rateUSDToFCFA > 0;
         const marginValide = Number.isFinite(margin) && margin >= 0 && margin <= 1000;
 
         if (!rateValide || !marginValide) {
@@ -950,18 +982,29 @@ class DakproCJImporter {
             return;
         }
 
-        const prixAchat = Math.round(basePrice * rate);
-        const montantMarge = Math.round(prixAchat * margin / 100);
-        const prixFinal = prixAchat + montantMarge;
+        // Base de calcul en FCFA
+        const prixAchatFCFA = Math.round(basePriceUSD * rateUSDToFCFA);
+        const montantMargeFCFA = Math.round(prixAchatFCFA * margin / 100);
+        const prixFinalFCFA = prixAchatFCFA + montantMargeFCFA;
 
-        display.innerText = this.formatFCFA(prixFinal);
-        document.getElementById('cj-purchase-price').innerText = this.formatFCFA(prixAchat);
-        document.getElementById('cj-margin-amount').innerText = this.formatFCFA(montantMarge);
-        document.getElementById('cj-summary-price').innerText = this.formatFCFA(prixFinal);
+        // Facteur de conversion selon la devise choisie
+        let conversionFactor = 1;
+        if (currency === 'USD') conversionFactor = 1 / rateUSDToFCFA;
+        else if (currency === 'EUR') conversionFactor = 0.001525; // Taux indicatif EUR/FCFA (~655)
+        else if (currency === 'NGN') conversionFactor = 1.65; // Taux indicatif NGN/FCFA
 
-        document.getElementById('cj-montant-vendeur').innerText = this.formatFCFA(prixFinal * vendeur / 100);
-        document.getElementById('cj-montant-affiliation').innerText = this.formatFCFA(prixFinal * affiliation / 100);
-        document.getElementById('cj-montant-plateforme').innerText = this.formatFCFA(prixFinal * plateforme / 100);
+        const prixAchatDisplay = prixAchatFCFA * conversionFactor;
+        const montantMargeDisplay = montantMargeFCFA * conversionFactor;
+        const prixFinalDisplay = prixFinalFCFA * conversionFactor;
+
+        display.innerText = this.formatPrice(prixFinalDisplay, currency);
+        document.getElementById('cj-purchase-price').innerText = this.formatPrice(prixAchatDisplay, currency);
+        document.getElementById('cj-margin-amount').innerText = this.formatPrice(montantMargeDisplay, currency);
+        document.getElementById('cj-summary-price').innerText = this.formatPrice(prixFinalDisplay, currency);
+
+        document.getElementById('cj-montant-vendeur').innerText = this.formatPrice(prixFinalDisplay * vendeur / 100, currency);
+        document.getElementById('cj-montant-affiliation').innerText = this.formatPrice(prixFinalDisplay * affiliation / 100, currency);
+        document.getElementById('cj-montant-plateforme').innerText = this.formatPrice(prixFinalDisplay * plateforme / 100, currency);
     }
 
     // ========================================================
@@ -986,6 +1029,8 @@ class DakproCJImporter {
             const product = this.selectedProduct;
             const margin = Number(document.getElementById('cj-margin-input')?.value);
             const rate = Number(document.getElementById('cj-usd-rate')?.value);
+            const currency = document.getElementById('cj-currency-select')?.value || 'FCFA';
+            const lang = document.getElementById('cj-lang-select')?.value || 'fr';
 
             if (!Number.isFinite(margin) || margin < 0 || margin > 1000) {
                 throw new Error("La marge doit être comprise entre 0 et 1 000 %.");
@@ -996,9 +1041,9 @@ class DakproCJImporter {
             }
 
             const commissions = this.validateCommissions();
-            const basePrice = Number(product.sellPrice);
+            const basePriceUSD = Number(product.sellPrice);
 
-            if (!Number.isFinite(basePrice) || basePrice <= 0) {
+            if (!Number.isFinite(basePriceUSD) || basePriceUSD <= 0) {
                 throw new Error("Prix fournisseur CJ invalide.");
             }
 
@@ -1016,9 +1061,16 @@ class DakproCJImporter {
             const vendeurId = currentUser.uid;
             const vendeurNom = currentUser.displayName || currentUser.nom || "DAKPRO ÉLITE";
 
-            const prixAchatFCFA = Math.round(basePrice * rate);
-            const montantMarge = Math.round(prixAchatFCFA * margin / 100);
-            const prixFinalFCFA = prixAchatFCFA + montantMarge;
+            const prixAchatFCFA = Math.round(basePriceUSD * rate);
+            const montantMargeFCFA = Math.round(prixAchatFCFA * margin / 100);
+            const prixFinalFCFA = prixAchatFCFA + montantMargeFCFA;
+
+            let conversionFactor = 1;
+            if (currency === 'USD') conversionFactor = 1 / rate;
+            else if (currency === 'EUR') conversionFactor = 0.001525;
+            else if (currency === 'NGN') conversionFactor = 1.65;
+
+            const prixFinalExport = Math.round(prixFinalFCFA * conversionFactor * 100) / 100;
 
             const publicationRef = push(ref(this.db, 'publications'));
             const prodId = publicationRef.key;
@@ -1039,11 +1091,12 @@ class DakproCJImporter {
                 nom_en: product.productName,
                 description: product.description || product.productName,
                 description_en: product.description || product.productName,
+                langue: lang,
                 categorie: product.categoryName || "Importation CJ",
                 sousCategorie: product.categoryName || "Importation CJ",
-                prix: prixFinalFCFA,
+                prix: prixFinalExport,
                 prixPromo: null,
-                devise: "FCFA",
+                devise: currency,
                 image: product.productImage,
                 images: [product.productImage],
                 video: "",
@@ -1065,14 +1118,14 @@ class DakproCJImporter {
                 cjPid: product.pid,
                 sku: product.productSku || "",
                 typeImportation: "CJ_DROPSHIPPING",
-                prixFournisseurUSD: basePrice,
+                prixFournisseurUSD: basePriceUSD,
                 comptabilité: {
-                    prixAchat: prixAchatFCFA,
-                    prixVente: prixFinalFCFA,
-                    montantMarge,
-                    devise: "FCFA",
+                    prixAchat: Math.round(prixAchatFCFA * conversionFactor * 100) / 100,
+                    prixVente: prixFinalExport,
+                    montantMarge: Math.round(montantMargeFCFA * conversionFactor * 100) / 100,
+                    devise: currency,
                     fournisseur: "CJdropshipping",
-                    fournisseurPrixUSD: basePrice,
+                    fournisseurPrixUSD: basePriceUSD,
                     tauxConversion: rate,
                     margePourcentage: margin
                 },
