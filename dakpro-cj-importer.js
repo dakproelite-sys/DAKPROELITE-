@@ -599,7 +599,7 @@ class DakproCJImporter {
     }
 
     // ========================================================
-    // RECHERCHE CATALOGUE
+    // RECHERCHE CATALOGUE (Corrigé vers 'products')
     // ========================================================
 
     async search() {
@@ -617,7 +617,7 @@ class DakproCJImporter {
         this.status("● RECHERCHE EN COURS");
 
         try {
-            const response = await this.api("search", {
+            const response = await this.api("products", {
                 keyWord: this.keyword,
                 categoryId: this.categoryId,
                 page: this.page,
