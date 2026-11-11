@@ -434,7 +434,7 @@ class DakproCJImporter {
     }
 
     // ========================================================
-    // COMMUNICATION AVEC L'API VERCEL (ULTRA-SÉCURISÉE)
+    // COMMUNICATION AVEC L'API VERCEL
     // ========================================================
 
     async api(action, params = {}, method = "GET") {
