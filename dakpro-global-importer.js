@@ -1,5 +1,5 @@
 // ======================================================
-// DAKPRO ÉLITE — GLOBAL IMPORTER
+// DAKPRO ÉLITE — GLOBAL IMPORTER (VERSION DÉFINITIVE CJ V2.0)
 // CJ DROPSHIPPING + CLOUDINARY + FIREBASE
 // FICHIER : dakpro-global-importer.js
 // ======================================================
@@ -285,13 +285,14 @@ class DakproCJImporter {
         if (Array.isArray(data)) return data;
 
         const candidates = [
+            data?.content?.productList, // Standard officiel CJ V2.0 (/product/listV2)
+            data?.content?.list,
+            data?.productList,
             data?.list,
+            data?.pageList,
             data?.variants,
             data?.items,
             data?.tree,
-            data?.content?.list,
-            data?.content?.productList,
-            data?.productList,
             data?.content
         ];
 
@@ -306,6 +307,7 @@ class DakproCJImporter {
         let data = this.getData(response);
         if (Array.isArray(data)) data = data[0] || {};
         if (Array.isArray(data?.list)) data = data.list[0] || {};
+        if (Array.isArray(data?.pageList)) data = data.pageList[0] || {};
         return data && typeof data === "object" ? data : {};
     }
 
@@ -416,7 +418,9 @@ class DakproCJImporter {
                 keyWord: this.keyword,
                 categoryId: this.categoryId,
                 page: this.page,
-                size: CONFIG.pageSize
+                size: CONFIG.pageSize,
+                enable_description: "1",
+                enable_category: "1"
             });
 
             if (requestNumber !== this.searchNumber) return;
@@ -424,7 +428,7 @@ class DakproCJImporter {
             const data = this.getData(response);
             const list = this.getProductList(response);
 
-            this.totalRecords = Number(data?.totalRecords ?? data?.total ?? 0);
+            this.totalRecords = Number(data?.totalRecords ?? data?.total ?? data?.totalCount ?? 0);
             this.totalPages = Number(
                 data?.totalPages ||
                 Math.ceil(this.totalRecords / CONFIG.pageSize) || 1
@@ -439,31 +443,38 @@ class DakproCJImporter {
             this.products.clear();
 
             const products = list.map(item => {
-                const pid = String(item.pid || item.productId || item.id || "");
+                // Champs officiels CJ V2.0 mappés proprement
+                const pid = String(item.id || item.pid || item.productId || item.goodsId || "");
                 const images = this.images(
-                    item.productImageSet || item.images,
-                    item.productImage || item.bigImage
+                    item.productImageSet || item.images || item.goodsImageSet,
+                    item.bigImage || item.productImage || item.goodsImage
                 );
 
                 const product = {
                     pid,
-                    name: item.productNameEn || item.productName ||
-                          item.nameEn || item.name || "Produit CJ",
-                    image: item.productImage || item.bigImage || images[0] || "",
+                    name: item.nameEn || item.productNameEn || item.productName ||
+                          item.name || item.goodsName || "Produit CJ",
+                    image: item.bigImage || item.productImage || item.goodsImage || images[0] || "",
                     images,
-                    sku: item.productSku || item.sku || "",
+                    sku: item.productSku || item.sku || item.goodsSku || "",
                     price: this.number(
-                        item.sellPrice ?? item.productPrice ?? item.supplierPrice
+                        item.nowPrice ?? item.sellPrice ?? item.productPrice ?? item.supplierPrice ?? item.goodsPrice
                     ),
                     stock: this.stock(item),
-                    categoryId: item.categoryId || "",
-                    categoryName: item.categoryName || "",
-                    description: item.description || ""
+                    categoryId: item.categoryId || item.threeCategoryName || "",
+                    categoryName: item.threeCategoryName || item.categoryName || "",
+                    description: item.description || item.goodsDesc || ""
                 };
 
                 if (pid) this.products.set(pid, product);
                 return product;
             }).filter(p => p.pid);
+
+            if (!products.length) {
+                grid.innerHTML = `<div class="dakcj-message">Aucun produit valide trouvé dans les fiches CJ.</div>`;
+                info.textContent = "Erreur de format.";
+                return;
+            }
 
             this.renderProducts(products);
 
@@ -548,13 +559,13 @@ class DakproCJImporter {
             if (results[0].status === "fulfilled") {
                 const d = this.getObject(results[0].value);
 
-                product.name = d.productNameEn || d.productName || product.name;
-                product.description = d.description || d.productDescription || product.description;
-                product.sku = d.productSku || product.sku;
-                product.image = d.productImage || d.bigImage || product.image;
+                product.name = d.nameEn || d.productNameEn || d.productName || d.goodsName || product.name;
+                product.description = d.description || d.productDescription || d.goodsDesc || product.description;
+                product.sku = d.productSku || d.sku || product.sku;
+                product.image = d.bigImage || d.productImage || d.goodsImage || product.image;
                 product.images = this.images(d.productImageSet || d.images, product.image);
                 product.price = this.number(
-                    d.sellPrice ?? d.supplierPrice ?? d.productPrice ?? product.price
+                    d.nowPrice ?? d.sellPrice ?? d.supplierPrice ?? d.productPrice ?? product.price
                 );
             }
 
@@ -781,6 +792,7 @@ class DakproCJImporter {
 
             $("dakcj-stock").textContent = this.inventory
                 ? "Stock disponible : " + (
+                    this.inventory.warehouseInventoryNum ??
                     this.inventory.totalInventory ??
                     this.inventory.stock ??
                     this.inventory.inventory ??
@@ -888,7 +900,6 @@ class DakproCJImporter {
         try {
             const calculation = this.calculatePrice();
 
-            // Vérification des doublons CJ
             const duplicateQuery = query(
                 ref(this.db, CONFIG.FIREBASE_PATH),
                 orderByChild("cjPid"),
@@ -1084,6 +1095,7 @@ class DakproCJImporter {
         if (!product) return null;
 
         for (const value of [
+            product.warehouseInventoryNum,
             product.stock,
             product.inventory,
             product.quantity,
